@@ -1,0 +1,239 @@
+name: Generate SLSA Level 3 Provenance
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write          # For uploading release assets
+  id-token: write          # For OIDC token signing (SLSA requirement)
+  actions: read            # For reading workflow info
+
+env:
+  # Pinned SLSA generator version for reproducibility
+  SLSA_GENERATOR_VERSION: v2.0.0
+
+jobs:
+  # Build job - creates artifacts for provenance
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      hashes: ${{ steps.hash.outputs.hashes }}
+      artifact-name: ${{ steps.build.outputs.artifact-name }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Nix with flakes
+        uses: DeterminateSystems/nix-installer-action@v13
+        with:
+          extra-conf: |
+            experimental-features = nix-command flakes
+            accept-flake-config = true
+
+      - name: Build all packages
+        id: build
+        run: |
+          # Create artifacts directory
+          mkdir -p artifacts
+          
+          # List of all 10 curated packages
+          packages=(go git gh jq ripgrep grep findutils gawk gnused opencode)
+          
+          # Build each package and collect store paths
+          for pkg in "${packages[@]}"; do
+            echo "Building $pkg..."
+            store_path=$(nix build ".#${pkg}" --no-link --print-out-paths)
+            echo "Built: $store_path"
+            
+            # Create a tarball of the package
+            tar -czf "artifacts/${pkg}.tar.gz" -C "$store_path" .
+          done
+          
+          # Create a manifest with package info
+          cat > artifacts/manifest.json << EOF
+          {
+            "release": "${{ github.event.release.tag_name }}",
+            "commit": "${{ github.sha }}",
+            "packages": $(nix eval --json '.#packages.x86_64-linux' 2>/dev/null || echo '[]'),
+            "built_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
+          EOF
+          
+          # Create combined tarball
+          tar -czf artifacts/all-packages.tar.gz -C artifacts $(ls artifacts/*.tar.gz | xargs -n1 basename) manifest.json
+          
+          echo "Built artifacts:"
+          ls -la artifacts/
+          
+          # Set output for artifact name
+          echo "artifact-name=all-packages" >> $GITHUB_OUTPUT
+
+      - name: Generate artifact hashes
+        id: hash
+        run: |
+          # Generate SHA256 hashes of all artifacts
+          cd artifacts
+          
+          # Create hashes file in SLSA format
+          echo "hashes=$(sha256sum *.tar.gz | base64 -w0)" >> $GITHUB_OUTPUT
+          
+          # Also create a readable hashes file
+          sha256sum *.tar.gz > ../hashes.txt
+          
+          echo "Generated hashes:"
+          cat ../hashes.txt
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: all-packages
+          path: artifacts/*.tar.gz
+          retention-days: 30
+
+      - name: Upload hashes
+        uses: actions/upload-artifact@v4
+        with:
+          name: hashes
+          path: hashes.txt
+          retention-days: 30
+
+  # SLSA provenance generation - uses hardened runner
+  provenance:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      actions: read
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: all-packages
+          path: artifacts
+
+      - name: Download hashes
+        uses: actions/download-artifact@v4
+        with:
+          name: hashes
+          path: .
+
+      - name: Generate SLSA Level 3 provenance
+        uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.0.0
+        with:
+          base64-subjects: "${{ needs.build.outputs.hashes }}"
+          provenance-name: "slsa-attestation.intoto.jsonl"
+          upload-assets: true
+          upload-to-release: true
+          release-tag: "${{ github.event.release.tag_name }}"
+        env:
+          # Ensure hermetic build environment
+          # Nix builds are hermetic by design
+          SLSA_BUILD_TYPE: "https://nixos.org/build/v1"
+
+  # Attach artifacts and attestation to release
+  release:
+    needs: [build, provenance]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: all-packages
+          path: artifacts
+
+      - name: Download attestation
+        uses: actions/download-artifact@v4
+        with:
+          name: slsa-attestation
+          path: attestation
+
+      - name: Upload artifacts to release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: artifacts/all-packages.tar.gz
+          asset_name: wellmaintained-nixpkgs-${{ github.event.release.tag_name }}.tar.gz
+          asset_content_type: application/gzip
+
+      - name: Upload attestation to release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: attestation/slsa-attestation.intoto.jsonl
+          asset_name: slsa-attestation-${{ github.event.release.tag_name }}.intoto.jsonl
+          asset_content_type: application/json
+
+      - name: Store attestation in repository
+        run: |
+          # Create attestations directory if it doesn't exist
+          mkdir -p attestations
+          
+          # Copy attestation to repository
+          cp attestation/slsa-attestation.intoto.jsonl \
+             "attestations/slsa-attestation-${{ github.event.release.tag_name }}.intoto.jsonl"
+          
+          # Create a latest symlink
+          ln -sf "slsa-attestation-${{ github.event.release.tag_name }}.intoto.jsonl" \
+                 attestations/slsa-attestation-latest.intoto.jsonl
+          
+          echo "Attestation stored in repository"
+          ls -la attestations/
+
+      - name: Commit attestation to repository
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(attestations): add SLSA attestation for ${{ github.event.release.tag_name }}"
+          file_pattern: attestations/*.jsonl
+          branch: main
+          commit_options: '--no-verify'
+
+  # Summary job
+  summary:
+    needs: [build, provenance, release]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate summary
+        run: |
+          echo "## SLSA Level 3 Provenance Generation Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Release** | ${{ github.event.release.tag_name }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **SLSA Level** | 3 |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Build Type** | Hermetic (Nix) |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Runner** | Hardened GitHub-hosted |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Signing** | GitHub OIDC Token |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Package Bundle**: \`wellmaintained-nixpkgs-${{ github.event.release.tag_name }}.tar.gz\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Attestation**: \`slsa-attestation-${{ github.event.release.tag_name }}.intoto.jsonl\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Verification" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```bash' >> $GITHUB_STEP_SUMMARY
+          echo "# Install slsa-verifier" >> $GITHUB_STEP_SUMMARY
+          echo "go install github.com/slsa-framework/slsa-verifier/v2/cli/slsa-verifier@latest" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "# Download attestation and artifact from release" >> $GITHUB_STEP_SUMMARY
+          echo "gh release download ${{ github.event.release.tag_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "# Verify the attestation" >> $GITHUB_STEP_SUMMARY
+          echo "slsa-verifier verify-artifact \\" >> $GITHUB_STEP_SUMMARY
+          echo "  --provenance-path slsa-attestation-${{ github.event.release.tag_name }}.intoto.jsonl \\" >> $GITHUB_STEP_SUMMARY
+          echo "  --source-uri github.com/${{ github.repository }} \\" >> $GITHUB_STEP_SUMMARY
+          echo "  --source-tag ${{ github.event.release.tag_name }} \\" >> $GITHUB_STEP_SUMMARY
+          echo "  wellmaintained-nixpkgs-${{ github.event.release.tag_name }}.tar.gz" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ SLSA Level 3 provenance attestation generated and attached to release" >> $GITHUB_STEP_SUMMARY

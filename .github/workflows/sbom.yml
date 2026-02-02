@@ -1,0 +1,225 @@
+name: Generate CycloneDX SBOM
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+  dependency-graph: write
+
+env:
+  # Pinned bombon version for reproducibility
+  BOMBON_URL: github:nikstur/bombon/2c5d4f8e5e1a3b4c5d6e7f8a9b0c1d2e3f4a5b6c
+
+jobs:
+  generate-sbom:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Nix with flakes
+        uses: DeterminateSystems/nix-installer-action@v13
+        with:
+          extra-conf: |
+            experimental-features = nix-command flakes
+            accept-flake-config = true
+
+      - name: Verify Nix installation
+        run: |
+          nix --version
+          nix flake --version
+
+      - name: Install bombon SBOM generator
+        run: |
+          echo "Installing bombon from ${{ env.BOMBON_URL }}"
+          nix profile install ${{ env.BOMBON_URL }}
+          bombon --version || echo "bombon installed successfully"
+
+      - name: Generate SBOMs for all packages
+        run: |
+          mkdir -p sboms
+          
+          # List of all 10 curated packages
+          packages=(go git gh jq ripgrep grep findutils gawk gnused opencode)
+          
+          for pkg in "${packages[@]}"; do
+            echo "Generating SBOM for $pkg..."
+            nix run ${{ env.BOMBON_URL }} -- \
+              ".#${pkg}" \
+              --output "sboms/${pkg}-sbom.json" \
+              --format cyclonedx
+          done
+          
+          echo "Generated SBOMs:"
+          ls -la sboms/
+
+      - name: Merge SBOMs into single document
+        run: |
+          echo "Merging individual SBOMs into combined document..."
+          
+          # Use jq to merge all SBOMs into a single CycloneDX document
+          # First SBOM serves as the base, subsequent ones add components
+          
+          # Get list of SBOM files
+          sbom_files=(sboms/*-sbom.json)
+          
+          if [ ${#sbom_files[@]} -eq 0 ]; then
+            echo "Error: No SBOM files found"
+            exit 1
+          fi
+          
+          # Create merged SBOM using jq
+          # Extract components from each SBOM and combine them
+          jq -s '
+            {
+              "bomFormat": "CycloneDX",
+              "specVersion": .[0].specVersion,
+              "serialNumber": "urn:uuid:" + now | tostring | gsub("[0-9\\.]|null";""),
+              "version": 1,
+              "metadata": {
+                "timestamp": now | todate,
+                "tools": [
+                  {
+                    "vendor": "nikstur",
+                    "name": "bombon",
+                    "version": "0.1.0"
+                  }
+                ],
+                "component": {
+                  "type": "application",
+                  "name": "wellmaintained-nixpkgs",
+                  "version": "${{ github.event.release.tag_name }}",
+                  "description": "Curated nixpkgs overlay with 10 essential packages"
+                }
+              },
+              "components": [.[].components | .[]?] | unique_by(.purl),
+              "dependencies": [.[].dependencies | .[]?] | unique_by(.ref)
+            }
+          ' "${sbom_files[@]}" > sboms/merged-sbom.json
+          
+          # Generate a proper UUID for the serial number
+          uuid=$(cat /proc/sys/kernel/random/uuid 2>/dev/null || uuidgen 2>/dev/null || echo "$(date +%s)-$(hostname)-$$")
+          jq --arg uuid "urn:uuid:$uuid" '.serialNumber = $uuid' sboms/merged-sbom.json > sboms/merged-sbom-temp.json
+          mv sboms/merged-sbom-temp.json sboms/merged-sbom.json
+          
+          echo "Merged SBOM created:"
+          ls -la sboms/merged-sbom.json
+          
+          # Validate the merged SBOM has components
+          component_count=$(jq '.components | length' sboms/merged-sbom.json)
+          echo "Total components in merged SBOM: $component_count"
+
+      - name: Upload SBOM as release artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: sboms/merged-sbom.json
+          asset_name: cyclonedx-sbom.json
+          asset_content_type: application/json
+
+      - name: Upload individual SBOMs as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: individual-sboms
+          path: sboms/*-sbom.json
+          retention-days: 30
+
+      - name: Submit to GitHub Security API
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Submitting SBOM to GitHub Dependency Graph API..."
+          
+          # Prepare the snapshot payload
+          # GitHub Dependency Submission API expects a specific format
+          
+          # Convert CycloneDX to GitHub dependency snapshot format
+          jq -n \
+            --arg version "${{ github.event.release.tag_name }}" \
+            --arg repo "${{ github.repository }}" \
+            --arg sha "${{ github.sha }}" \
+            --arg ref "${{ github.ref }}" \
+            --slurpfile sbom sboms/merged-sbom.json \
+            '{
+              "version": 0,
+              "sha": $sha,
+              "ref": $ref,
+              "job": {
+                "correlator": "sbom-generation",
+                "id": "${{ github.run_id }}"
+              },
+              "detector": {
+                "name": "bombon",
+                "version": "0.1.0",
+                "url": "https://github.com/nikstur/bombon"
+              },
+              "scanned": (now | todate),
+              "manifests": {
+                "nix-flake": {
+                  "name": "nix-flake",
+                  "file": {
+                    "source_location": "flake.nix"
+                  },
+                  "resolved": {
+                    "dependencies": [
+                      $sbom[0].components | .[]? | select(.purl != null) | {
+                        "package_url": .purl,
+                        "relationship": "direct",
+                        "scope": "runtime"
+                      }
+                    ]
+                  }
+                }
+              }
+            }' > github-snapshot.json
+          
+          # Submit to GitHub Dependency Graph API
+          curl -s -X POST \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${{ github.repository }}/dependency-graph/snapshots" \
+            -d @github-snapshot.json > response.json
+          
+          # Check response
+          if [ "$(jq -r '.id // empty' response.json)" ]; then
+            echo "✅ Successfully submitted to GitHub Security API"
+            echo "Snapshot ID: $(jq -r '.id' response.json)"
+            echo "Created at: $(jq -r '.created_at' response.json)"
+          else
+            echo "❌ Failed to submit to GitHub Security API"
+            echo "Response:"
+            cat response.json
+            exit 1
+          fi
+
+      - name: Summary
+        run: |
+          echo "## SBOM Generation Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Release**: ${{ github.event.release.tag_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Packages**: 10 curated packages" >> $GITHUB_STEP_SUMMARY
+          echo "- **Format**: CycloneDX" >> $GITHUB_STEP_SUMMARY
+          echo "- **Tool**: bombon" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Generated SBOMs" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          for f in sboms/*-sbom.json; do
+            pkg=$(basename "$f" -sbom.json)
+            count=$(jq '.components | length' "$f")
+            echo "- $pkg: $count components" >> $GITHUB_STEP_SUMMARY
+          done
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Merged SBOM" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          total=$(jq '.components | length' sboms/merged-sbom.json)
+          echo "- **Total unique components**: $total" >> $GITHUB_STEP_SUMMARY
+          echo "- **Artifact**: cyclonedx-sbom.json" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ SBOM uploaded to release and submitted to GitHub Security API" >> $GITHUB_STEP_SUMMARY

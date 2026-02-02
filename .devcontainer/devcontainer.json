@@ -23,11 +23,13 @@
       }
     }
   },
-  "postCreateCommand": "nix --version && echo 'Nix is ready!'",
+  "postCreateCommand": "nix --version && nix develop --command bash -c 'echo \"Nix development environment ready!\" && which go && which git && which gh'",
   "postStartCommand": "nix flake check || echo 'Flake check completed'",
   "remoteUser": "vscode",
   "mounts": [
-    "source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,type=bind,consistency=cached"
+    "source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,type=bind,consistency=cached",
+    "source=devcontainer-nix-store,target=/nix,type=volume",
+    "source=devcontainer-nix-cache,target=/home/vscode/.cache/nix,type=volume"
   ],
   "runArgs": [
     "--env",
