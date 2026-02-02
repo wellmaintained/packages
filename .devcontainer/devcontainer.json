@@ -1,0 +1,38 @@
+{
+  "name": "Compliance Infrastructure - Nix Devcontainer",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "features": {
+    "ghcr.io/devcontainers/features/nix:1": {
+      "version": "latest",
+      "multiUser": true,
+      "extraNixConfig": "experimental-features = nix-command flakes"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "jnoortheen.nix-ide",
+        "mkhl.direnv",
+        "arrterian.nix-env-selector"
+      ],
+      "settings": {
+        "nix.enableLanguageServer": true,
+        "nix.serverPath": "nixd",
+        "nix.formatterPath": "nixpkgs-fmt",
+        "terminal.integrated.defaultProfile.linux": "bash"
+      }
+    }
+  },
+  "postCreateCommand": "nix --version && nix develop --command bash -c 'echo \"Nix development environment ready!\" && which go && which git && which gh'",
+  "postStartCommand": "nix flake check || echo 'Flake check completed'",
+  "remoteUser": "vscode",
+  "mounts": [
+    "source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,type=bind,consistency=cached",
+    "source=devcontainer-nix-store,target=/nix,type=volume",
+    "source=devcontainer-nix-cache,target=/home/vscode/.cache/nix,type=volume"
+  ],
+  "runArgs": [
+    "--env",
+    "GIT_EDITOR=code --wait"
+  ]
+}

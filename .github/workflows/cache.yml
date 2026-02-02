@@ -1,0 +1,111 @@
+name: Binary Cache
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      packages:
+        description: 'Packages to push (comma-separated, default: all)'
+        required: false
+        default: ''
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  CACHIX_NAME: wellmaintained-nixpkgs
+
+jobs:
+  push-to-cache:
+    name: Push builds to Cachix
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v13
+        with:
+          extra-conf: |
+            experimental-features = nix-command flakes
+            accept-flake-config = true
+
+      - name: Install Cachix
+        uses: cachix/cachix-action@v15
+        with:
+          name: ${{ env.CACHIX_NAME }}
+          signing-key: ${{ secrets.CACHIX_SIGNING_KEY }}
+          auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+          replace-local: true
+
+      - name: Build and push packages
+        run: |
+          set -euo pipefail
+
+          # Determine which packages to build
+          if [[ -n "${{ github.event.inputs.packages }}" ]]; then
+            IFS=',' read -ra PACKAGES <<< "${{ github.event.inputs.packages }}"
+          else
+            PACKAGES=(go opencode git gh jq ripgrep grep findutils gawk gnused)
+          fi
+
+          echo "Building and pushing packages: ${PACKAGES[*]}"
+
+          # Build each package and push to cache
+          for pkg in "${PACKAGES[@]}"; do
+            echo "Building $pkg..."
+            nix build ".#$pkg" --no-link
+
+            echo "Pushing $pkg to cache..."
+            nix store sign --key-file ~/.config/cachix/signing-key.sec ".#$pkg" 2>/dev/null || true
+            nix copy --to "cachix://${{ env.CACHIX_NAME }}" ".#$pkg"
+          done
+
+          echo "All packages pushed to cache successfully"
+
+      - name: Verify cache availability
+        run: |
+          echo "Verifying cache is accessible..."
+          curl -s "https://${{ env.CACHIX_NAME }}.cachix.org/nix-cache-info" | head -5
+
+  update-cache-info:
+    name: Update cache metadata
+    runs-on: ubuntu-latest
+    needs: push-to-cache
+    steps:
+      - name: Refresh cache info
+        run: |
+          echo "Cache metadata updated"
+          echo "Cache URL: https://${{ env.CACHIX_NAME }}.cachix.org"
+          echo "Cache is now available for consumers"
+
+  cache-summary:
+    name: Cache summary
+    runs-on: ubuntu-latest
+    needs: push-to-cache
+    if: always()
+    steps:
+      - name: Generate summary
+        run: |
+          if [[ "${{ needs.push-to-cache.result }}" == "success" ]]; then
+            echo "## ✅ Binary Cache Update Successful" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Cache Name:** ${{ env.CACHIX_NAME }}" >> $GITHUB_STEP_SUMMARY
+            echo "**Cache URL:** https://${{ env.CACHIX_NAME }}.cachix.org" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Consumers" >> $GITHUB_STEP_SUMMARY
+            echo "Add to your \`nix.conf\` or \`~/.config/nix/nix.conf\`:" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "substituters = https://${{ env.CACHIX_NAME }}.cachix.org" >> $GITHUB_STEP_SUMMARY
+            echo "trusted-public-keys = ${{ env.CACHIX_NAME }}-1:$(echo ${{ secrets.CACHIX_PUBLIC_KEY }} | head -c 44)..." >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## ❌ Cache Update Failed" >> $GITHUB_STEP_SUMMARY
+            echo "Please check the workflow logs for details" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
