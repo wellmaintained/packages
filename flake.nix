@@ -23,78 +23,28 @@
         inherit system;
       });
 
-      # Curated overlay exposing exactly 10 packages
-      curatedOverlay = final: prev: {
-        # Package 1: Go compiler (1.23+)
-        curated-go = final.go_1_23 or final.go;
-        
-        # Package 2: Git version control
-        curated-git = final.git;
-        
-        # Package 3: GitHub CLI
-        curated-gh = final.gh;
-        
-        # Package 4: JSON processor
-        curated-jq = final.jq;
-        
-        # Package 5: Fast grep alternative (ripgrep)
-        curated-ripgrep = final.ripgrep;
-        
-        # Package 6: GNU grep
-        curated-grep = final.gnugrep;
-        
-        # Package 7: GNU findutils
-        curated-findutils = final.findutils;
-        
-        # Package 8: GNU awk
-        curated-gawk = final.gawk;
-        
-        # Package 9: GNU sed
-        curated-gnused = final.gnused;
-        
-        # Package 10: opencode - AI coding agent
-        # Note: opencode is not in nixpkgs yet, so we create a placeholder
-        # or use a similar tool. Using a placeholder derivation for now.
-        curated-opencode = final.stdenv.mkDerivation {
-          pname = "opencode-placeholder";
-          version = "0.1.0";
-          
-          src = null;
-          
-          dontUnpack = true;
-          dontBuild = true;
-          
-          installPhase = ''
-            mkdir -p $out/bin
-            cat > $out/bin/opencode << 'EOF'
-          #!/bin/sh
-          echo "opencode: AI coding agent placeholder"
-          echo "This is a curated package in the compliance infrastructure overlay."
-          echo "For the actual opencode tool, please install separately."
-          EOF
-            chmod +x $out/bin/opencode
-          '';
-          
-          meta = with final.lib; {
-            description = "AI coding agent (placeholder for opencode)";
-            homepage = "https://github.com/opencode-ai/opencode";
-            license = licenses.mit;
-            maintainers = [ ];
-            platforms = platforms.all;
-          };
-        };
-      };
-
     in
     {
       # Expose the curated overlay
-      overlays.default = curatedOverlay;
+      overlays.default = final: prev: {
+        # Import all curated packages from pkgs/ directory
+        curated-go = final.callPackage ./pkgs/go { };
+        curated-git = final.callPackage ./pkgs/git { };
+        curated-gh = final.callPackage ./pkgs/gh { };
+        curated-jq = final.callPackage ./pkgs/jq { };
+        curated-ripgrep = final.callPackage ./pkgs/ripgrep { };
+        curated-grep = final.callPackage ./pkgs/grep { };
+        curated-findutils = final.callPackage ./pkgs/findutils { };
+        curated-gawk = final.callPackage ./pkgs/gawk { };
+        curated-gnused = final.callPackage ./pkgs/gnused { };
+        curated-opencode = final.callPackage ./pkgs/opencode { };
+      };
 
       # Packages output - all 10 curated packages for each system
       packages = forEachSystem ({ pkgs, system }: 
         let
           # Apply the curated overlay to get curated packages
-          curatedPkgs = pkgs.extend curatedOverlay;
+          curatedPkgs = pkgs.extend self.overlays.default;
         in
         {
           # Individual packages
@@ -135,7 +85,7 @@
       # Development shell with all 10 packages
       devShells = forEachSystem ({ pkgs, system }:
         let
-          curatedPkgs = pkgs.extend curatedOverlay;
+          curatedPkgs = pkgs.extend self.overlays.default;
         in
         {
           default = pkgs.mkShell {
@@ -166,7 +116,7 @@
               echo "  7. findutils - $(find --version 2>/dev/null | head -1 || echo 'GNU find')"
               echo "  8. gawk      - $(awk --version 2>/dev/null | head -1 || echo 'GNU awk')"
               echo "  9. gnused    - $(sed --version 2>/dev/null | head -1 || echo 'GNU sed')"
-              echo "  10. opencode - AI coding agent (placeholder)"
+              echo "  10. opencode - $(opencode --version 2>/dev/null || echo 'AI coding agent')"
               echo "=================================================="
             '';
             
