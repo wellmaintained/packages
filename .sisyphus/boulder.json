@@ -1,0 +1,41 @@
+{
+  "active_plan": "/home/mrdavidlaing/Work/wellmaintained-nixpkgs/.worktrees/pr-1-compliance-infrastructure/.sisyphus/plans/compliance-infrastructure.md",
+  "started_at": "2026-02-02T19:54:24.065Z",
+  "completed_at": "2026-02-02T21:35:00.000Z",
+  "session_ids": ["ses_3e0145679ffe6Pp7ga0LFLfZdU"],
+  "plan_name": "compliance-infrastructure",
+  "status": "complete",
+  "tasks_completed": 8,
+  "tasks_total": 8,
+  "checkboxes": {
+    "total": 23,
+    "checked": 17,
+    "unchecked": 6
+  },
+  "verification_summary": {
+    "packages_built": "10/10",
+    "workflows_created": 4,
+    "documentation_files": 4,
+    "flake_check": "passes",
+    "yaml_validation": "all valid",
+    "devcontainer_json": "valid",
+    "no_secrets": true,
+    "package_scope_limited": true
+  },
+  "blockers": {
+    "devcontainer_cli": [
+      "Devcontainer launches with all tools available",
+      "Devcontainer configuration valid and builds"
+    ],
+    "release_event": [
+      "Release creates CycloneDX SBOM and submits to GitHub Security",
+      "SLSA provenance attestation attached to releases"
+    ],
+    "security_alerts": [
+      "CVE triage workflow routes findings to issue queue"
+    ],
+    "manual_setup": [
+      "Binary cache configured and accessible"
+    ]
+  }
+}
