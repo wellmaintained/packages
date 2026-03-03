@@ -1,0 +1,119 @@
+name: Build sbomify devcontainer image
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - flake.nix
+      - flake.lock
+      - .github/workflows/build-devcontainer.yml
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    env:
+      IMAGE_NAME: ghcr.io/wellmaintained/packages/devcontainer-sbomify
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest
+            type=sha,prefix=sha-
+
+      - name: Generate Dockerfile
+        run: |
+          cat > Dockerfile.devcontainer-sbomify <<'EOF'
+          FROM ubuntu:24.04
+
+          ENV DEBIAN_FRONTEND=noninteractive
+          ENV CI=true
+          ENV NIX_CONFIG="experimental-features = nix-command flakes"
+
+          RUN apt-get update && apt-get install -y --no-install-recommends \
+              bash \
+              ca-certificates \
+              curl \
+              git \
+              gnupg \
+              jq \
+              sudo \
+              wget \
+              xz-utils \
+              && rm -rf /var/lib/apt/lists/*
+
+          # Node.js 22 is required by several agent-side CLIs.
+          RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
+              apt-get install -y nodejs && \
+              rm -rf /var/lib/apt/lists/*
+
+          # Install Claude Code.
+          RUN curl -fsSL https://claude.ai/install.sh | bash && \
+              cp /root/.local/bin/claude /usr/local/bin/claude && \
+              chmod +x /usr/local/bin/claude
+
+          # Install Cursor agent CLI.
+          RUN curl -fsSL https://cursor.com/install | bash && \
+              ln -s "$(find /root/.local/share/cursor-agent -name cursor-agent -type f | head -1)" /usr/local/bin/cursor-agent
+
+          # Install OpenCode CLI.
+          RUN curl -fsSL https://opencode.ai/install | bash && \
+              cp /root/.opencode/bin/opencode /usr/local/bin/opencode && \
+              chmod +x /usr/local/bin/opencode
+
+          # Install Nix.
+          RUN curl -fsSL https://install.determinate.systems/nix | \
+              sh -s -- install --no-confirm
+          ENV PATH="/nix/var/nix/profiles/default/bin:${PATH}"
+
+          # Pin the flake context into the image.
+          WORKDIR /opt/wellmaintained-packages
+          COPY flake.nix flake.lock ./
+
+          # Realize the sbomify devShell closure during build.
+          RUN nix develop .#sbomify -c bash -lc '\
+              python3 --version && \
+              uv --version && \
+              bun --version && \
+              node --version'
+
+          # Ensure all runtime commands execute inside the sbomify devShell.
+          RUN cat > /usr/local/bin/with-sbomify-devshell <<'WRAP' && chmod +x /usr/local/bin/with-sbomify-devshell
+          #!/usr/bin/env bash
+          set -euo pipefail
+          exec nix develop /opt/wellmaintained-packages#sbomify -c "$@"
+          WRAP
+
+          ENTRYPOINT ["/usr/local/bin/with-sbomify-devshell"]
+          CMD ["bash"]
+          EOF
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.devcontainer-sbomify
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
