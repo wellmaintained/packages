@@ -138,6 +138,7 @@
         # OCI images
         packages = {
           caddy-image = import ./images/caddy.nix { inherit pkgs; };
+          postgres-image = import ./images/postgres.nix { inherit pkgs; };
         };
 
         # DevShells - ready-to-use development environments
