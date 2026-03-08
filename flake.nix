@@ -135,6 +135,11 @@
         # Export package sets for downstream consumers
         inherit packageSets;
 
+        # OCI images
+        packages = {
+          caddy-image = import ./images/caddy.nix { inherit pkgs; };
+        };
+
         # DevShells - ready-to-use development environments
         devShells = {
 
