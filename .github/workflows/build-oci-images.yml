@@ -1,0 +1,66 @@
+name: Build and publish OCI images
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - images/**
+      - flake.nix
+      - flake.lock
+      - .github/workflows/build-oci-images.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        image:
+          - name: caddy
+            package: caddy-image
+          - name: postgres
+            package: postgres-image
+          - name: redis
+            package: redis-image
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+
+      - name: Set up Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build image
+        run: nix build .#${{ matrix.image.package }}
+
+      - name: Load and push image
+        run: |
+          # Load the Nix-built image into Docker
+          docker load < result
+
+          # Get the image name and tag from the loaded output
+          LOADED_IMAGE=$(docker load < result 2>&1 | grep -oP 'Loaded image: \K.*')
+
+          # Tag for GHCR
+          GHCR_REPO="ghcr.io/wellmaintained/packages/${{ matrix.image.name }}"
+          SHA_TAG="sha-${GITHUB_SHA::7}"
+
+          docker tag "${LOADED_IMAGE}" "${GHCR_REPO}:latest"
+          docker tag "${LOADED_IMAGE}" "${GHCR_REPO}:${SHA_TAG}"
+
+          docker push "${GHCR_REPO}:latest"
+          docker push "${GHCR_REPO}:${SHA_TAG}"
