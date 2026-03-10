@@ -30,6 +30,9 @@ jobs:
           - name: redis
             package: redis-image
             nixpkg: redis
+          - name: keycloak
+            package: keycloak-image
+            nixpkg: keycloak
     steps:
       - name: Checkout
         uses: actions/checkout@v4
