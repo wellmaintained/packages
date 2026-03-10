@@ -153,10 +153,10 @@
           keycloak-image = keycloakImage;
 
           # CycloneDX SBOMs — build with: nix build .#<name>-sbom
-          caddy-sbom = bombon.lib.buildBom caddyImage {};
-          postgres-sbom = bombon.lib.buildBom postgresImage {};
-          redis-sbom = bombon.lib.buildBom redisImage {};
-          keycloak-sbom = bombon.lib.buildBom keycloakImage {};
+          caddy-sbom = bombon.lib.${system}.buildBom caddyImage {};
+          postgres-sbom = bombon.lib.${system}.buildBom postgresImage {};
+          redis-sbom = bombon.lib.${system}.buildBom redisImage {};
+          keycloak-sbom = bombon.lib.${system}.buildBom keycloakImage {};
         };
 
         # DevShells - ready-to-use development environments
