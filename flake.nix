@@ -140,6 +140,7 @@
           caddy-image = import ./images/caddy.nix { inherit pkgs; };
           postgres-image = import ./images/postgres.nix { inherit pkgs; };
           redis-image = import ./images/redis.nix { inherit pkgs; };
+          keycloak-image = import ./images/keycloak.nix { inherit pkgs; };
         };
 
         # DevShells - ready-to-use development environments
