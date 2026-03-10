@@ -23,10 +23,13 @@ jobs:
         image:
           - name: caddy
             package: caddy-image
+            nixpkg: caddy
           - name: postgres
             package: postgres-image
+            nixpkg: postgresql_17
           - name: redis
             package: redis-image
+            nixpkg: redis
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -44,6 +47,12 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Get upstream version
+        id: version
+        run: |
+          VERSION=$(nix eval --raw nixpkgs#${{ matrix.image.nixpkg }}.version)
+          echo "upstream=${VERSION}" >> "$GITHUB_OUTPUT"
+
       - name: Build image
         run: nix build .#${{ matrix.image.package }}
 
@@ -57,10 +66,13 @@ jobs:
 
           # Tag for GHCR
           GHCR_REPO="ghcr.io/wellmaintained/packages/${{ matrix.image.name }}"
-          SHA_TAG="sha-${GITHUB_SHA::7}"
+          VERSION="${{ steps.version.outputs.upstream }}"
+          SHA_SHORT="${GITHUB_SHA::7}"
 
           docker tag "${LOADED_IMAGE}" "${GHCR_REPO}:latest"
-          docker tag "${LOADED_IMAGE}" "${GHCR_REPO}:${SHA_TAG}"
+          docker tag "${LOADED_IMAGE}" "${GHCR_REPO}:${VERSION}"
+          docker tag "${LOADED_IMAGE}" "${GHCR_REPO}:${VERSION}-${SHA_SHORT}"
 
           docker push "${GHCR_REPO}:latest"
-          docker push "${GHCR_REPO}:${SHA_TAG}"
+          docker push "${GHCR_REPO}:${VERSION}"
+          docker push "${GHCR_REPO}:${VERSION}-${SHA_SHORT}"
