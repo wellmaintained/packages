@@ -5,9 +5,13 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     flake-utils.url = "github:numtide/flake-utils";
+    bombon = {
+      url = "github:nikstur/bombon";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { self, nixpkgs, flake-utils }:
+  outputs = { self, nixpkgs, flake-utils, bombon }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs {
@@ -130,17 +134,29 @@
           ];
         };
 
+        # OCI images
+        caddyImage = import ./images/caddy.nix { inherit pkgs; };
+        postgresImage = import ./images/postgres.nix { inherit pkgs; };
+        redisImage = import ./images/redis.nix { inherit pkgs; };
+        keycloakImage = import ./images/keycloak.nix { inherit pkgs; };
+
       in
       {
         # Export package sets for downstream consumers
         inherit packageSets;
 
-        # OCI images
+        # OCI images + SBOM derivations (built via bombon's buildBom)
         packages = {
-          caddy-image = import ./images/caddy.nix { inherit pkgs; };
-          postgres-image = import ./images/postgres.nix { inherit pkgs; };
-          redis-image = import ./images/redis.nix { inherit pkgs; };
-          keycloak-image = import ./images/keycloak.nix { inherit pkgs; };
+          caddy-image = caddyImage;
+          postgres-image = postgresImage;
+          redis-image = redisImage;
+          keycloak-image = keycloakImage;
+
+          # CycloneDX SBOMs — build with: nix build .#<name>-sbom
+          caddy-sbom = bombon.lib.buildBom caddyImage {};
+          postgres-sbom = bombon.lib.buildBom postgresImage {};
+          redis-sbom = bombon.lib.buildBom redisImage {};
+          keycloak-sbom = bombon.lib.buildBom keycloakImage {};
         };
 
         # DevShells - ready-to-use development environments

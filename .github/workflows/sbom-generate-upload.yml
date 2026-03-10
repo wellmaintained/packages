@@ -1,0 +1,101 @@
+name: Generate and upload SBOMs
+
+# Runs after OCI images are built, or on direct pushes that touch image sources.
+#
+# Prerequisites (one-time setup):
+#   1. Add SBOMIFY_TOKEN secret to the repository (Settings → Secrets → Actions).
+#      Generate the token at https://app.sbomify.com.
+#   2. Create one sbomify component per image and replace the placeholder
+#      sbomify_component_id values in the matrix below with the real IDs.
+
+on:
+  workflow_run:
+    workflows: ["Build and publish OCI images"]
+    types: [completed]
+    branches: [main]
+  push:
+    branches:
+      - main
+    paths:
+      - images/**
+      - flake.nix
+      - flake.lock
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  generate-and-upload:
+    # Skip if triggered by a failed workflow_run
+    if: >-
+      github.event_name != 'workflow_run' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          - name: caddy
+            sbom_package: caddy-sbom
+            nixpkg: caddy
+            # Replace with the real sbomify component ID after creating the component
+            sbomify_component_id: REPLACE_WITH_SBOMIFY_COMPONENT_ID
+          - name: postgres
+            sbom_package: postgres-sbom
+            nixpkg: postgresql_17
+            sbomify_component_id: REPLACE_WITH_SBOMIFY_COMPONENT_ID
+          - name: redis
+            sbom_package: redis-sbom
+            nixpkg: redis
+            sbomify_component_id: REPLACE_WITH_SBOMIFY_COMPONENT_ID
+          - name: keycloak
+            sbom_package: keycloak-sbom
+            nixpkg: keycloak
+            sbomify_component_id: REPLACE_WITH_SBOMIFY_COMPONENT_ID
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+        with:
+          diagnostic-endpoint: ""
+
+      - name: Set up Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@main
+        with:
+          use-flakehub: false
+
+      - name: Get upstream version
+        id: version
+        run: |
+          VERSION=$(nix eval --raw nixpkgs#${{ matrix.image.nixpkg }}.version)
+          echo "upstream=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Generate SBOM
+        run: |
+          nix build .#${{ matrix.image.sbom_package }}
+          cp result/bom.json ${{ matrix.image.name }}.cdx.json
+
+      - name: Generate and Upload SBOM to sbomify
+        uses: sbomify/sbomify-action@master
+        env:
+          TOKEN: ${{ secrets.SBOMIFY_TOKEN }}
+          COMPONENT_ID: ${{ matrix.image.sbomify_component_id }}
+          COMPONENT_NAME: ${{ matrix.image.name }}
+          COMPONENT_VERSION: ${{ steps.version.outputs.upstream }}
+          INPUT_FILE: ${{ matrix.image.name }}.cdx.json
+          SBOM_FORMAT: cyclonedx
+          AUGMENT: true
+          ENRICH: true
+          UPLOAD: true
+          OUTPUT_FILE: ${{ matrix.image.name }}.enriched.cdx.json
+
+      - name: Upload enriched SBOM as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-${{ matrix.image.name }}
+          path: ${{ matrix.image.name }}.enriched.cdx.json
+          if-no-files-found: warn
