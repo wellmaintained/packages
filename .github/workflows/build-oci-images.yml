@@ -67,12 +67,12 @@ jobs:
           # Tag for GHCR
           GHCR_REPO="ghcr.io/wellmaintained/packages/${{ matrix.image.name }}"
           VERSION="${{ steps.version.outputs.upstream }}"
-          SHA_SHORT="${GITHUB_SHA::7}"
+          CALVER=$(date -u '+%Y%m%d%H%M')
 
           docker tag "${LOADED_IMAGE}" "${GHCR_REPO}:latest"
           docker tag "${LOADED_IMAGE}" "${GHCR_REPO}:${VERSION}"
-          docker tag "${LOADED_IMAGE}" "${GHCR_REPO}:${VERSION}-${SHA_SHORT}"
+          docker tag "${LOADED_IMAGE}" "${GHCR_REPO}:${VERSION}-${CALVER}"
 
           docker push "${GHCR_REPO}:latest"
           docker push "${GHCR_REPO}:${VERSION}"
-          docker push "${GHCR_REPO}:${VERSION}-${SHA_SHORT}"
+          docker push "${GHCR_REPO}:${VERSION}-${CALVER}"
