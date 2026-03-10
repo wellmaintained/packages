@@ -1,0 +1,189 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.6.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "serialNumber": "urn:uuid:a1b2c3d4-5678-4901-abcd-ef1234567890",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-03-10T00:00:00Z",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "hand-curated",
+          "version": "1.0.0",
+          "description": "Manually authored enrichment file — merged with generated SBOMs"
+        }
+      ]
+    },
+    "supplier": {
+      "name": "Well Maintained",
+      "url": ["https://github.com/wellmaintained"],
+      "contact": [
+        {
+          "name": "Well Maintained Maintainers",
+          "email": "maintainers@wellmaintained.dev"
+        }
+      ]
+    },
+    "component": {
+      "bom-ref": "wmp-base-images",
+      "type": "container",
+      "name": "Well Maintained Base Images",
+      "version": "1.0.0",
+      "description": "Curated set of well-maintained OCI base images built reproducibly from Nix",
+      "supplier": {
+        "name": "Well Maintained",
+        "url": ["https://github.com/wellmaintained"]
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/wellmaintained/packages"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/wellmaintained"
+        }
+      ]
+    }
+  },
+  "components": [
+    {
+      "bom-ref": "pkg:docker/wellmaintained/redis@latest",
+      "type": "container",
+      "name": "redis",
+      "version": "latest",
+      "description": "Redis in-memory data store — built from Nix, minimal attack surface",
+      "supplier": {
+        "name": "Well Maintained",
+        "url": ["https://github.com/wellmaintained"]
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause",
+            "url": "https://github.com/redis/redis/blob/unstable/COPYING"
+          }
+        }
+      ],
+      "purl": "pkg:docker/wellmaintained/redis@latest",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/wellmaintained/packages"
+        },
+        {
+          "type": "documentation",
+          "url": "https://redis.io/docs/"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:docker/wellmaintained/caddy@latest",
+      "type": "container",
+      "name": "caddy",
+      "version": "latest",
+      "description": "Caddy web server — built from Nix, minimal attack surface",
+      "supplier": {
+        "name": "Well Maintained",
+        "url": ["https://github.com/wellmaintained"]
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0",
+            "url": "https://github.com/caddyserver/caddy/blob/master/LICENSE"
+          }
+        }
+      ],
+      "purl": "pkg:docker/wellmaintained/caddy@latest",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/wellmaintained/packages"
+        },
+        {
+          "type": "documentation",
+          "url": "https://caddyserver.com/docs/"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:docker/wellmaintained/postgres@latest",
+      "type": "container",
+      "name": "postgres",
+      "version": "latest",
+      "description": "PostgreSQL relational database — built from Nix, minimal attack surface",
+      "supplier": {
+        "name": "Well Maintained",
+        "url": ["https://github.com/wellmaintained"]
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "PostgreSQL",
+            "url": "https://www.postgresql.org/about/licence/"
+          }
+        }
+      ],
+      "purl": "pkg:docker/wellmaintained/postgres@latest",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/wellmaintained/packages"
+        },
+        {
+          "type": "documentation",
+          "url": "https://www.postgresql.org/docs/"
+        }
+      ]
+    }
+  ],
+  "vulnerabilities": [
+    {
+      "bom-ref": "vex-placeholder-base-001",
+      "id": "CVE-PLACEHOLDER-BASE-0000",
+      "source": {
+        "name": "NVD",
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-PLACEHOLDER-BASE-0000"
+      },
+      "ratings": [
+        {
+          "source": {
+            "name": "NVD"
+          },
+          "score": 0.0,
+          "severity": "none",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N"
+        }
+      ],
+      "description": "PLACEHOLDER: Replace with actual CVE id and assessment. This entry demonstrates the VEX structure for documenting vulnerability exploitability for Well Maintained base images.",
+      "affects": [
+        {
+          "ref": "pkg:docker/wellmaintained/redis@latest",
+          "versions": [
+            {
+              "version": "latest",
+              "status": "unaffected"
+            }
+          ]
+        }
+      ],
+      "analysis": {
+        "state": "not_affected",
+        "justification": "code_not_reachable",
+        "response": ["will_not_fix"],
+        "detail": "PLACEHOLDER: Document here why this CVE does not affect this image — e.g., the vulnerable code path is absent from the Nix-built closure, or the feature is not compiled in."
+      }
+    }
+  ]
+}

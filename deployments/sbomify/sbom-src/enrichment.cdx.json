@@ -1,0 +1,154 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.6.schema.json",
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "serialNumber": "urn:uuid:f0e1d2c3-b4a5-4678-90ef-ab1234567890",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-03-10T00:00:00Z",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "hand-curated",
+          "version": "1.0.0",
+          "description": "Manually authored enrichment file — merged with generated SBOMs"
+        }
+      ]
+    },
+    "supplier": {
+      "name": "Well Maintained",
+      "url": ["https://github.com/wellmaintained"],
+      "contact": [
+        {
+          "name": "Well Maintained Maintainers",
+          "email": "maintainers@wellmaintained.dev"
+        }
+      ]
+    },
+    "component": {
+      "bom-ref": "sbomify-deployment",
+      "type": "application",
+      "name": "sbomify",
+      "version": "latest",
+      "description": "Self-hosted sbomify deployment — SBOM management, enrichment, and sharing platform",
+      "supplier": {
+        "name": "Well Maintained",
+        "url": ["https://github.com/wellmaintained"]
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "AGPL-3.0-only",
+            "url": "https://github.com/wellmaintained/sbomify/blob/main/LICENSE"
+          }
+        }
+      ],
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/wellmaintained/sbomify"
+        },
+        {
+          "type": "website",
+          "url": "https://sbomify.com"
+        },
+        {
+          "type": "documentation",
+          "url": "https://docs.sbomify.com"
+        }
+      ]
+    }
+  },
+  "components": [
+    {
+      "bom-ref": "sbomify-django-app",
+      "type": "application",
+      "name": "sbomify-app",
+      "version": "latest",
+      "description": "sbomify Django application — Python/Django backend with Bun/TypeScript frontend",
+      "supplier": {
+        "name": "Well Maintained",
+        "url": ["https://github.com/wellmaintained"]
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "AGPL-3.0-only"
+          }
+        }
+      ],
+      "purl": "pkg:github/wellmaintained/sbomify@latest",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/wellmaintained/sbomify"
+        }
+      ]
+    },
+    {
+      "bom-ref": "sbomify-runtime-postgres",
+      "type": "container",
+      "name": "postgres",
+      "version": "latest",
+      "description": "PostgreSQL dependency for sbomify — sourced from Well Maintained base images",
+      "supplier": {
+        "name": "Well Maintained",
+        "url": ["https://github.com/wellmaintained"]
+      },
+      "licenses": [
+        {
+          "license": {
+            "id": "PostgreSQL"
+          }
+        }
+      ],
+      "purl": "pkg:docker/wellmaintained/postgres@latest",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/wellmaintained/packages"
+        }
+      ]
+    }
+  ],
+  "vulnerabilities": [
+    {
+      "bom-ref": "vex-sbomify-placeholder-001",
+      "id": "CVE-PLACEHOLDER-SBOMIFY-0000",
+      "source": {
+        "name": "NVD",
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-PLACEHOLDER-SBOMIFY-0000"
+      },
+      "ratings": [
+        {
+          "source": {
+            "name": "NVD"
+          },
+          "score": 0.0,
+          "severity": "none",
+          "method": "CVSSv31",
+          "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N"
+        }
+      ],
+      "description": "PLACEHOLDER: Replace with actual CVE id and assessment. This entry demonstrates the VEX structure for the sbomify application deployment.",
+      "affects": [
+        {
+          "ref": "sbomify-deployment",
+          "versions": [
+            {
+              "version": "latest",
+              "status": "unaffected"
+            }
+          ]
+        }
+      ],
+      "analysis": {
+        "state": "not_affected",
+        "justification": "code_not_reachable",
+        "response": ["will_not_fix"],
+        "detail": "PLACEHOLDER: Document here why this CVE does not affect the sbomify deployment — e.g., the vulnerable feature is disabled in configuration, or the affected code path is not exercised."
+      }
+    }
+  ]
+}
