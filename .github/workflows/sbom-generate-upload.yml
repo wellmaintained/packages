@@ -80,7 +80,7 @@ jobs:
           COMPONENT_ID: ${{ matrix.image.sbomify_component_id }}
           COMPONENT_NAME: ${{ matrix.image.name }}
           COMPONENT_VERSION: ${{ steps.version.outputs.upstream }}
-          INPUT_FILE: ${{ matrix.image.name }}.cdx.json
+          SBOM_FILE: ${{ matrix.image.name }}.cdx.json
           SBOM_FORMAT: cyclonedx
           AUGMENT: true
           ENRICH: true
