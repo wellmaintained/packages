@@ -55,17 +55,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@main
+        uses: DeterminateSystems/determinate-nix-action@v3
         with:
           diagnostic-endpoint: ""
-
-      - name: Set up Nix cache
-        uses: DeterminateSystems/magic-nix-cache-action@main
-        with:
-          use-flakehub: false
 
       - name: Get upstream version
         id: version
@@ -93,7 +88,7 @@ jobs:
           OUTPUT_FILE: ${{ matrix.image.name }}.enriched.cdx.json
 
       - name: Upload enriched SBOM as artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: sbom-${{ matrix.image.name }}
           path: ${{ matrix.image.name }}.enriched.cdx.json
