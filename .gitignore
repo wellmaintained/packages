@@ -36,3 +36,12 @@ go.work.sum
 
 # Claude Code local settings
 .claude/settings.local.json
+
+# Nix build outputs
+result
+result-*
+
+# Build artifacts
+http_cache.sqlite
+sbom.csv
+sbom.spdx.json
