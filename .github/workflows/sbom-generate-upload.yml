@@ -77,7 +77,7 @@ jobs:
       - name: Generate SBOM
         run: |
           nix build .#${{ matrix.image.sbom_package }}
-          cp result/bom.json ${{ matrix.image.name }}.cdx.json
+          cp result ${{ matrix.image.name }}.cdx.json
 
       - name: Generate and Upload SBOM to sbomify
         uses: sbomify/sbomify-action@master
