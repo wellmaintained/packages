@@ -39,20 +39,19 @@ jobs:
           - name: caddy
             sbom_package: caddy-sbom
             nixpkg: caddy
-            # Replace with the real sbomify component ID after creating the component
-            sbomify_component_id: REPLACE_WITH_SBOMIFY_COMPONENT_ID
+            sbomify_component_id: zYDq6NtrOBuo
           - name: postgres
             sbom_package: postgres-sbom
             nixpkg: postgresql_17
-            sbomify_component_id: REPLACE_WITH_SBOMIFY_COMPONENT_ID
+            sbomify_component_id: M8rixM6mMEPe
           - name: redis
             sbom_package: redis-sbom
             nixpkg: redis
-            sbomify_component_id: REPLACE_WITH_SBOMIFY_COMPONENT_ID
+            sbomify_component_id: ABBCcw2YiYrG
           - name: keycloak
             sbom_package: keycloak-sbom
             nixpkg: keycloak
-            sbomify_component_id: REPLACE_WITH_SBOMIFY_COMPONENT_ID
+            sbomify_component_id: N4agQD8pvej8
 
     steps:
       - name: Checkout
