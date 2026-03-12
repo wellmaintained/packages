@@ -9,9 +9,32 @@
       url = "github:nikstur/bombon";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    pyproject-nix = {
+      url = "github:pyproject-nix/pyproject.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    uv2nix = {
+      url = "github:pyproject-nix/uv2nix";
+      inputs.pyproject-nix.follows = "pyproject-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    pyproject-build-systems = {
+      url = "github:pyproject-nix/build-system-pkgs";
+      inputs.pyproject-nix.follows = "pyproject-nix";
+      inputs.uv2nix.follows = "uv2nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    uv2nix-hammer-overrides = {
+      url = "github:TyberiusPrime/uv2nix_hammer_overrides";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    sbomify-src = {
+      url = "git+file:../sbomify";
+      flake = false;
+    };
   };
 
-  outputs = { self, nixpkgs, flake-utils, bombon }:
+  outputs = { self, nixpkgs, flake-utils, bombon, pyproject-nix, uv2nix, pyproject-build-systems, uv2nix-hammer-overrides, sbomify-src }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs {
@@ -140,6 +163,56 @@
         redisImage = import ./images/redis.nix { inherit pkgs; };
         keycloakImage = import ./images/keycloak.nix { inherit pkgs; };
 
+        # uv2nix: Python virtualenv from sbomify's uv.lock
+        sbomifyWorkspace = uv2nix.lib.workspace.loadWorkspace {
+          workspaceRoot = sbomify-src;
+        };
+
+        sbomifyOverlay = sbomifyWorkspace.mkPyprojectOverlay {
+          sourcePreference = "wheel";
+        };
+
+        pythonSet =
+          (pkgs.callPackage pyproject-nix.build.packages {
+            python = pkgs.python313;
+          }).overrideScope (
+            pkgs.lib.composeManyExtensions [
+              pyproject-build-systems.overlays.default
+              sbomifyOverlay
+              (uv2nix-hammer-overrides.overrides pkgs)
+              # psycopg2: hammer_overrides hardcodes a broken pg_config path
+              # (getDev postgresql has no pg_config binary in recent nixpkgs-unstable).
+              # Override postPatch to use pg_config from the split package.
+              (final: prev: {
+                psycopg2 = prev.psycopg2.overrideAttrs (old: {
+                  nativeBuildInputs = (old.nativeBuildInputs or []) ++ [ pkgs.postgresql_16.pg_config ];
+                  buildInputs = (old.buildInputs or []) ++ [ pkgs.postgresql_16 pkgs.openssl ];
+                  postPatch = ''
+                    substituteInPlace setup.py \
+                      --replace-fail "self.pg_config_exe = self.build_ext.pg_config" \
+                      'self.pg_config_exe = "${pkgs.postgresql_16.pg_config}/bin/pg_config"'
+                  '';
+                });
+              })
+            ]
+          );
+
+        sbomifyVenv = pythonSet.mkVirtualEnv "sbomify-venv" sbomifyWorkspace.deps.default;
+
+        sbomifyFrontend = import ./deployments/sbomify/pkgs/sbomify-frontend {
+          inherit pkgs;
+          sbomifySrc = sbomify-src;
+        };
+
+        sbomifyApp = import ./deployments/sbomify/pkgs/sbomify-app {
+          inherit pkgs sbomifyVenv sbomifyFrontend;
+          sbomifySrc = sbomify-src;
+        };
+
+        sbomifyAppImage = import ./deployments/sbomify/images/sbomify-app.nix {
+          inherit pkgs sbomifyApp;
+        };
+
       in
       {
         # Export package sets for downstream consumers
@@ -157,6 +230,13 @@
           postgres-sbom = bombon.lib.${system}.buildBom postgresImage {};
           redis-sbom = bombon.lib.${system}.buildBom redisImage {};
           keycloak-sbom = bombon.lib.${system}.buildBom keycloakImage {};
+          sbomify-app-sbom = bombon.lib.${system}.buildBom sbomifyAppImage {};
+
+          # sbomify app packages
+          sbomify-venv = sbomifyVenv;
+          sbomify-frontend = sbomifyFrontend;
+          sbomify-app = sbomifyApp;
+          sbomify-app-image = sbomifyAppImage;
         };
 
         # DevShells - ready-to-use development environments

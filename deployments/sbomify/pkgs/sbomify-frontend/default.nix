@@ -15,13 +15,14 @@ let
     '';
 
     installPhase = ''
-      mkdir -p $out
-      cp -r node_modules $out/node_modules
+      # Tar up node_modules so the FOD output is opaque to the store-path scanner
+      # (bun install creates .bin symlinks and shebangs referencing /nix/store paths)
+      tar cf $out node_modules
     '';
 
     outputHashMode = "recursive";
     outputHashAlgo = "sha256";
-    outputHash = pkgs.lib.fakeHash;
+    outputHash = "sha256-tgIpvp4Z+L3WPfVDfkLF54XOWyPSU8nPtKK/eX9cwo0=";
   };
 in
 
@@ -35,9 +36,9 @@ pkgs.stdenv.mkDerivation {
 
   buildPhase = ''
     export HOME=$(mktemp -d)
-    ln -s ${sbomify-node-modules}/node_modules ./node_modules
+    tar xf ${sbomify-node-modules}
     bun run copy-deps
-    bun x vite build
+    node ./node_modules/vite/bin/vite.js build
   '';
 
   installPhase = ''

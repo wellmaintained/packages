@@ -26,13 +26,13 @@ pkgs.stdenv.mkDerivation {
     cp -r sbomify manage.py pyproject.toml $out/app/
     cp -r staticfiles $out/app/staticfiles
 
-    # Gunicorn wrapper script
+    # Gunicorn wrapper script (all paths Nix-interpolated, GUNICORN_WORKERS is runtime)
     cat > $out/bin/sbomify-web <<'WRAPPER'
     #!/bin/sh
     exec ${sbomifyVenv}/bin/gunicorn sbomify.asgi:application \
       --bind 0.0.0.0:8000 --workers ''${GUNICORN_WORKERS:-2} \
       --worker-class uvicorn_worker.UvicornWorker \
-      --graceful-timeout 30 --timeout 120 --chdir $out/app
+      --graceful-timeout 30 --timeout 120 --chdir ${placeholder "out"}/app
     WRAPPER
     chmod +x $out/bin/sbomify-web
 
