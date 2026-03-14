@@ -131,11 +131,10 @@
     "sbomify-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1772561632,
-        "narHash": "sha256-L2uNVLGc8KU5wPTyhpXTA39mUSBqz19CS4s0iTXmS3g=",
-        "ref": "refs/heads/master",
-        "rev": "cf5f031df7e1e0cf6e7c211ad758ab698eea24b1",
-        "revCount": 2217,
+        "lastModified": 1773348797,
+        "narHash": "sha256-QiAWTwLIY6dpYXHrW7OD4F/5/afFHb6AzOLnZMxHIlI=",
+        "rev": "7a84aa4d2a7d061023bc78729a53ad6acb3ab24e",
+        "revCount": 2395,
         "type": "git",
         "url": "file:../sbomify"
       },
