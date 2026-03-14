@@ -28,18 +28,23 @@
       url = "github:TyberiusPrime/uv2nix_hammer_overrides";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    bun2nix = {
+      url = "github:nix-community/bun2nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     sbomify-src = {
       url = "github:sbomify/sbomify/v0.27.0";
       flake = false;
     };
   };
 
-  outputs = { self, nixpkgs, flake-utils, bombon, pyproject-nix, uv2nix, pyproject-build-systems, uv2nix-hammer-overrides, sbomify-src }:
+  outputs = { self, nixpkgs, flake-utils, bombon, pyproject-nix, uv2nix, pyproject-build-systems, uv2nix-hammer-overrides, bun2nix, sbomify-src }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs {
           inherit system;
           config.allowUnfree = false;
+          overlays = [ bun2nix.overlays.default ];
         };
 
         # Shared Python dev tools (version-agnostic); pass pythonXXXPackages as argument
