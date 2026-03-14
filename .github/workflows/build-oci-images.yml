@@ -80,8 +80,19 @@ jobs:
           docker push "${GHCR_REPO}:${VERSION}"
           docker push "${GHCR_REPO}:${VERSION}-${CALVER}"
 
-  build-and-push-sbomify-app:
+  build-and-push-sbomify-images:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        image:
+          - name: sbomify-app
+            package: sbomify-app-image
+          - name: sbomify-keycloak
+            package: sbomify-keycloak-image
+          - name: sbomify-caddy-dev
+            package: sbomify-caddy-dev-image
+          - name: sbomify-minio-init
+            package: sbomify-minio-init-image
     steps:
       - name: Checkout packages
         uses: actions/checkout@v5
@@ -114,7 +125,7 @@ jobs:
 
       - name: Build image
         working-directory: packages
-        run: nix build .#sbomify-app-image
+        run: nix build .#${{ matrix.image.package }}
 
       - name: Load and push image
         working-directory: packages
@@ -126,7 +137,7 @@ jobs:
           LOADED_IMAGE=$(docker load < result 2>&1 | grep -oP 'Loaded image: \K.*')
 
           # Tag for GHCR
-          GHCR_REPO="ghcr.io/wellmaintained/packages/sbomify-app"
+          GHCR_REPO="ghcr.io/wellmaintained/packages/${{ matrix.image.name }}"
           VERSION="${{ steps.version.outputs.upstream }}"
           CALVER=$(date -u '+%Y%m%d%H%M')
 
