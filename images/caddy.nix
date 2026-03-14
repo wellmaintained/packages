@@ -10,6 +10,12 @@ pkgs.dockerTools.buildLayeredImage {
   ];
 
   config = {
+    Labels = {
+      "org.opencontainers.image.source" = "https://github.com/wellmaintained/packages";
+      "org.opencontainers.image.description" = "Caddy web server — Nix-built minimal OCI image";
+      "org.opencontainers.image.licenses" = "Apache-2.0";
+      "org.opencontainers.image.vendor" = "wellmaintained";
+    };
     Entrypoint = [ "${pkgs.caddy}/bin/caddy" ];
     Cmd = [ "run" "--config" "/etc/caddy/Caddyfile" "--adapter" "caddyfile" ];
     ExposedPorts = {

@@ -11,6 +11,12 @@ pkgs.dockerTools.buildLayeredImage {
   ];
 
   config = {
+    Labels = {
+      "org.opencontainers.image.source" = "https://github.com/wellmaintained/packages";
+      "org.opencontainers.image.description" = "PostgreSQL 17 database — Nix-built minimal OCI image";
+      "org.opencontainers.image.licenses" = "PostgreSQL";
+      "org.opencontainers.image.vendor" = "wellmaintained";
+    };
     Entrypoint = [ "${pkgs.postgresql_17}/bin/postgres" ];
     ExposedPorts = {
       "5432/tcp" = {};
