@@ -91,7 +91,7 @@ jobs:
       - name: Checkout sbomify
         uses: actions/checkout@v5
         with:
-          repository: wellmaintained/sbomify
+          repository: sbomifyhub/sbomify
           path: sbomify
 
       - name: Install Nix
