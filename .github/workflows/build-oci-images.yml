@@ -94,17 +94,8 @@ jobs:
           - name: sbomify-minio-init
             package: sbomify-minio-init-image
     steps:
-      - name: Checkout packages
+      - name: Checkout
         uses: actions/checkout@v5
-        with:
-          path: packages
-
-      - name: Checkout sbomify
-        uses: actions/checkout@v5
-        with:
-          repository: sbomify/sbomify
-          path: sbomify
-          fetch-depth: 0
 
       - name: Install Nix
         uses: DeterminateSystems/determinate-nix-action@v3
@@ -121,15 +112,13 @@ jobs:
       - name: Get sbomify version
         id: version
         run: |
-          VERSION=$(grep '^version' sbomify/pyproject.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          VERSION=$(grep 'github:sbomify/sbomify/' flake.nix | grep -oP '/v\K[0-9.]+')
           echo "upstream=${VERSION}" >> "$GITHUB_OUTPUT"
 
       - name: Build image
-        working-directory: packages
         run: nix build .#${{ matrix.image.package }}
 
       - name: Load and push image
-        working-directory: packages
         run: |
           # Load the Nix-built image into Docker
           docker load < result

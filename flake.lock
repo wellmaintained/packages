@@ -133,14 +133,16 @@
       "locked": {
         "lastModified": 1771946210,
         "narHash": "sha256-2sTl0axAB35DnKAA6fFbndMo/xOpzif8uaFJo4PmpEo=",
+        "owner": "sbomify",
+        "repo": "sbomify",
         "rev": "e6d7e971bf44b07d1bd7d77406469d66883b54d1",
-        "revCount": 2160,
-        "type": "git",
-        "url": "file:../sbomify"
+        "type": "github"
       },
       "original": {
-        "type": "git",
-        "url": "file:../sbomify"
+        "owner": "sbomify",
+        "ref": "v0.27.0",
+        "repo": "sbomify",
+        "type": "github"
       }
     },
     "systems": {
