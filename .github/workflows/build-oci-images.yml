@@ -34,6 +34,9 @@ jobs:
           - name: keycloak
             package: keycloak-image
             nixpkg: keycloak
+          - name: minio
+            package: minio-image
+            nixpkg: minio
     steps:
       - name: Checkout
         uses: actions/checkout@v5
