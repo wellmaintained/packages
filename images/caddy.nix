@@ -15,6 +15,8 @@ pkgs.dockerTools.buildLayeredImage {
       "org.opencontainers.image.description" = "Caddy web server — Nix-built minimal OCI image";
       "org.opencontainers.image.licenses" = "Apache-2.0";
       "org.opencontainers.image.vendor" = "wellmaintained";
+      "org.opencontainers.image.title" = "Caddy";
+      "org.opencontainers.image.version" = pkgs.caddy.version;
     };
     Entrypoint = [ "${pkgs.caddy}/bin/caddy" ];
     Cmd = [ "run" "--config" "/etc/caddy/Caddyfile" "--adapter" "caddyfile" ];
