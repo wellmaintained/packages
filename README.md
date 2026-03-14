@@ -6,10 +6,8 @@ Curated set of Nix-built minimal OCI container images.
 
 | Image | Description |
 |-------|-------------|
-| `ghcr.io/wellmaintained/caddy` | Caddy web server |
 | `ghcr.io/wellmaintained/postgres` | PostgreSQL 17 database |
 | `ghcr.io/wellmaintained/redis` | Redis server |
-| `ghcr.io/wellmaintained/keycloak` | Keycloak identity provider |
 | `ghcr.io/wellmaintained/minio` | MinIO object storage server |
 | `ghcr.io/wellmaintained/minio-client` | MinIO client (mc) |
 

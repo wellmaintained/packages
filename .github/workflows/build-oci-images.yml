@@ -22,18 +22,12 @@ jobs:
     strategy:
       matrix:
         image:
-          - name: caddy
-            package: caddy-image
-            nixpkg: caddy
           - name: postgres
             package: postgres-image
             nixpkg: postgresql_17
           - name: redis
             package: redis-image
             nixpkg: redis
-          - name: keycloak
-            package: keycloak-image
-            nixpkg: keycloak
           - name: minio
             package: minio-image
             nixpkg: minio

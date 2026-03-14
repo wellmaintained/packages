@@ -158,10 +158,8 @@
         };
 
         # OCI images
-        caddyImage = import ./images/caddy.nix { inherit pkgs; };
         postgresImage = import ./images/postgres.nix { inherit pkgs; };
         redisImage = import ./images/redis.nix { inherit pkgs; };
-        keycloakImage = import ./images/keycloak.nix { inherit pkgs; };
         minioImage = import ./images/minio.nix { inherit pkgs; };
         minioClientImage = import ./images/minio-client.nix { inherit pkgs; };
 
@@ -237,18 +235,14 @@
 
         # OCI images + SBOM derivations (built via bombon's buildBom)
         packages = {
-          caddy-image = caddyImage;
           postgres-image = postgresImage;
           redis-image = redisImage;
-          keycloak-image = keycloakImage;
           minio-image = minioImage;
           minio-client-image = minioClientImage;
 
           # CycloneDX SBOMs — build with: nix build .#<name>-sbom
-          caddy-sbom = bombon.lib.${system}.buildBom caddyImage {};
           postgres-sbom = bombon.lib.${system}.buildBom postgresImage {};
           redis-sbom = bombon.lib.${system}.buildBom redisImage {};
-          keycloak-sbom = bombon.lib.${system}.buildBom keycloakImage {};
           minio-sbom = bombon.lib.${system}.buildBom minioImage {};
           minio-client-sbom = bombon.lib.${system}.buildBom minioClientImage {};
           sbomify-app-sbom = bombon.lib.${system}.buildBom sbomifyAppImage {};
