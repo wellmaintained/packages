@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - images/**
+      - deployments/sbomify/**
       - flake.nix
       - flake.lock
       - .github/workflows/build-oci-images.yml
@@ -68,6 +69,64 @@ jobs:
 
           # Tag for GHCR
           GHCR_REPO="ghcr.io/wellmaintained/packages/${{ matrix.image.name }}"
+          VERSION="${{ steps.version.outputs.upstream }}"
+          CALVER=$(date -u '+%Y%m%d%H%M')
+
+          docker tag "${LOADED_IMAGE}" "${GHCR_REPO}:latest"
+          docker tag "${LOADED_IMAGE}" "${GHCR_REPO}:${VERSION}"
+          docker tag "${LOADED_IMAGE}" "${GHCR_REPO}:${VERSION}-${CALVER}"
+
+          docker push "${GHCR_REPO}:latest"
+          docker push "${GHCR_REPO}:${VERSION}"
+          docker push "${GHCR_REPO}:${VERSION}-${CALVER}"
+
+  build-and-push-sbomify-app:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout packages
+        uses: actions/checkout@v5
+        with:
+          path: packages
+
+      - name: Checkout sbomify
+        uses: actions/checkout@v5
+        with:
+          repository: wellmaintained/sbomify
+          path: sbomify
+
+      - name: Install Nix
+        uses: DeterminateSystems/determinate-nix-action@v3
+        with:
+          diagnostic-endpoint: ""
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get sbomify version
+        id: version
+        run: |
+          VERSION=$(grep '^version' sbomify/pyproject.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          echo "upstream=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Build image
+        working-directory: packages
+        run: nix build .#sbomify-app-image
+
+      - name: Load and push image
+        working-directory: packages
+        run: |
+          # Load the Nix-built image into Docker
+          docker load < result
+
+          # Get the image name and tag from the loaded output
+          LOADED_IMAGE=$(docker load < result 2>&1 | grep -oP 'Loaded image: \K.*')
+
+          # Tag for GHCR
+          GHCR_REPO="ghcr.io/wellmaintained/packages/sbomify-app"
           VERSION="${{ steps.version.outputs.upstream }}"
           CALVER=$(date -u '+%Y%m%d%H%M')
 
