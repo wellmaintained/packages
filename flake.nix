@@ -163,6 +163,7 @@
         redisImage = import ./images/redis.nix { inherit pkgs; };
         keycloakImage = import ./images/keycloak.nix { inherit pkgs; };
         minioImage = import ./images/minio.nix { inherit pkgs; };
+        minioClientImage = import ./images/minio-client.nix { inherit pkgs; };
 
         # uv2nix: Python virtualenv from sbomify's uv.lock
         sbomifyWorkspace = uv2nix.lib.workspace.loadWorkspace {
@@ -226,6 +227,7 @@
           redis-image = redisImage;
           keycloak-image = keycloakImage;
           minio-image = minioImage;
+          minio-client-image = minioClientImage;
 
           # CycloneDX SBOMs — build with: nix build .#<name>-sbom
           caddy-sbom = bombon.lib.${system}.buildBom caddyImage {};
@@ -233,6 +235,7 @@
           redis-sbom = bombon.lib.${system}.buildBom redisImage {};
           keycloak-sbom = bombon.lib.${system}.buildBom keycloakImage {};
           minio-sbom = bombon.lib.${system}.buildBom minioImage {};
+          minio-client-sbom = bombon.lib.${system}.buildBom minioClientImage {};
           sbomify-app-sbom = bombon.lib.${system}.buildBom sbomifyAppImage {};
 
           # sbomify app packages
