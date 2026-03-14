@@ -104,6 +104,7 @@ jobs:
         with:
           repository: sbomify/sbomify
           path: sbomify
+          fetch-depth: 0
 
       - name: Install Nix
         uses: DeterminateSystems/determinate-nix-action@v3
