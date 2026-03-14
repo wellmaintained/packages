@@ -215,6 +215,21 @@
           inherit pkgs sbomifyApp;
         };
 
+        sbomifyKeycloakImage = import ./deployments/sbomify/images/sbomify-keycloak.nix {
+          inherit pkgs;
+          sbomifySrc = sbomify-src;
+        };
+
+        sbomifyCaddyDevImage = import ./deployments/sbomify/images/sbomify-caddy-dev.nix {
+          inherit pkgs;
+          sbomifySrc = sbomify-src;
+        };
+
+        sbomifyMinioInitImage = import ./deployments/sbomify/images/sbomify-minio-init.nix {
+          inherit pkgs;
+          sbomifySrc = sbomify-src;
+        };
+
       in
       {
         # Export package sets for downstream consumers
@@ -243,6 +258,9 @@
           sbomify-frontend = sbomifyFrontend;
           sbomify-app = sbomifyApp;
           sbomify-app-image = sbomifyAppImage;
+          sbomify-keycloak-image = sbomifyKeycloakImage;
+          sbomify-caddy-dev-image = sbomifyCaddyDevImage;
+          sbomify-minio-init-image = sbomifyMinioInitImage;
         };
 
         # DevShells - ready-to-use development environments
