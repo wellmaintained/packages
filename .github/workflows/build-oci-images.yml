@@ -18,7 +18,7 @@ permissions:
 
 jobs:
   build-and-push:
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     strategy:
       matrix:
         image:
@@ -81,7 +81,7 @@ jobs:
           docker push "${GHCR_REPO}:${VERSION}-${CALVER}"
 
   build-and-push-sbomify-images:
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     strategy:
       matrix:
         image:
