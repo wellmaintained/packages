@@ -45,6 +45,8 @@ jobs:
 
       - name: Magic Nix Cache
         uses: DeterminateSystems/magic-nix-cache-action@main
+        with:
+          use-flakehub: false
 
       - name: Log in to GHCR
         uses: docker/login-action@v4
@@ -107,6 +109,8 @@ jobs:
 
       - name: Magic Nix Cache
         uses: DeterminateSystems/magic-nix-cache-action@main
+        with:
+          use-flakehub: false
 
       - name: Log in to GHCR
         uses: docker/login-action@v4
