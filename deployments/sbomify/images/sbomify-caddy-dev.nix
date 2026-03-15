@@ -1,10 +1,10 @@
 { pkgs, sbomifySrc }:
 
 let
-  # Bake the dev Caddyfile into /etc/caddy/Caddyfile
+  # Use the compose-specific dev Caddyfile (HTTP-only, no TLS warnings)
   caddyConfig = pkgs.runCommand "sbomify-caddy-dev-config" { } ''
     mkdir -p $out/etc/caddy
-    cp ${sbomifySrc}/Caddyfile.dev $out/etc/caddy/Caddyfile
+    cp ${../compose/Caddyfile.dev} $out/etc/caddy/Caddyfile
   '';
 in
 
@@ -15,6 +15,7 @@ pkgs.dockerTools.buildLayeredImage {
   contents = [
     pkgs.caddy
     pkgs.cacert
+    pkgs.wget
     caddyConfig
   ];
 
@@ -31,8 +32,6 @@ pkgs.dockerTools.buildLayeredImage {
     Cmd = [ "run" "--config" "/etc/caddy/Caddyfile" "--adapter" "caddyfile" ];
     ExposedPorts = {
       "80/tcp" = {};
-      "443/tcp" = {};
-      "443/udp" = {};
     };
     Env = [
       "XDG_DATA_HOME=/data"
