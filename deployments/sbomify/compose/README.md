@@ -23,7 +23,7 @@ docker compose up
 | sbomify-backend | Django app server | (internal) |
 | sbomify-caddy | Caddy reverse proxy | HTTP :8000, HTTPS :8443 |
 | sbomify-worker | Dramatiq background worker | (internal) |
-| keycloak | Identity provider | :8080 |
+| keycloak | Identity provider | :8180 |
 | sbomify-db | PostgreSQL database | :5432 |
 | sbomify-redis | Redis cache/broker | :6379 |
 | sbomify-minio | MinIO object storage | API :9000, Console :9001 |
@@ -40,7 +40,7 @@ docker compose up
 ## URLs
 
 - **sbomify**: http://127.0.0.1:8000 (HTTP) / https://127.0.0.1:8443 (HTTPS, self-signed)
-- **Keycloak**: http://127.0.0.1:8080
+- **Keycloak**: http://127.0.0.1:8180
 - **MinIO Console**: http://127.0.0.1:9001
 
 ## Teardown
