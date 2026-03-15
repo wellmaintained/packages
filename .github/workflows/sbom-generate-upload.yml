@@ -56,7 +56,7 @@ jobs:
           - name: sbomify-app
             sbom_package: sbomify-app-sbom
             nixpkg: python313
-            sbomify_component_id: PLACEHOLDER_SBOMIFY_APP
+            sbomify_component_id: VP42I4XQgpDE
           - name: sbomify-keycloak
             sbom_package: sbomify-keycloak-sbom
             nixpkg: keycloak
