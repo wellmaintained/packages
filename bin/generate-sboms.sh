@@ -45,28 +45,18 @@ for entry in "${SBOM_TARGETS[@]}"; do
 
     cp -L "$sbom_file" "${SBOM_DIR}/${target}.cdx.json"
 
-    # Patch root component: bombon uses the symlinkJoin name (e.g. "postgres-closure")
-    # which is meaningless. Rewrite it to describe the OCI image with proper metadata
-    # and wire up the dependency graph.
+    # Patch root component to describe the OCI image instead of the
+    # synthetic symlinkJoin closure name that bombon generates.
     version=$(nix eval --raw nixpkgs#"${target//-/_}".version 2>/dev/null || echo "unknown")
     image_name="wellmaintained/packages/${target}-image"
     purl="pkg:docker/wellmaintained/packages/${target}@${version}"
 
-    jq --arg name "$image_name" \
-       --arg version "$version" \
-       --arg purl "$purl" \
-       --arg license "$license" \
-       '
-      .metadata.component.name = $name |
-      .metadata.component.version = $version |
-      .metadata.component.type = "container" |
-      .metadata.component.purl = $purl |
-      .metadata.component.licenses = [{"license": {"id": $license}}] |
-      .metadata.component["bom-ref"] as $root |
-      .dependencies = [
-        {"ref": $root, "dependsOn": [.components[]?["bom-ref"]]}
-      ] + [.dependencies[]? | select(.ref != $root)]
-    ' "${SBOM_DIR}/${target}.cdx.json" > "${SBOM_DIR}/${target}.cdx.json.tmp" \
+    "${REPO_ROOT}/bin/patch-sbom-root" \
+      --name "$image_name" \
+      --version "$version" \
+      --purl "$purl" \
+      --license "$license" \
+      < "${SBOM_DIR}/${target}.cdx.json" > "${SBOM_DIR}/${target}.cdx.json.tmp" \
       && mv "${SBOM_DIR}/${target}.cdx.json.tmp" "${SBOM_DIR}/${target}.cdx.json"
 
     echo "  -> ${SBOM_DIR}/${target}.cdx.json"

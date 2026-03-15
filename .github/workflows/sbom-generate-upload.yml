@@ -112,32 +112,15 @@ jobs:
 
       - name: Patch root component metadata
         run: |
-          # bombon names the root component after the symlinkJoin derivation
-          # (e.g. "postgres-closure"). Rewrite it to describe the OCI image
-          # so the dependency graph has a meaningful root.
           VERSION="${{ steps.version.outputs.upstream }}"
-          IMAGE_NAME="wellmaintained/packages/${{ matrix.image.name }}-image"
-          PURL="pkg:docker/wellmaintained/packages/${{ matrix.image.name }}@${VERSION}"
-          LICENSE="${{ matrix.image.license }}"
           SBOM="${{ matrix.image.name }}.cdx.json"
 
-          jq --arg name "$IMAGE_NAME" \
-             --arg version "$VERSION" \
-             --arg purl "$PURL" \
-             --arg license "$LICENSE" \
-             '
-            # Patch the metadata component (root component)
-            .metadata.component.name = $name |
-            .metadata.component.version = $version |
-            .metadata.component.type = "container" |
-            .metadata.component.purl = $purl |
-            .metadata.component.licenses = [{"license": {"id": $license}}] |
-            # Add dependency links from root to all components
-            .metadata.component["bom-ref"] as $root |
-            .dependencies = [
-              {"ref": $root, "dependsOn": [.components[]?["bom-ref"]]}
-            ] + [.dependencies[]? | select(.ref != $root)]
-          ' "$SBOM" > "${SBOM}.tmp" && mv "${SBOM}.tmp" "$SBOM"
+          bin/patch-sbom-root \
+            --name "wellmaintained/packages/${{ matrix.image.name }}-image" \
+            --version "$VERSION" \
+            --purl "pkg:docker/wellmaintained/packages/${{ matrix.image.name }}@${VERSION}" \
+            --license "${{ matrix.image.license }}" \
+            < "$SBOM" > "${SBOM}.tmp" && mv "${SBOM}.tmp" "$SBOM"
 
       - name: Generate and Upload SBOM to sbomify
         if: ${{ !startsWith(matrix.image.sbomify_component_id, 'PLACEHOLDER') }}
