@@ -25,7 +25,7 @@ docker compose up
 | sbomify-worker | Dramatiq background worker | (internal) |
 | keycloak | Identity provider | :8180 |
 | sbomify-db | PostgreSQL database | :5432 |
-| sbomify-redis | Redis cache/broker | :6379 |
+| sbomify-redis | Redis cache/broker | :6389 |
 | sbomify-minio | MinIO object storage | API :9000, Console :9001 |
 
 ## Default Credentials

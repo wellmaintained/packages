@@ -73,7 +73,7 @@ services:
     image: ${REDIS_IMAGE:-ghcr.io/wellmaintained/packages/redis}:${REDIS_TAG:-latest}
     restart: ${REDIS_RESTART_POLICY:-always}
     ports:
-      - "${REDIS_PORT:-6379}:6379"
+      - "${REDIS_PORT:-6389}:6379"
     volumes:
       - sbomify_redis_data:/data
     healthcheck:
