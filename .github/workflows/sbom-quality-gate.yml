@@ -1,0 +1,174 @@
+name: SBOM quality gate
+
+# Scores the PR's SBOMs and compares against the baseline from main.
+# Blocks merging if any image's quality score regresses.
+#
+# Requires the "Generate SBOMs" workflow to have run first on this PR
+# (it produces the enriched SBOM artifacts we score here).
+
+on:
+  workflow_run:
+    workflows: ["Generate SBOMs"]
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: read
+  pull-requests: write
+
+jobs:
+  score:
+    if: >-
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          - name: postgres
+          - name: redis
+          - name: minio
+          - name: minio-client
+          - name: sbomify-app
+          - name: sbomify-keycloak
+          - name: sbomify-caddy-dev
+          - name: sbomify-minio-init
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Install sbomqs
+        run: |
+          curl -sSfL https://github.com/interlynk-io/sbomqs/releases/latest/download/sbomqs-linux-amd64 \
+            -o /usr/local/bin/sbomqs
+          chmod +x /usr/local/bin/sbomqs
+
+      - name: Install sbomlyze
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/rezmoss/sbomlyze/main/install.sh | sh
+          mv ./sbomlyze /usr/local/bin/sbomlyze
+
+      - name: Download PR SBOM
+        uses: actions/download-artifact@v4
+        with:
+          name: sbom-${{ matrix.image.name }}
+          path: current/
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+
+      - name: Score current SBOM
+        run: |
+          mkdir -p results
+          SBOM=$(ls current/*.cdx.json | head -1)
+          bin/sbom-score --image "${{ matrix.image.name }}" "$SBOM" \
+            > results/score-${{ matrix.image.name }}.json
+        env:
+          PATH: /usr/local/bin:$PATH
+
+      - name: Fetch baseline SBOM
+        id: baseline
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Find the latest successful Generate SBOMs run on main
+          RUN_ID=$(gh run list \
+            --workflow="Generate SBOMs" \
+            --branch=main \
+            --status=success \
+            --limit=1 \
+            --json databaseId \
+            --jq '.[0].databaseId')
+
+          if [ -z "$RUN_ID" ] || [ "$RUN_ID" = "null" ]; then
+            echo "has_baseline=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          gh run download "$RUN_ID" \
+            --name "sbom-${{ matrix.image.name }}" \
+            --dir baseline/ || {
+              echo "has_baseline=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            }
+
+          echo "has_baseline=true" >> "$GITHUB_OUTPUT"
+
+      - name: Score baseline SBOM
+        if: steps.baseline.outputs.has_baseline == 'true'
+        run: |
+          SBOM=$(ls baseline/*.cdx.json | head -1)
+          bin/sbom-score --image "${{ matrix.image.name }}" "$SBOM" \
+            > results/baseline-${{ matrix.image.name }}.json
+
+      - name: Compare SBOMs
+        if: steps.baseline.outputs.has_baseline == 'true'
+        run: |
+          BASELINE=$(ls baseline/*.cdx.json | head -1)
+          CURRENT=$(ls current/*.cdx.json | head -1)
+          bin/sbom-compare \
+            --baseline "$BASELINE" \
+            --current "$CURRENT" \
+            --image "${{ matrix.image.name }}" \
+            --policy .github/sbom-policy.json \
+            > results/compare-${{ matrix.image.name }}.json
+
+      - name: Upload results
+        uses: actions/upload-artifact@v6
+        with:
+          name: sbom-qg-${{ matrix.image.name }}
+          path: results/
+
+  report:
+    needs: score
+    if: always() && needs.score.result != 'skipped'
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    permissions:
+      pull-requests: write
+      actions: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Download all results
+        uses: actions/download-artifact@v4
+        with:
+          pattern: sbom-qg-*
+          merge-multiple: true
+          path: results/
+
+      - name: Generate report
+        id: report
+        run: |
+          bin/sbom-report --scores-dir results/ > pr-comment.md 2>report-stderr.txt || {
+            cat report-stderr.txt >&2
+            echo "failed=true" >> "$GITHUB_OUTPUT"
+          }
+
+      - name: Resolve PR number
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # The workflow_run event doesn't directly give us the PR number.
+          # Look it up from the head branch.
+          HEAD_BRANCH="${{ github.event.workflow_run.head_branch }}"
+          PR_NUMBER=$(gh pr list --head "$HEAD_BRANCH" --json number --jq '.[0].number')
+          echo "number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
+
+      - name: Post PR comment
+        if: steps.pr.outputs.number
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: sbom-quality-gate
+          number: ${{ steps.pr.outputs.number }}
+          path: pr-comment.md
+
+      - name: Fail on regression
+        if: steps.report.outputs.failed == 'true'
+        run: |
+          echo "SBOM quality regression detected. See PR comment for details."
+          exit 1

@@ -1,0 +1,7 @@
+{
+  "max_added": 50,
+  "max_removed": 50,
+  "deny_licenses": [],
+  "require_licenses": true,
+  "deny_duplicates": true
+}

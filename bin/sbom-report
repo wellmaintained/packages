@@ -1,0 +1,93 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Generate a markdown PR comment from SBOM quality scores and diffs.
+#
+# Usage: sbom-report --scores-dir DIR
+#
+# Expects files in DIR matching:
+#   score-<image>.json     — output of bin/sbom-score (required)
+#   baseline-<image>.json  — output of bin/sbom-score for the baseline (optional)
+#   compare-<image>.json   — output of bin/sbom-compare (optional)
+#
+# Outputs markdown to stdout.
+# Exits non-zero if any image's score regressed vs its baseline.
+
+scores_dir=""
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --scores-dir) scores_dir="$2"; shift 2 ;;
+    -*)           echo "Unknown option: $1" >&2; exit 1 ;;
+    *)            echo "Unexpected argument: $1" >&2; exit 1 ;;
+  esac
+done
+
+if [ -z "$scores_dir" ]; then
+  echo "Usage: sbom-report --scores-dir DIR" >&2
+  exit 1
+fi
+
+regression=false
+
+# Collect all scored images
+images=()
+for f in "$scores_dir"/score-*.json; do
+  [ -f "$f" ] || continue
+  img=$(jq -r '.image' "$f")
+  images+=("$img")
+done
+
+# Header
+echo "## SBOM Quality Gate"
+echo ""
+echo "| Image | Score | Baseline | Delta | Status |"
+echo "|-------|-------|----------|-------|--------|"
+
+# Table rows
+for img in "${images[@]}"; do
+  score=$(jq -r '.score' "$scores_dir/score-${img}.json")
+
+  if [ -f "$scores_dir/baseline-${img}.json" ]; then
+    baseline=$(jq -r '.score' "$scores_dir/baseline-${img}.json")
+    delta=$(printf '%.1f' "$(echo "$score - $baseline" | bc -l)")
+
+    # Format delta with sign
+    if echo "$delta > 0" | bc -l | grep -q '^1$'; then
+      delta_fmt="+${delta}"
+      status="pass"
+    elif echo "$delta < 0" | bc -l | grep -q '^1$'; then
+      delta_fmt="${delta}"
+      status="regression"
+      regression=true
+    else
+      delta_fmt="0"
+      status="pass"
+    fi
+
+    echo "| ${img} | ${score} | ${baseline} | ${delta_fmt} | ${status} |"
+  else
+    echo "| ${img} | ${score} | N/A | N/A | new baseline |"
+  fi
+done
+
+# Diff details
+for img in "${images[@]}"; do
+  if [ -f "$scores_dir/compare-${img}.json" ]; then
+    diff_md=$(jq -r '.diff_md // empty' "$scores_dir/compare-${img}.json")
+    if [ -n "$diff_md" ]; then
+      echo ""
+      echo "<details>"
+      echo "<summary>Diff: ${img}</summary>"
+      echo ""
+      echo "$diff_md"
+      echo ""
+      echo "</details>"
+    fi
+  fi
+done
+
+if [ "$regression" = true ]; then
+  echo "SBOM quality regression detected" >&2
+  exit 1
+fi

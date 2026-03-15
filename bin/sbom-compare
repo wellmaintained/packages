@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Compare two SBOMs using sbomlyze and output structured JSON.
+#
+# Usage: sbom-compare --baseline FILE --current FILE --image NAME [--policy FILE] [--sbomlyze-cmd CMD]
+#
+# Runs sbomlyze in diff mode to produce markdown and JUnit outputs,
+# and optionally checks a policy file for violations.
+# Always exits 0 — policy violations are reported in the JSON output,
+# not via exit code, so the caller can aggregate results before deciding.
+
+sbomlyze_cmd="sbomlyze"
+baseline="" current="" image="" policy=""
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --sbomlyze-cmd) sbomlyze_cmd="$2"; shift 2 ;;
+    --baseline)     baseline="$2";     shift 2 ;;
+    --current)      current="$2";      shift 2 ;;
+    --image)        image="$2";        shift 2 ;;
+    --policy)       policy="$2";       shift 2 ;;
+    -*)             echo "Unknown option: $1" >&2; exit 1 ;;
+    *)              echo "Unexpected argument: $1" >&2; exit 1 ;;
+  esac
+done
+
+if [ -z "$baseline" ] || [ -z "$current" ] || [ -z "$image" ]; then
+  echo "Usage: sbom-compare --baseline FILE --current FILE --image NAME [--policy FILE] [--sbomlyze-cmd CMD]" >&2
+  [ -z "$image" ] && echo "Missing required argument: --image" >&2
+  exit 1
+fi
+
+[ ! -f "$baseline" ] && echo "Baseline file not found: $baseline" >&2 && exit 1
+[ ! -f "$current" ]  && echo "Current file not found: $current" >&2 && exit 1
+
+# Get markdown diff
+diff_md=$("$sbomlyze_cmd" "$baseline" "$current" --format markdown 2>/dev/null || true)
+
+# Get JUnit XML
+junit_xml=$("$sbomlyze_cmd" "$baseline" "$current" --format junit 2>/dev/null || true)
+
+# Check policy if provided
+policy_pass=true
+if [ -n "$policy" ]; then
+  if ! "$sbomlyze_cmd" "$baseline" "$current" --policy "$policy" > /dev/null 2>&1; then
+    policy_pass=false
+  fi
+fi
+
+jq -n \
+  --arg image "$image" \
+  --arg diff_md "$diff_md" \
+  --arg junit_xml "$junit_xml" \
+  --argjson policy_pass "$policy_pass" \
+  '{
+    image: $image,
+    diff_md: $diff_md,
+    junit_xml: $junit_xml,
+    policy_pass: $policy_pass
+  }'
