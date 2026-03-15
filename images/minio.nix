@@ -20,7 +20,7 @@ pkgs.dockerTools.buildLayeredImage {
       "org.opencontainers.image.title" = "MinIO";
       "org.opencontainers.image.version" = pkgs.minio.version;
     };
-    Entrypoint = [ "${pkgs.minio}/bin/minio" "server" "/data" "--console-address" ":9001" ];
+    Entrypoint = [ "${pkgs.minio}/bin/minio" ];
     ExposedPorts = {
       "9000/tcp" = {};
       "9001/tcp" = {};
