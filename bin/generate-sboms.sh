@@ -8,15 +8,16 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 SBOM_DIR="${REPO_ROOT}/sboms"
 
 # All image SBOM targets (must match flake.nix packages)
+# Format: name:license (SPDX identifier)
 SBOM_TARGETS=(
-  postgres
-  redis
-  minio
-  minio-client
-  sbomify-app
-  sbomify-keycloak
-  sbomify-caddy-dev
-  sbomify-minio-init
+  postgres:PostgreSQL
+  redis:AGPL-3.0-only
+  minio:AGPL-3.0-or-later
+  minio-client:Apache-2.0
+  sbomify-app:Apache-2.0
+  sbomify-keycloak:Apache-2.0
+  sbomify-caddy-dev:Apache-2.0
+  sbomify-minio-init:Apache-2.0
 )
 
 mkdir -p "$SBOM_DIR"
@@ -26,7 +27,9 @@ echo ""
 
 failed=()
 
-for target in "${SBOM_TARGETS[@]}"; do
+for entry in "${SBOM_TARGETS[@]}"; do
+  target="${entry%%:*}"
+  license="${entry#*:}"
   echo "--- ${target} ---"
   sbom_attr=".#${target}-sbom"
 
@@ -41,6 +44,31 @@ for target in "${SBOM_TARGETS[@]}"; do
     fi
 
     cp -L "$sbom_file" "${SBOM_DIR}/${target}.cdx.json"
+
+    # Patch root component: bombon uses the symlinkJoin name (e.g. "postgres-closure")
+    # which is meaningless. Rewrite it to describe the OCI image with proper metadata
+    # and wire up the dependency graph.
+    version=$(nix eval --raw nixpkgs#"${target//-/_}".version 2>/dev/null || echo "unknown")
+    image_name="wellmaintained/packages/${target}-image"
+    purl="pkg:docker/wellmaintained/packages/${target}@${version}"
+
+    jq --arg name "$image_name" \
+       --arg version "$version" \
+       --arg purl "$purl" \
+       --arg license "$license" \
+       '
+      .metadata.component.name = $name |
+      .metadata.component.version = $version |
+      .metadata.component.type = "container" |
+      .metadata.component.purl = $purl |
+      .metadata.component.licenses = [{"license": {"id": $license}}] |
+      .metadata.component["bom-ref"] as $root |
+      .dependencies = [
+        {"ref": $root, "dependsOn": [.components[]?["bom-ref"]]}
+      ] + [.dependencies[]? | select(.ref != $root)]
+    ' "${SBOM_DIR}/${target}.cdx.json" > "${SBOM_DIR}/${target}.cdx.json.tmp" \
+      && mv "${SBOM_DIR}/${target}.cdx.json.tmp" "${SBOM_DIR}/${target}.cdx.json"
+
     echo "  -> ${SBOM_DIR}/${target}.cdx.json"
 
     # Quick verification

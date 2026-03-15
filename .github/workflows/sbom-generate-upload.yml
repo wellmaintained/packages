@@ -41,34 +41,42 @@ jobs:
           - name: postgres
             sbom_package: postgres-sbom
             nixpkg: postgresql_17
+            license: PostgreSQL
             sbomify_component_id: M8rixM6mMEPe
           - name: redis
             sbom_package: redis-sbom
             nixpkg: redis
+            license: AGPL-3.0-only
             sbomify_component_id: ABBCcw2YiYrG
           - name: minio
             sbom_package: minio-sbom
             nixpkg: minio
+            license: AGPL-3.0-or-later
             sbomify_component_id: PLACEHOLDER_MINIO
           - name: minio-client
             sbom_package: minio-client-sbom
             nixpkg: minio-client
+            license: Apache-2.0
             sbomify_component_id: PLACEHOLDER_MINIO_CLIENT
           - name: sbomify-app
             sbom_package: sbomify-app-sbom
             nixpkg: python313
+            license: Apache-2.0
             sbomify_component_id: VP42I4XQgpDE
           - name: sbomify-keycloak
             sbom_package: sbomify-keycloak-sbom
             nixpkg: keycloak
+            license: Apache-2.0
             sbomify_component_id: N4agQD8pvej8
           - name: sbomify-caddy-dev
             sbom_package: sbomify-caddy-dev-sbom
             nixpkg: caddy
+            license: Apache-2.0
             sbomify_component_id: zYDq6NtrOBuo
           - name: sbomify-minio-init
             sbom_package: sbomify-minio-init-sbom
             nixpkg: minio-client
+            license: Apache-2.0
             sbomify_component_id: PLACEHOLDER_SBOMIFY_MINIO_INIT
 
     steps:
@@ -101,6 +109,35 @@ jobs:
         run: |
           nix build .#${{ matrix.image.sbom_package }}
           cp -L result ${{ matrix.image.name }}.cdx.json
+
+      - name: Patch root component metadata
+        run: |
+          # bombon names the root component after the symlinkJoin derivation
+          # (e.g. "postgres-closure"). Rewrite it to describe the OCI image
+          # so the dependency graph has a meaningful root.
+          VERSION="${{ steps.version.outputs.upstream }}"
+          IMAGE_NAME="wellmaintained/packages/${{ matrix.image.name }}-image"
+          PURL="pkg:docker/wellmaintained/packages/${{ matrix.image.name }}@${VERSION}"
+          LICENSE="${{ matrix.image.license }}"
+          SBOM="${{ matrix.image.name }}.cdx.json"
+
+          jq --arg name "$IMAGE_NAME" \
+             --arg version "$VERSION" \
+             --arg purl "$PURL" \
+             --arg license "$LICENSE" \
+             '
+            # Patch the metadata component (root component)
+            .metadata.component.name = $name |
+            .metadata.component.version = $version |
+            .metadata.component.type = "container" |
+            .metadata.component.purl = $purl |
+            .metadata.component.licenses = [{"license": {"id": $license}}] |
+            # Add dependency links from root to all components
+            .metadata.component["bom-ref"] as $root |
+            .dependencies = [
+              {"ref": $root, "dependsOn": [.components[]?["bom-ref"]]}
+            ] + [.dependencies[]? | select(.ref != $root)]
+          ' "$SBOM" > "${SBOM}.tmp" && mv "${SBOM}.tmp" "$SBOM"
 
       - name: Generate and Upload SBOM to sbomify
         if: ${{ !startsWith(matrix.image.sbomify_component_id, 'PLACEHOLDER') }}
