@@ -18,6 +18,7 @@ on:
       - main
     paths:
       - images/**
+      - deployments/sbomify/**
       - flake.nix
       - flake.lock
   workflow_dispatch:
@@ -36,10 +37,6 @@ jobs:
       fail-fast: false
       matrix:
         image:
-          - name: caddy
-            sbom_package: caddy-sbom
-            nixpkg: caddy
-            sbomify_component_id: zYDq6NtrOBuo
           - name: postgres
             sbom_package: postgres-sbom
             nixpkg: postgresql_17
@@ -48,10 +45,30 @@ jobs:
             sbom_package: redis-sbom
             nixpkg: redis
             sbomify_component_id: ABBCcw2YiYrG
-          - name: keycloak
-            sbom_package: keycloak-sbom
+          - name: minio
+            sbom_package: minio-sbom
+            nixpkg: minio
+            sbomify_component_id: PLACEHOLDER_MINIO
+          - name: minio-client
+            sbom_package: minio-client-sbom
+            nixpkg: minio-client
+            sbomify_component_id: PLACEHOLDER_MINIO_CLIENT
+          - name: sbomify-app
+            sbom_package: sbomify-app-sbom
+            nixpkg: python313
+            sbomify_component_id: PLACEHOLDER_SBOMIFY_APP
+          - name: sbomify-keycloak
+            sbom_package: sbomify-keycloak-sbom
             nixpkg: keycloak
             sbomify_component_id: N4agQD8pvej8
+          - name: sbomify-caddy-dev
+            sbom_package: sbomify-caddy-dev-sbom
+            nixpkg: caddy
+            sbomify_component_id: zYDq6NtrOBuo
+          - name: sbomify-minio-init
+            sbom_package: sbomify-minio-init-sbom
+            nixpkg: minio-client
+            sbomify_component_id: PLACEHOLDER_SBOMIFY_MINIO_INIT
 
     steps:
       - name: Checkout
@@ -70,16 +87,23 @@ jobs:
       - name: Get upstream version
         id: version
         run: |
-          VERSION=$(nix eval --raw nixpkgs#${{ matrix.image.nixpkg }}.version)
+          if [[ "${{ matrix.image.name }}" == sbomify-* ]]; then
+            # sbomify images use the pinned sbomify source version
+            VERSION=$(grep 'github:sbomify/sbomify/' flake.nix | grep -oP '/v\K[0-9.]+')
+          else
+            VERSION=$(nix eval --raw nixpkgs#${{ matrix.image.nixpkg }}.version)
+          fi
           echo "upstream=${VERSION}" >> "$GITHUB_OUTPUT"
 
       - name: Generate SBOM
         run: |
           nix build .#${{ matrix.image.sbom_package }}
-          cp result ${{ matrix.image.name }}.cdx.json
+          cp -L result ${{ matrix.image.name }}.cdx.json
 
       - name: Generate and Upload SBOM to sbomify
+        if: ${{ !startsWith(matrix.image.sbomify_component_id, 'PLACEHOLDER') }}
         uses: sbomify/sbomify-action@master
+        continue-on-error: true
         env:
           TOKEN: ${{ secrets.SBOMIFY_TOKEN }}
           COMPONENT_ID: ${{ matrix.image.sbomify_component_id }}

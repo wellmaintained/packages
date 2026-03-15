@@ -246,11 +246,40 @@
           minio-client-image = minioClientImage;
 
           # CycloneDX SBOMs — build with: nix build .#<name>-sbom
-          postgres-sbom = bombon.lib.${system}.buildBom postgresImage {};
-          redis-sbom = bombon.lib.${system}.buildBom redisImage {};
-          minio-sbom = bombon.lib.${system}.buildBom minioImage {};
-          minio-client-sbom = bombon.lib.${system}.buildBom minioClientImage {};
-          sbomify-app-sbom = bombon.lib.${system}.buildBom sbomifyAppImage {};
+          # bombon needs a derivation whose Nix closure contains the actual packages
+          # (not the image tar.gz, which is self-contained). symlinkJoin preserves the closure.
+          postgres-sbom = bombon.lib.${system}.buildBom (pkgs.symlinkJoin {
+            name = "postgres-closure";
+            paths = [ pkgs.postgresql_17 pkgs.cacert pkgs.bash pkgs.coreutils ];
+          }) {};
+          redis-sbom = bombon.lib.${system}.buildBom (pkgs.symlinkJoin {
+            name = "redis-closure";
+            paths = [ pkgs.redis ];
+          }) {};
+          minio-sbom = bombon.lib.${system}.buildBom (pkgs.symlinkJoin {
+            name = "minio-closure";
+            paths = [ pkgs.minio pkgs.minio-client pkgs.bashInteractive pkgs.coreutils ];
+          }) {};
+          minio-client-sbom = bombon.lib.${system}.buildBom (pkgs.symlinkJoin {
+            name = "minio-client-closure";
+            paths = [ pkgs.minio-client pkgs.bashInteractive pkgs.coreutils ];
+          }) {};
+          sbomify-app-sbom = bombon.lib.${system}.buildBom (pkgs.symlinkJoin {
+            name = "sbomify-app-closure";
+            paths = [ sbomifyApp pkgs.bashInteractive pkgs.coreutils pkgs.cacert pkgs.osv-scanner pkgs.cosign ];
+          }) {};
+          sbomify-keycloak-sbom = bombon.lib.${system}.buildBom (pkgs.symlinkJoin {
+            name = "sbomify-keycloak-closure";
+            paths = [ pkgs.keycloak pkgs.cacert pkgs.bashInteractive pkgs.coreutils pkgs.gnugrep pkgs.gnused pkgs.findutils pkgs.curl pkgs.jq ];
+          }) {};
+          sbomify-caddy-dev-sbom = bombon.lib.${system}.buildBom (pkgs.symlinkJoin {
+            name = "sbomify-caddy-dev-closure";
+            paths = [ pkgs.caddy pkgs.cacert pkgs.wget ];
+          }) {};
+          sbomify-minio-init-sbom = bombon.lib.${system}.buildBom (pkgs.symlinkJoin {
+            name = "sbomify-minio-init-closure";
+            paths = [ pkgs.minio-client pkgs.bashInteractive pkgs.coreutils ];
+          }) {};
 
           # sbomify app packages
           sbomify-venv = sbomifyVenv;
