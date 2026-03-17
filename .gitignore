@@ -46,3 +46,6 @@ http_cache.sqlite
 sbom.csv
 sbom.spdx.json
 sboms/
+
+# Yak task tracker
+.yaks/
