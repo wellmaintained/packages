@@ -1,4 +1,4 @@
-name: Upload SBOMs to sbomify
+name: Upload SBOMs to sbomify.com
 
 # Uploads enriched SBOMs to sbomify after they are generated on main.
 # Only runs when the Generate SBOMs workflow completes successfully on main.
@@ -16,7 +16,7 @@ permissions:
 jobs:
   upload:
     if: github.event.workflow_run.conclusion == 'success'
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: blacksmith-2vcpu-ubuntu-2404
     strategy:
       fail-fast: false
       matrix:
@@ -25,22 +25,15 @@ jobs:
             sbomify_component_id: M8rixM6mMEPe
           - name: redis
             sbomify_component_id: ABBCcw2YiYrG
-          - name: minio
-            sbomify_component_id: PLACEHOLDER_MINIO
-          - name: minio-client
-            sbomify_component_id: PLACEHOLDER_MINIO_CLIENT
           - name: sbomify-app
             sbomify_component_id: VP42I4XQgpDE
           - name: sbomify-keycloak
             sbomify_component_id: N4agQD8pvej8
           - name: sbomify-caddy-dev
             sbomify_component_id: zYDq6NtrOBuo
-          - name: sbomify-minio-init
-            sbomify_component_id: PLACEHOLDER_SBOMIFY_MINIO_INIT
 
     steps:
       - name: Download enriched SBOM
-        if: ${{ !startsWith(matrix.image.sbomify_component_id, 'PLACEHOLDER') }}
         uses: actions/download-artifact@v4
         with:
           name: sbom-${{ matrix.image.name }}
@@ -48,8 +41,7 @@ jobs:
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ github.token }}
 
-      - name: Upload to sbomify
-        if: ${{ !startsWith(matrix.image.sbomify_component_id, 'PLACEHOLDER') }}
+      - name: Upload to sbomify.com
         uses: sbomify/sbomify-action@master
         env:
           TOKEN: ${{ secrets.SBOMIFY_TOKEN }}

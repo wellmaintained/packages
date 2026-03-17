@@ -7,7 +7,7 @@ name: Generate SBOMs
 on:
   pull_request:
     branches: [main]
-    paths:
+    paths: &sbom-paths
       - images/**
       - deployments/sbomify/**
       - flake.nix
@@ -15,12 +15,7 @@ on:
       - bin/patch-sbom-root
   push:
     branches: [main]
-    paths:
-      - images/**
-      - deployments/sbomify/**
-      - flake.nix
-      - flake.lock
-      - bin/patch-sbom-root
+    paths: *sbom-paths
   workflow_dispatch:
 
 permissions:
@@ -29,7 +24,7 @@ permissions:
 
 jobs:
   generate:
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: blacksmith-2vcpu-ubuntu-2404
     strategy:
       fail-fast: false
       matrix:
@@ -79,16 +74,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Install Nix
-        uses: DeterminateSystems/determinate-nix-action@v3
-        with:
-          diagnostic-endpoint: ""
-
-      - name: Cache Nix store
-        uses: nix-community/cache-nix-action@v7
-        with:
-          primary-key: nix-${{ runner.os }}-${{ hashFiles('flake.lock') }}
-          restore-prefixes-first-match: nix-${{ runner.os }}-
+      - name: Setup Nix
+        uses: ./.github/actions/setup-nix
 
       - name: Get upstream version
         id: version

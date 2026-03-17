@@ -39,22 +39,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Install Nix
-        uses: DeterminateSystems/determinate-nix-action@v3
-        with:
-          diagnostic-endpoint: ""
+      - name: Setup Nix
+        uses: ./.github/actions/setup-nix
 
-      - name: Cache Nix store
-        uses: nix-community/cache-nix-action@v7
-        with:
-          primary-key: nix-${{ runner.os }}-${{ hashFiles('flake.lock') }}
-          restore-prefixes-first-match: nix-${{ runner.os }}-
-
-      - name: Build sbomqs
-        run: nix build .#sbomqs -o sbomqs-bin
-
-      - name: Build sbomlyze
-        run: nix build .#sbomlyze -o sbomlyze-bin
+      - name: Build sbomqs and sbomlyze
+        run: |
+          nix build .#sbomqs -o sbomqs-bin
+          nix build .#sbomlyze -o sbomlyze-bin
+          echo "$PWD/sbomqs-bin/bin" >> "$GITHUB_PATH"
+          echo "$PWD/sbomlyze-bin/bin" >> "$GITHUB_PATH"
 
       - name: Download PR SBOM
         uses: actions/download-artifact@v4
@@ -68,7 +61,7 @@ jobs:
         run: |
           mkdir -p results
           SBOM=$(ls current/*.cdx.json | head -1)
-          bin/sbom-score --sbomqs-cmd ./sbomqs-bin/bin/sbomqs --image "${{ matrix.image.name }}" "$SBOM" \
+          bin/sbom-score --image "${{ matrix.image.name }}" "$SBOM" \
             > results/score-${{ matrix.image.name }}.json
 
       - name: Fetch baseline SBOM
@@ -104,7 +97,7 @@ jobs:
         if: steps.baseline.outputs.has_baseline == 'true'
         run: |
           SBOM=$(ls baseline/*.cdx.json | head -1)
-          bin/sbom-score --sbomqs-cmd ./sbomqs-bin/bin/sbomqs --image "${{ matrix.image.name }}" "$SBOM" \
+          bin/sbom-score --image "${{ matrix.image.name }}" "$SBOM" \
             > results/baseline-${{ matrix.image.name }}.json
 
       - name: Compare SBOMs
@@ -113,7 +106,6 @@ jobs:
           BASELINE=$(ls baseline/*.cdx.json | head -1)
           CURRENT=$(ls current/*.cdx.json | head -1)
           bin/sbom-compare \
-            --sbomlyze-cmd ./sbomlyze-bin/bin/sbomlyze \
             --baseline "$BASELINE" \
             --current "$CURRENT" \
             --image "${{ matrix.image.name }}" \
@@ -123,11 +115,13 @@ jobs:
       - name: Upload results
         uses: actions/upload-artifact@v6
         with:
-          name: sbom-qg-${{ matrix.image.name }}
+          name: sbom-quality-gate-${{ matrix.image.name }}
           path: results/
 
   report:
     needs: score
+    # Run even if some score jobs failed, but not if the entire score job
+    # was skipped (which happens on direct pushes to main where there's no PR).
     if: always() && needs.score.result != 'skipped'
     runs-on: blacksmith-2vcpu-ubuntu-2404
     permissions:
@@ -141,7 +135,7 @@ jobs:
       - name: Download all results
         uses: actions/download-artifact@v4
         with:
-          pattern: sbom-qg-*
+          pattern: sbom-quality-gate-*
           merge-multiple: true
           path: results/
 
@@ -166,7 +160,7 @@ jobs:
 
       - name: Post PR comment
         if: steps.pr.outputs.number
-        uses: marocchino/sticky-pull-request-comment@v2
+        uses: marocchino/sticky-pull-request-comment@v3
         with:
           header: sbom-quality-gate
           number: ${{ steps.pr.outputs.number }}
