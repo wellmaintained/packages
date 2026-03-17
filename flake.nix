@@ -233,6 +233,10 @@
           sbomifySrc = sbomify-src;
         };
 
+        # SBOM quality tools
+        sbomqs = import ./pkgs/sbomqs { inherit pkgs; };
+        sbomlyze = import ./pkgs/sbomlyze { inherit pkgs; };
+
       in
       {
         # Export package sets for downstream consumers
@@ -280,6 +284,9 @@
             name = "sbomify-minio-init-closure";
             paths = [ pkgs.minio-client pkgs.bashInteractive pkgs.coreutils ];
           }) {};
+
+          # SBOM quality tools
+          inherit sbomqs sbomlyze;
 
           # sbomify app packages
           sbomify-venv = sbomifyVenv;
