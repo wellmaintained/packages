@@ -1,0 +1,30 @@
+name: SBOM quality gate (pending)
+
+# Posts an early "pending" sticky PR comment so authors see visual feedback
+# while sbom-generate.yml runs. Uses the same sticky header as the quality
+# gate report so the real scores replace this placeholder automatically.
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - images/**
+      - deployments/sbomify/**
+      - flake.nix
+      - flake.lock
+      - bin/patch-sbom-root
+
+permissions:
+  pull-requests: write
+
+jobs:
+  pending:
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    steps:
+      - name: Post pending comment
+        uses: marocchino/sticky-pull-request-comment@v3
+        with:
+          header: sbom-quality-gate
+          message: |
+            ## SBOM Quality Gate
+            ⏳ Generating SBOMs and calculating quality scores... please wait.
