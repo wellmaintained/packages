@@ -1,26 +1,21 @@
-name: Generate and upload SBOMs
+name: Generate SBOMs
 
-# Runs after OCI images are built, or on direct pushes that touch image sources.
-#
-# Prerequisites (one-time setup):
-#   1. Add SBOMIFY_TOKEN secret to the repository (Settings → Secrets → Actions).
-#      Generate the token at https://app.sbomify.com.
-#   2. Create one sbomify component per image and replace the placeholder
-#      sbomify_component_id values in the matrix below with the real IDs.
+# Generates and enriches CycloneDX SBOMs for all Nix-built OCI images.
+# Enriched SBOMs are uploaded as artifacts for downstream workflows
+# (quality gate on PRs, upload to sbomify on merge).
 
 on:
-  workflow_run:
-    workflows: ["Build and publish OCI images"]
-    types: [completed]
+  pull_request:
     branches: [main]
-  push:
-    branches:
-      - main
-    paths:
+    paths: &sbom-paths
       - images/**
       - deployments/sbomify/**
       - flake.nix
       - flake.lock
+      - bin/patch-sbom-root
+  push:
+    branches: [main]
+    paths: *sbom-paths
   workflow_dispatch:
 
 permissions:
@@ -28,12 +23,8 @@ permissions:
   contents: read
 
 jobs:
-  generate-and-upload:
-    # Skip if triggered by a failed workflow_run
-    if: >-
-      github.event_name != 'workflow_run' ||
-      github.event.workflow_run.conclusion == 'success'
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+  generate:
+    runs-on: blacksmith-2vcpu-ubuntu-2404
     strategy:
       fail-fast: false
       matrix:
@@ -41,56 +32,55 @@ jobs:
           - name: postgres
             sbom_package: postgres-sbom
             nixpkg: postgresql_17
+            license: PostgreSQL
             sbomify_component_id: M8rixM6mMEPe
           - name: redis
             sbom_package: redis-sbom
             nixpkg: redis
+            license: AGPL-3.0-only
             sbomify_component_id: ABBCcw2YiYrG
           - name: minio
             sbom_package: minio-sbom
             nixpkg: minio
+            license: AGPL-3.0-or-later
             sbomify_component_id: PLACEHOLDER_MINIO
           - name: minio-client
             sbom_package: minio-client-sbom
             nixpkg: minio-client
+            license: Apache-2.0
             sbomify_component_id: PLACEHOLDER_MINIO_CLIENT
           - name: sbomify-app
             sbom_package: sbomify-app-sbom
             nixpkg: python313
+            license: Apache-2.0
             sbomify_component_id: VP42I4XQgpDE
           - name: sbomify-keycloak
             sbom_package: sbomify-keycloak-sbom
             nixpkg: keycloak
+            license: Apache-2.0
             sbomify_component_id: N4agQD8pvej8
           - name: sbomify-caddy-dev
             sbom_package: sbomify-caddy-dev-sbom
             nixpkg: caddy
+            license: Apache-2.0
             sbomify_component_id: zYDq6NtrOBuo
           - name: sbomify-minio-init
             sbom_package: sbomify-minio-init-sbom
             nixpkg: minio-client
+            license: Apache-2.0
             sbomify_component_id: PLACEHOLDER_SBOMIFY_MINIO_INIT
 
     steps:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Install Nix
-        uses: DeterminateSystems/determinate-nix-action@v3
-        with:
-          diagnostic-endpoint: ""
-
-      - name: Cache Nix store
-        uses: nix-community/cache-nix-action@v7
-        with:
-          primary-key: nix-${{ runner.os }}-${{ hashFiles('flake.lock') }}
-          restore-prefixes-first-match: nix-${{ runner.os }}-
+      - name: Setup Nix
+        uses: ./.github/actions/setup-nix
 
       - name: Get upstream version
         id: version
         run: |
           if [[ "${{ matrix.image.name }}" == sbomify-* ]]; then
-            # sbomify images use the pinned sbomify source version
             VERSION=$(grep 'github:sbomify/sbomify/' flake.nix | grep -oP '/v\K[0-9.]+')
           else
             VERSION=$(nix eval --raw nixpkgs#${{ matrix.image.nixpkg }}.version)
@@ -102,7 +92,19 @@ jobs:
           nix build .#${{ matrix.image.sbom_package }}
           cp -L result ${{ matrix.image.name }}.cdx.json
 
-      - name: Generate and Upload SBOM to sbomify
+      - name: Patch root component metadata
+        run: |
+          VERSION="${{ steps.version.outputs.upstream }}"
+          SBOM="${{ matrix.image.name }}.cdx.json"
+
+          bin/patch-sbom-root \
+            --name "wellmaintained/packages/${{ matrix.image.name }}-image" \
+            --version "$VERSION" \
+            --purl "pkg:docker/wellmaintained/packages/${{ matrix.image.name }}@${VERSION}" \
+            --license "${{ matrix.image.license }}" \
+            < "$SBOM" > "${SBOM}.tmp" && mv "${SBOM}.tmp" "$SBOM"
+
+      - name: Enrich SBOM
         if: ${{ !startsWith(matrix.image.sbomify_component_id, 'PLACEHOLDER') }}
         uses: sbomify/sbomify-action@master
         continue-on-error: true
@@ -115,12 +117,17 @@ jobs:
           SBOM_FORMAT: cyclonedx
           AUGMENT: true
           ENRICH: true
-          UPLOAD: true
+          UPLOAD: false
           OUTPUT_FILE: ${{ matrix.image.name }}.enriched.cdx.json
 
-      - name: Upload enriched SBOM as artifact
+      - name: Fall back to raw SBOM if enrichment skipped
+        run: |
+          if [ ! -f "${{ matrix.image.name }}.enriched.cdx.json" ]; then
+            cp "${{ matrix.image.name }}.cdx.json" "${{ matrix.image.name }}.enriched.cdx.json"
+          fi
+
+      - name: Upload enriched SBOM
         uses: actions/upload-artifact@v6
         with:
           name: sbom-${{ matrix.image.name }}
           path: ${{ matrix.image.name }}.enriched.cdx.json
-          if-no-files-found: warn

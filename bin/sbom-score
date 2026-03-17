@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Score an SBOM using sbomqs and output structured JSON.
+#
+# Usage: sbom-score [--sbomqs-cmd CMD] --image NAME <sbom.cdx.json>
+#
+# Output (stdout): JSON with score, image name, component count, and category breakdown.
+
+sbomqs_cmd="sbomqs"
+image=""
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --sbomqs-cmd) sbomqs_cmd="$2"; shift 2 ;;
+    --image)      image="$2";      shift 2 ;;
+    -*)           echo "Unknown option: $1" >&2; exit 1 ;;
+    *)            break ;;
+  esac
+done
+
+if [ $# -eq 0 ]; then
+  echo "Usage: sbom-score [--sbomqs-cmd CMD] --image NAME <sbom.cdx.json>" >&2
+  exit 1
+fi
+
+sbom_file="$1"
+
+if [ ! -f "$sbom_file" ]; then
+  echo "SBOM file not found: $sbom_file" >&2
+  exit 1
+fi
+
+# Run sbomqs and capture output
+raw_output=$("$sbomqs_cmd" score "$sbom_file" --json 2>/dev/null) || {
+  echo "sbomqs failed to score $sbom_file" >&2
+  exit 1
+}
+
+# Transform sbomqs output into our structured format
+echo "$raw_output" | jq --arg image "$image" '
+  .files[0] as $f |
+  {
+    image: $image,
+    score: $f.avg_score,
+    num_components: $f.num_components,
+    categories: [
+      $f.scores[]? | {category: .category, score: .score, max_score: .max_score}
+    ]
+  }
+'

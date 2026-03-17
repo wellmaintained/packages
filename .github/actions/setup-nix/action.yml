@@ -1,0 +1,16 @@
+name: Setup Nix
+description: Install Nix with Determinate Systems and configure Nix store cache
+
+runs:
+  using: composite
+  steps:
+    - name: Install Nix
+      uses: DeterminateSystems/determinate-nix-action@v3
+      with:
+        diagnostic-endpoint: ""
+
+    - name: Cache Nix store
+      uses: nix-community/cache-nix-action@v7
+      with:
+        primary-key: nix-${{ runner.os }}-${{ hashFiles('flake.lock') }}
+        restore-prefixes-first-match: nix-${{ runner.os }}-

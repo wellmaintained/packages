@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Patch the root component of a bombon-generated CycloneDX SBOM.
+#
+# bombon uses the symlinkJoin derivation name (e.g. "postgres-closure") as the
+# root component, which carries no meaningful metadata. This script rewrites it
+# to describe the OCI image with proper name, version, type, PURL, license, and
+# wires up the dependency graph so the root depends on all closure components.
+#
+# Usage: patch-sbom-root --name NAME --version VER --purl PURL --license SPDX < in.cdx.json > out.cdx.json
+
+name="" version="" purl="" license=""
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --name)    name="$2";    shift 2 ;;
+    --version) version="$2"; shift 2 ;;
+    --purl)    purl="$2";    shift 2 ;;
+    --license) license="$2"; shift 2 ;;
+    *) echo "Unknown argument: $1" >&2; exit 1 ;;
+  esac
+done
+
+missing=()
+[ -z "$name" ]    && missing+=("--name")
+[ -z "$version" ] && missing+=("--version")
+[ -z "$purl" ]    && missing+=("--purl")
+[ -z "$license" ] && missing+=("--license")
+
+if [ ${#missing[@]} -gt 0 ]; then
+  echo "Missing required arguments: ${missing[*]}" >&2
+  exit 1
+fi
+
+jq --arg name "$name" \
+   --arg version "$version" \
+   --arg purl "$purl" \
+   --arg license "$license" \
+   '
+  .metadata.component.name = $name |
+  .metadata.component.version = $version |
+  .metadata.component.type = "container" |
+  .metadata.component.purl = $purl |
+  .metadata.component.licenses = [{"license": {"id": $license}}] |
+  .metadata.component["bom-ref"] as $root |
+  .dependencies = [
+    {"ref": $root, "dependsOn": [.components[]?["bom-ref"]]}
+  ] + [.dependencies[]? | select(.ref != $root)]
+'

@@ -1,0 +1,51 @@
+name: Upload SBOMs to sbomify.com
+
+# Uploads enriched SBOMs to sbomify after they are generated on main.
+# Only runs when the Generate SBOMs workflow completes successfully on main.
+
+on:
+  workflow_run:
+    workflows: ["Generate SBOMs"]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  upload:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    strategy:
+      fail-fast: false
+      matrix:
+        image:
+          - name: postgres
+            sbomify_component_id: M8rixM6mMEPe
+          - name: redis
+            sbomify_component_id: ABBCcw2YiYrG
+          - name: sbomify-app
+            sbomify_component_id: VP42I4XQgpDE
+          - name: sbomify-keycloak
+            sbomify_component_id: N4agQD8pvej8
+          - name: sbomify-caddy-dev
+            sbomify_component_id: zYDq6NtrOBuo
+
+    steps:
+      - name: Download enriched SBOM
+        uses: actions/download-artifact@v4
+        with:
+          name: sbom-${{ matrix.image.name }}
+          path: sbom/
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+
+      - name: Upload to sbomify.com
+        uses: sbomify/sbomify-action@master
+        env:
+          TOKEN: ${{ secrets.SBOMIFY_TOKEN }}
+          COMPONENT_ID: ${{ matrix.image.sbomify_component_id }}
+          SBOM_FILE: sbom/${{ matrix.image.name }}.enriched.cdx.json
+          SBOM_FORMAT: cyclonedx
+          UPLOAD: true
