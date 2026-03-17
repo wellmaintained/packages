@@ -10,6 +10,7 @@ set -euo pipefail
 # wires up the dependency graph so the root depends on all closure components.
 #
 # Usage: patch-sbom-root --name NAME --version VER --purl PURL --license SPDX < in.cdx.json > out.cdx.json
+# Output: CycloneDX SBOM with patched root component written to stdout.
 
 name="" version="" purl="" license=""
 
