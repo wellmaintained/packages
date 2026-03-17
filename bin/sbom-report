@@ -47,27 +47,29 @@ echo "|-------|-------|----------|-------|--------|"
 # Table rows
 for img in "${images[@]}"; do
   score=$(jq -r '.score' "$scores_dir/score-${img}.json")
+  score_fmt=$(printf "%.2f" "$score")
 
   if [ -f "$scores_dir/baseline-${img}.json" ]; then
     baseline=$(jq -r '.score' "$scores_dir/baseline-${img}.json")
-    delta=$(awk "BEGIN { printf \"%.1f\", $score - $baseline }")
+    baseline_fmt=$(printf "%.2f" "$baseline")
+    delta=$(awk "BEGIN { printf \"%.2f\", $score - $baseline }")
 
     # Format delta with sign
     if awk "BEGIN { exit !($delta > 0) }"; then
       delta_fmt="+${delta}"
-      status="pass"
+      status="✅ pass"
     elif awk "BEGIN { exit !($delta < 0) }"; then
       delta_fmt="${delta}"
-      status="regression"
+      status="❌ regression"
       regression=true
     else
-      delta_fmt="0"
-      status="pass"
+      delta_fmt="+0.00"
+      status="✅ pass"
     fi
 
-    echo "| ${img} | ${score} | ${baseline} | ${delta_fmt} | ${status} |"
+    echo "| ${img} | ${score_fmt} | ${baseline_fmt} | ${delta_fmt} | ${status} |"
   else
-    echo "| ${img} | ${score} | N/A | N/A | new baseline |"
+    echo "| ${img} | ${score_fmt} | N/A | N/A | new baseline |"
   fi
 done
 
