@@ -5,21 +5,21 @@ Describe "bin/sbom-report"
 
     # Score result for postgres (improved)
     cat > "$RESULTS_DIR/score-postgres.json" <<'JSON'
-{"image":"postgres","score":7.2,"num_components":24,"categories":[{"category":"Licensing","score":6.5,"max_score":10.0}]}
+{"image":"postgres","score":7.2,"num_components":24,"categories":[{"category":"Licensing","score":6.5}]}
 JSON
 
     # Score result for redis (regressed)
     cat > "$RESULTS_DIR/score-redis.json" <<'JSON'
-{"image":"redis","score":6.0,"num_components":8,"categories":[{"category":"Licensing","score":5.0,"max_score":10.0}]}
+{"image":"redis","score":6.0,"num_components":8,"categories":[{"category":"Licensing","score":5.0}]}
 JSON
 
     # Baseline scores
     cat > "$RESULTS_DIR/baseline-postgres.json" <<'JSON'
-{"image":"postgres","score":7.0,"num_components":24,"categories":[{"category":"Licensing","score":6.0,"max_score":10.0}]}
+{"image":"postgres","score":7.0,"num_components":24,"categories":[{"category":"Licensing","score":6.0}]}
 JSON
 
     cat > "$RESULTS_DIR/baseline-redis.json" <<'JSON'
-{"image":"redis","score":6.5,"num_components":8,"categories":[{"category":"Licensing","score":5.5,"max_score":10.0}]}
+{"image":"redis","score":6.5,"num_components":8,"categories":[{"category":"Licensing","score":5.5}]}
 JSON
 
     # Compare result for postgres

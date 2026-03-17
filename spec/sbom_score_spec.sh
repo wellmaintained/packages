@@ -29,12 +29,12 @@ JSON
   Describe "sbomqs integration"
     # Mock sbomqs to avoid requiring the real binary in tests
     mock_sbomqs() {
-      # Create a fake sbomqs that outputs realistic JSON
+      # Create a fake sbomqs that outputs realistic v2.0.4 JSON
       MOCK_SBOMQS="$(mktemp)"
       cat > "$MOCK_SBOMQS" <<'SCRIPT'
 #!/bin/sh
 cat <<'MOCK'
-{"files":[{"avg_score":7.2,"num_components":24,"scores":[{"category":"Licensing","score":6.5,"max_score":10.0},{"category":"Structural","score":8.1,"max_score":10.0},{"category":"Completeness","score":7.0,"max_score":10.0}]}]}
+{"files":[{"sbom_quality_score":7.2,"num_components":24,"comprehenssive":[{"category":"Licensing","feature":"comp_with_license","score":6.0,"description":"complete","ignored":false},{"category":"Licensing","feature":"comp_valid_license","score":7.0,"description":"complete","ignored":false},{"category":"Structural","feature":"has_components","score":8.1,"description":"complete","ignored":false},{"category":"Completeness","feature":"comp_with_supplier","score":7.0,"description":"complete","ignored":false}]}]}
 MOCK
 SCRIPT
       chmod +x "$MOCK_SBOMQS"
