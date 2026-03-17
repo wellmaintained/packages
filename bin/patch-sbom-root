@@ -2,6 +2,7 @@
 set -euo pipefail
 
 # Patch the root component of a bombon-generated CycloneDX SBOM.
+# shellcheck disable=SC2086
 #
 # bombon uses the symlinkJoin derivation name (e.g. "postgres-closure") as the
 # root component, which carries no meaningful metadata. This script rewrites it
