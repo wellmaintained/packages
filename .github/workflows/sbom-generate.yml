@@ -44,11 +44,6 @@ jobs:
             nixpkg: minio
             license: AGPL-3.0-or-later
             sbomify_component_id: PLACEHOLDER_MINIO
-          - name: minio-client
-            sbom_package: minio-client-sbom
-            nixpkg: minio-client
-            license: Apache-2.0
-            sbomify_component_id: PLACEHOLDER_MINIO_CLIENT
           - name: sbomify-app
             sbom_package: sbomify-app-sbom
             nixpkg: python313

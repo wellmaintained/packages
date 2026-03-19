@@ -12,7 +12,6 @@ SBOM_TARGETS=(
   postgres
   redis
   minio
-  minio-client
   sbomify-app
   sbomify-keycloak
   sbomify-caddy-dev

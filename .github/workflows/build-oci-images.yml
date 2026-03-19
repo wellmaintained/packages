@@ -32,9 +32,6 @@ jobs:
           - name: minio
             package: minio-image
             nixpkg: minio
-          - name: minio-client
-            package: minio-client-image
-            nixpkg: minio-client
     steps:
       - name: Checkout
         uses: actions/checkout@v5
