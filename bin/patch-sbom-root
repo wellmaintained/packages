@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# test: trigger SBOM quality gate pipeline (verify pending comment + score formatting)
 # Patch the root component of a bombon-generated CycloneDX SBOM.
 # shellcheck disable=SC2086
 #
