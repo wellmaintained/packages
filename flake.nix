@@ -290,6 +290,7 @@
               git
               direnv
               nix-direnv
+              cyclonedx-cli
             ];
           };
 

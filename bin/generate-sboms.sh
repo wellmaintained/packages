@@ -40,7 +40,10 @@ for target in "${SBOM_TARGETS[@]}"; do
     fi
 
     cp -L "$sbom_file" "${SBOM_DIR}/${target}.cdx.json"
-    echo "  -> ${SBOM_DIR}/${target}.cdx.json"
+
+    # Convert bombon's CycloneDX 1.5 output to 1.6
+    "${REPO_ROOT}/bin/convert-sbom-to-cdx16" "${SBOM_DIR}/${target}.cdx.json"
+    echo "  -> ${SBOM_DIR}/${target}.cdx.json (CycloneDX 1.6)"
 
     # Quick verification
     bom_format=$(jq -r '.bomFormat // empty' "${SBOM_DIR}/${target}.cdx.json" 2>/dev/null || true)

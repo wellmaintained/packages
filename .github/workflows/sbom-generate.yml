@@ -59,6 +59,9 @@ jobs:
           nix build .#${{ matrix.sbom_package }}
           cp -L result ${{ steps.meta.outputs.name }}.cdx.json
 
+      - name: Convert to CycloneDX 1.6
+        run: bin/convert-sbom-to-cdx16 "${{ steps.meta.outputs.name }}.cdx.json"
+
       - name: Patch root component metadata
         run: |
           VERSION="${{ steps.meta.outputs.version }}"
