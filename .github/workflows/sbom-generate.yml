@@ -60,16 +60,7 @@ jobs:
           cp -L result ${{ steps.meta.outputs.name }}.cdx.json
 
       - name: Convert to CycloneDX 1.6
-        run: |
-          SBOM="${{ steps.meta.outputs.name }}.cdx.json"
-          nix build nixpkgs#cyclonedx-cli -o cyclonedx-cli
-          cyclonedx-cli/bin/cyclonedx convert \
-            --input-file "$SBOM" \
-            --output-file "${SBOM}.tmp" \
-            --input-format json \
-            --output-format json \
-            --output-version v1_6
-          mv "${SBOM}.tmp" "$SBOM"
+        run: bin/convert-sbom-to-cdx16 "${{ steps.meta.outputs.name }}.cdx.json"
 
       - name: Patch root component metadata
         run: |
