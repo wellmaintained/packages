@@ -40,6 +40,21 @@ for target in "${SBOM_TARGETS[@]}"; do
     fi
 
     cp -L "$sbom_file" "${SBOM_DIR}/${target}.cdx.json"
+
+    # Convert bombon's CycloneDX 1.5 output to 1.6
+    if command -v cyclonedx &>/dev/null; then
+      cyclonedx convert \
+        --input-file "${SBOM_DIR}/${target}.cdx.json" \
+        --output-file "${SBOM_DIR}/${target}.cdx.json.tmp" \
+        --input-format json \
+        --output-format json \
+        --output-version v1_6
+      mv "${SBOM_DIR}/${target}.cdx.json.tmp" "${SBOM_DIR}/${target}.cdx.json"
+      echo "  -> converted to CycloneDX 1.6"
+    else
+      echo "  WARNING: cyclonedx not found, skipping 1.6 conversion"
+    fi
+
     echo "  -> ${SBOM_DIR}/${target}.cdx.json"
 
     # Quick verification

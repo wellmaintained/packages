@@ -59,6 +59,18 @@ jobs:
           nix build .#${{ matrix.sbom_package }}
           cp -L result ${{ steps.meta.outputs.name }}.cdx.json
 
+      - name: Convert to CycloneDX 1.6
+        run: |
+          SBOM="${{ matrix.image.name }}.cdx.json"
+          nix build nixpkgs#cyclonedx-cli -o cyclonedx-cli
+          cyclonedx-cli/bin/cyclonedx convert \
+            --input-file "$SBOM" \
+            --output-file "${SBOM}.tmp" \
+            --input-format json \
+            --output-format json \
+            --output-version v1_6
+          mv "${SBOM}.tmp" "$SBOM"
+
       - name: Patch root component metadata
         run: |
           VERSION="${{ steps.meta.outputs.version }}"
