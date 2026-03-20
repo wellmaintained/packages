@@ -29,7 +29,6 @@ jobs:
           - name: postgres
           - name: redis
           - name: minio
-          - name: minio-client
           - name: sbomify-app
           - name: sbomify-keycloak
           - name: sbomify-caddy-dev

@@ -166,8 +166,6 @@
         postgresImage = import ./images/postgres.nix { inherit pkgs; };
         redisImage = import ./images/redis.nix { inherit pkgs; };
         minioImage = import ./images/minio.nix { inherit pkgs; };
-        minioClientImage = import ./images/minio-client.nix { inherit pkgs; };
-
         # uv2nix: Python virtualenv from sbomify's uv.lock
         sbomifyWorkspace = uv2nix.lib.workspace.loadWorkspace {
           workspaceRoot = sbomify-src;
@@ -247,8 +245,6 @@
           postgres-image = postgresImage;
           redis-image = redisImage;
           minio-image = minioImage;
-          minio-client-image = minioClientImage;
-
           # CycloneDX SBOMs — build with: nix build .#<name>-sbom
           # bombon needs a derivation whose Nix closure contains the actual packages
           # (not the image tar.gz, which is self-contained). symlinkJoin preserves the closure.
@@ -263,10 +259,6 @@
           minio-sbom = bombon.lib.${system}.buildBom (pkgs.symlinkJoin {
             name = "minio-closure";
             paths = [ pkgs.minio pkgs.minio-client pkgs.bashInteractive pkgs.coreutils ];
-          }) {};
-          minio-client-sbom = bombon.lib.${system}.buildBom (pkgs.symlinkJoin {
-            name = "minio-client-closure";
-            paths = [ pkgs.minio-client pkgs.bashInteractive pkgs.coreutils ];
           }) {};
           sbomify-app-sbom = bombon.lib.${system}.buildBom (pkgs.symlinkJoin {
             name = "sbomify-app-closure";
