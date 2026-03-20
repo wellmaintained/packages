@@ -20,32 +20,37 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image:
-          - name: postgres
-            sbomify_component_id: M8rixM6mMEPe
-          - name: redis
-            sbomify_component_id: ABBCcw2YiYrG
-          - name: sbomify-app
-            sbomify_component_id: VP42I4XQgpDE
-          - name: sbomify-keycloak
-            sbomify_component_id: N4agQD8pvej8
-          - name: sbomify-caddy-dev
-            sbomify_component_id: zYDq6NtrOBuo
+        sbom_package:
+          - postgres-sbom
+          - redis-sbom
+          - minio-sbom
+          - sbomify-app-sbom
+          - sbomify-keycloak-sbom
+          - sbomify-caddy-dev-sbom
+          - sbomify-minio-init-sbom
 
     steps:
       - name: Download enriched SBOM
         uses: actions/download-artifact@v4
         with:
-          name: sbom-${{ matrix.image.name }}
+          name: ${{ matrix.sbom_package }}
           path: sbom/
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ github.token }}
 
+      - name: Read image metadata
+        id: meta
+        run: |
+          META=$(cat sbom/metadata.json)
+          echo "name=$(echo "$META" | jq -r .name)" >> "$GITHUB_OUTPUT"
+          echo "sbomify_component_id=$(echo "$META" | jq -r .sbomifyComponentId)" >> "$GITHUB_OUTPUT"
+
       - name: Upload to sbomify.com
+        if: ${{ !startsWith(steps.meta.outputs.sbomify_component_id, 'PLACEHOLDER') }}
         uses: sbomify/sbomify-action@master
         env:
           TOKEN: ${{ secrets.SBOMIFY_TOKEN }}
-          COMPONENT_ID: ${{ matrix.image.sbomify_component_id }}
-          SBOM_FILE: sbom/${{ matrix.image.name }}.enriched.cdx.json
+          COMPONENT_ID: ${{ steps.meta.outputs.sbomify_component_id }}
+          SBOM_FILE: sbom/${{ steps.meta.outputs.name }}.enriched.cdx.json
           SBOM_FORMAT: cyclonedx
           UPLOAD: true

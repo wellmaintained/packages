@@ -162,10 +162,11 @@
           ];
         };
 
-        # OCI images
-        postgresImage = import ./images/postgres.nix { inherit pkgs; };
-        redisImage = import ./images/redis.nix { inherit pkgs; };
-        minioImage = import ./images/minio.nix { inherit pkgs; };
+        # OCI images — each returns { image, sbom }
+        postgres = import ./images/postgres.nix { inherit pkgs; };
+        redis = import ./images/redis.nix { inherit pkgs; };
+        minio = import ./images/minio.nix { inherit pkgs; };
+
         # uv2nix: Python virtualenv from sbomify's uv.lock
         sbomifyWorkspace = uv2nix.lib.workspace.loadWorkspace {
           workspaceRoot = sbomify-src;
@@ -212,22 +213,25 @@
           sbomifySrc = sbomify-src;
         };
 
-        sbomifyAppImage = import ./deployments/sbomify/images/sbomify-app.nix {
-          inherit pkgs sbomifyApp;
+        # Version derived from the pinned sbomify-src input's pyproject.toml
+        sbomifyVersion = (builtins.fromTOML (builtins.readFile (sbomify-src + "/pyproject.toml"))).project.version;
+
+        sbomifyAppSpec = import ./deployments/sbomify/images/sbomify-app.nix {
+          inherit pkgs sbomifyApp sbomifyVersion;
         };
 
-        sbomifyKeycloakImage = import ./deployments/sbomify/images/sbomify-keycloak.nix {
+        sbomifyKeycloakSpec = import ./deployments/sbomify/images/sbomify-keycloak.nix {
           inherit pkgs;
           sbomifySrc = sbomify-src;
         };
 
-        sbomifyCaddyDevImage = import ./deployments/sbomify/images/sbomify-caddy-dev.nix {
+        sbomifyCaddyDevSpec = import ./deployments/sbomify/images/sbomify-caddy-dev.nix {
           inherit pkgs;
           sbomifySrc = sbomify-src;
         };
 
-        sbomifyMinioInitImage = import ./deployments/sbomify/images/sbomify-minio-init.nix {
-          inherit pkgs;
+        sbomifyMinioInitSpec = import ./deployments/sbomify/images/sbomify-minio-init.nix {
+          inherit pkgs sbomifyVersion;
           sbomifySrc = sbomify-src;
         };
 
@@ -240,42 +244,28 @@
         # Export package sets for downstream consumers
         inherit packageSets;
 
-        # OCI images + SBOM derivations (built via bombon's buildBom)
-        packages = {
-          postgres-image = postgresImage;
-          redis-image = redisImage;
-          minio-image = minioImage;
+        # OCI images + SBOM derivations
+        packages = let
+          # Build a CycloneDX SBOM from a spec's { closure, metadata }
+          mkSbom = spec: (bombon.lib.${system}.buildBom spec.closure {}).overrideAttrs {
+            passthru.imageMetadata = spec.metadata;
+          };
+        in {
+          postgres-image = postgres.image;
+          redis-image = redis.image;
+          minio-image = minio.image;
+
+
           # CycloneDX SBOMs — build with: nix build .#<name>-sbom
-          # bombon needs a derivation whose Nix closure contains the actual packages
-          # (not the image tar.gz, which is self-contained). symlinkJoin preserves the closure.
-          postgres-sbom = bombon.lib.${system}.buildBom (pkgs.symlinkJoin {
-            name = "postgres-closure";
-            paths = [ pkgs.postgresql_17 pkgs.cacert pkgs.bash pkgs.coreutils ];
-          }) {};
-          redis-sbom = bombon.lib.${system}.buildBom (pkgs.symlinkJoin {
-            name = "redis-closure";
-            paths = [ pkgs.redis ];
-          }) {};
-          minio-sbom = bombon.lib.${system}.buildBom (pkgs.symlinkJoin {
-            name = "minio-closure";
-            paths = [ pkgs.minio pkgs.minio-client pkgs.bashInteractive pkgs.coreutils ];
-          }) {};
-          sbomify-app-sbom = bombon.lib.${system}.buildBom (pkgs.symlinkJoin {
-            name = "sbomify-app-closure";
-            paths = [ sbomifyApp pkgs.bashInteractive pkgs.coreutils pkgs.cacert pkgs.osv-scanner pkgs.cosign ];
-          }) {};
-          sbomify-keycloak-sbom = bombon.lib.${system}.buildBom (pkgs.symlinkJoin {
-            name = "sbomify-keycloak-closure";
-            paths = [ pkgs.keycloak pkgs.cacert pkgs.bashInteractive pkgs.coreutils pkgs.gnugrep pkgs.gnused pkgs.findutils pkgs.curl pkgs.jq ];
-          }) {};
-          sbomify-caddy-dev-sbom = bombon.lib.${system}.buildBom (pkgs.symlinkJoin {
-            name = "sbomify-caddy-dev-closure";
-            paths = [ pkgs.caddy pkgs.cacert pkgs.wget ];
-          }) {};
-          sbomify-minio-init-sbom = bombon.lib.${system}.buildBom (pkgs.symlinkJoin {
-            name = "sbomify-minio-init-closure";
-            paths = [ pkgs.minio-client pkgs.bashInteractive pkgs.coreutils ];
-          }) {};
+          # Each exposes passthru.imageMetadata so CI can: nix eval --json .#<name>-sbom.imageMetadata
+          postgres-sbom = mkSbom postgres.sbom;
+          redis-sbom = mkSbom redis.sbom;
+          minio-sbom = mkSbom minio.sbom;
+
+          sbomify-app-sbom = mkSbom sbomifyAppSpec.sbom;
+          sbomify-keycloak-sbom = mkSbom sbomifyKeycloakSpec.sbom;
+          sbomify-caddy-dev-sbom = mkSbom sbomifyCaddyDevSpec.sbom;
+          sbomify-minio-init-sbom = mkSbom sbomifyMinioInitSpec.sbom;
 
           # SBOM quality tools
           inherit sbomqs sbomlyze;
@@ -284,10 +274,10 @@
           sbomify-venv = sbomifyVenv;
           sbomify-frontend = sbomifyFrontend;
           sbomify-app = sbomifyApp;
-          sbomify-app-image = sbomifyAppImage;
-          sbomify-keycloak-image = sbomifyKeycloakImage;
-          sbomify-caddy-dev-image = sbomifyCaddyDevImage;
-          sbomify-minio-init-image = sbomifyMinioInitImage;
+          sbomify-app-image = sbomifyAppSpec.image;
+          sbomify-keycloak-image = sbomifyKeycloakSpec.image;
+          sbomify-caddy-dev-image = sbomifyCaddyDevSpec.image;
+          sbomify-minio-init-image = sbomifyMinioInitSpec.image;
         };
 
         # DevShells - ready-to-use development environments

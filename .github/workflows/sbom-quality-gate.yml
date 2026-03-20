@@ -25,14 +25,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image:
-          - name: postgres
-          - name: redis
-          - name: minio
-          - name: sbomify-app
-          - name: sbomify-keycloak
-          - name: sbomify-caddy-dev
-          - name: sbomify-minio-init
+        sbom_package:
+          - postgres-sbom
+          - redis-sbom
+          - minio-sbom
+          - sbomify-app-sbom
+          - sbomify-keycloak-sbom
+          - sbomify-caddy-dev-sbom
+          - sbomify-minio-init-sbom
 
     steps:
       - name: Checkout
@@ -51,17 +51,21 @@ jobs:
       - name: Download PR SBOM
         uses: actions/download-artifact@v4
         with:
-          name: sbom-${{ matrix.image.name }}
+          name: ${{ matrix.sbom_package }}
           path: current/
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ github.token }}
+
+      - name: Read image metadata
+        id: meta
+        run: echo "name=$(jq -r .name current/metadata.json)" >> "$GITHUB_OUTPUT"
 
       - name: Score current SBOM
         run: |
           mkdir -p results
           SBOM=$(ls current/*.cdx.json | head -1)
-          bin/sbom-score --image "${{ matrix.image.name }}" "$SBOM" \
-            > results/score-${{ matrix.image.name }}.json
+          bin/sbom-score --image "${{ steps.meta.outputs.name }}" "$SBOM" \
+            > results/score-${{ steps.meta.outputs.name }}.json
 
       - name: Fetch baseline SBOM
         id: baseline
@@ -84,7 +88,7 @@ jobs:
           fi
 
           gh run download "$RUN_ID" \
-            --name "sbom-${{ matrix.image.name }}" \
+            --name "${{ matrix.sbom_package }}" \
             --dir baseline/ || {
               echo "has_baseline=false" >> "$GITHUB_OUTPUT"
               exit 0
@@ -96,8 +100,8 @@ jobs:
         if: steps.baseline.outputs.has_baseline == 'true'
         run: |
           SBOM=$(ls baseline/*.cdx.json | head -1)
-          bin/sbom-score --image "${{ matrix.image.name }}" "$SBOM" \
-            > results/baseline-${{ matrix.image.name }}.json
+          bin/sbom-score --image "${{ steps.meta.outputs.name }}" "$SBOM" \
+            > results/baseline-${{ steps.meta.outputs.name }}.json
 
       - name: Compare SBOMs
         if: steps.baseline.outputs.has_baseline == 'true'
@@ -107,14 +111,14 @@ jobs:
           bin/sbom-compare \
             --baseline "$BASELINE" \
             --current "$CURRENT" \
-            --image "${{ matrix.image.name }}" \
+            --image "${{ steps.meta.outputs.name }}" \
             --policy .github/sbom-policy.json \
-            > results/compare-${{ matrix.image.name }}.json
+            > results/compare-${{ steps.meta.outputs.name }}.json
 
       - name: Upload results
         uses: actions/upload-artifact@v6
         with:
-          name: sbom-quality-gate-${{ matrix.image.name }}
+          name: sbom-quality-gate-${{ steps.meta.outputs.name }}
           path: results/
 
   report:

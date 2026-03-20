@@ -28,42 +28,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image:
-          - name: postgres
-            sbom_package: postgres-sbom
-            nixpkg: postgresql_17
-            license: PostgreSQL
-            sbomify_component_id: M8rixM6mMEPe
-          - name: redis
-            sbom_package: redis-sbom
-            nixpkg: redis
-            license: AGPL-3.0-only
-            sbomify_component_id: ABBCcw2YiYrG
-          - name: minio
-            sbom_package: minio-sbom
-            nixpkg: minio
-            license: AGPL-3.0-or-later
-            sbomify_component_id: PLACEHOLDER_MINIO
-          - name: sbomify-app
-            sbom_package: sbomify-app-sbom
-            nixpkg: python313
-            license: Apache-2.0
-            sbomify_component_id: VP42I4XQgpDE
-          - name: sbomify-keycloak
-            sbom_package: sbomify-keycloak-sbom
-            nixpkg: keycloak
-            license: Apache-2.0
-            sbomify_component_id: N4agQD8pvej8
-          - name: sbomify-caddy-dev
-            sbom_package: sbomify-caddy-dev-sbom
-            nixpkg: caddy
-            license: Apache-2.0
-            sbomify_component_id: zYDq6NtrOBuo
-          - name: sbomify-minio-init
-            sbom_package: sbomify-minio-init-sbom
-            nixpkg: minio-client
-            license: Apache-2.0
-            sbomify_component_id: PLACEHOLDER_SBOMIFY_MINIO_INIT
+        sbom_package:
+          - postgres-sbom
+          - redis-sbom
+          - minio-sbom
+          - sbomify-app-sbom
+          - sbomify-keycloak-sbom
+          - sbomify-caddy-dev-sbom
+          - sbomify-minio-init-sbom
 
     steps:
       - name: Checkout
@@ -72,57 +44,58 @@ jobs:
       - name: Setup Nix
         uses: ./.github/actions/setup-nix
 
-      - name: Get upstream version
-        id: version
+      - name: Get image metadata
+        id: meta
         run: |
-          if [[ "${{ matrix.image.name }}" == sbomify-* ]]; then
-            VERSION=$(grep 'github:sbomify/sbomify/' flake.nix | grep -oP '/v\K[0-9.]+')
-          else
-            VERSION=$(nix eval --raw nixpkgs#${{ matrix.image.nixpkg }}.version)
-          fi
-          echo "upstream=${VERSION}" >> "$GITHUB_OUTPUT"
+          META=$(nix eval --json .#${{ matrix.sbom_package }}.imageMetadata)
+          echo "$META" > metadata.json
+          echo "name=$(echo "$META" | jq -r .name)" >> "$GITHUB_OUTPUT"
+          echo "version=$(echo "$META" | jq -r .version)" >> "$GITHUB_OUTPUT"
+          echo "license=$(echo "$META" | jq -r .license)" >> "$GITHUB_OUTPUT"
+          echo "sbomify_component_id=$(echo "$META" | jq -r .sbomifyComponentId)" >> "$GITHUB_OUTPUT"
 
       - name: Generate SBOM
         run: |
-          nix build .#${{ matrix.image.sbom_package }}
-          cp -L result ${{ matrix.image.name }}.cdx.json
+          nix build .#${{ matrix.sbom_package }}
+          cp -L result ${{ steps.meta.outputs.name }}.cdx.json
 
       - name: Patch root component metadata
         run: |
-          VERSION="${{ steps.version.outputs.upstream }}"
-          SBOM="${{ matrix.image.name }}.cdx.json"
+          VERSION="${{ steps.meta.outputs.version }}"
+          SBOM="${{ steps.meta.outputs.name }}.cdx.json"
 
           bin/patch-sbom-root \
-            --name "wellmaintained/packages/${{ matrix.image.name }}-image" \
+            --name "wellmaintained/packages/${{ steps.meta.outputs.name }}-image" \
             --version "$VERSION" \
-            --purl "pkg:docker/wellmaintained/packages/${{ matrix.image.name }}@${VERSION}" \
-            --license "${{ matrix.image.license }}" \
+            --purl "pkg:docker/wellmaintained/packages/${{ steps.meta.outputs.name }}@${VERSION}" \
+            --license "${{ steps.meta.outputs.license }}" \
             < "$SBOM" > "${SBOM}.tmp" && mv "${SBOM}.tmp" "$SBOM"
 
       - name: Enrich SBOM
-        if: ${{ !startsWith(matrix.image.sbomify_component_id, 'PLACEHOLDER') }}
         uses: sbomify/sbomify-action@master
         continue-on-error: true
         env:
           TOKEN: ${{ secrets.SBOMIFY_TOKEN }}
-          COMPONENT_ID: ${{ matrix.image.sbomify_component_id }}
-          COMPONENT_NAME: ${{ matrix.image.name }}
-          COMPONENT_VERSION: ${{ steps.version.outputs.upstream }}
-          SBOM_FILE: ${{ matrix.image.name }}.cdx.json
+          COMPONENT_ID: ${{ steps.meta.outputs.sbomify_component_id }}
+          COMPONENT_NAME: ${{ steps.meta.outputs.name }}
+          COMPONENT_VERSION: ${{ steps.meta.outputs.version }}
+          SBOM_FILE: ${{ steps.meta.outputs.name }}.cdx.json
           SBOM_FORMAT: cyclonedx
           AUGMENT: true
           ENRICH: true
           UPLOAD: false
-          OUTPUT_FILE: ${{ matrix.image.name }}.enriched.cdx.json
+          OUTPUT_FILE: ${{ steps.meta.outputs.name }}.enriched.cdx.json
 
       - name: Fall back to raw SBOM if enrichment skipped
         run: |
-          if [ ! -f "${{ matrix.image.name }}.enriched.cdx.json" ]; then
-            cp "${{ matrix.image.name }}.cdx.json" "${{ matrix.image.name }}.enriched.cdx.json"
+          if [ ! -f "${{ steps.meta.outputs.name }}.enriched.cdx.json" ]; then
+            cp "${{ steps.meta.outputs.name }}.cdx.json" "${{ steps.meta.outputs.name }}.enriched.cdx.json"
           fi
 
       - name: Upload enriched SBOM
         uses: actions/upload-artifact@v6
         with:
-          name: sbom-${{ matrix.image.name }}
-          path: ${{ matrix.image.name }}.enriched.cdx.json
+          name: ${{ matrix.sbom_package }}
+          path: |
+            ${{ steps.meta.outputs.name }}.enriched.cdx.json
+            metadata.json
