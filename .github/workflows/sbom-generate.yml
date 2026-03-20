@@ -61,7 +61,7 @@ jobs:
 
       - name: Convert to CycloneDX 1.6
         run: |
-          SBOM="${{ matrix.image.name }}.cdx.json"
+          SBOM="${{ steps.meta.outputs.name }}.cdx.json"
           nix build nixpkgs#cyclonedx-cli -o cyclonedx-cli
           cyclonedx-cli/bin/cyclonedx convert \
             --input-file "$SBOM" \
