@@ -65,48 +65,63 @@ let
   '';
 in
 
-pkgs.dockerTools.buildLayeredImage {
-  name = "postgres";
-  tag = "latest";
+{
+  image = pkgs.dockerTools.buildLayeredImage {
+    name = "postgres";
+    tag = "dev";
 
-  contents = [
-    pkgs.postgresql_17
-    pkgs.cacert
-    pkgs.bash
-    pkgs.coreutils
-  ];
-
-  # Create directories, /etc files, and set ownership
-  fakeRootCommands = ''
-    mkdir -p etc
-    echo -e "${passwdContent}" > etc/passwd
-    echo -e "${groupContent}" > etc/group
-    echo -e "${nsswitchContent}" > etc/nsswitch.conf
-    mkdir -p var/lib/postgresql/data
-    chown -R ${postgresUid}:${postgresGid} var/lib/postgresql
-    mkdir -p run/postgresql
-    chown ${postgresUid}:${postgresGid} run/postgresql
-    mkdir -p root
-    mkdir -p tmp
-    chmod 1777 tmp
-  '';
-
-  config = {
-    Labels = {
-      "org.opencontainers.image.source" = "https://github.com/wellmaintained/packages";
-      "org.opencontainers.image.description" = "PostgreSQL 17 database — Nix-built minimal OCI image";
-      "org.opencontainers.image.licenses" = "PostgreSQL";
-      "org.opencontainers.image.vendor" = "wellmaintained";
-      "org.opencontainers.image.title" = "PostgreSQL";
-      "org.opencontainers.image.version" = pkgs.postgresql_17.version;
-    };
-    Entrypoint = [ "${entrypoint}" ];
-    ExposedPorts = {
-      "5432/tcp" = {};
-    };
-    Env = [
-      "PGDATA=/var/lib/postgresql/data"
+    contents = [
+      pkgs.postgresql_17
+      pkgs.cacert
+      pkgs.bash
+      pkgs.coreutils
     ];
-    User = "${postgresUid}:${postgresGid}";
+
+    # Create directories, /etc files, and set ownership
+    fakeRootCommands = ''
+      mkdir -p etc
+      echo -e "${passwdContent}" > etc/passwd
+      echo -e "${groupContent}" > etc/group
+      echo -e "${nsswitchContent}" > etc/nsswitch.conf
+      mkdir -p var/lib/postgresql/data
+      chown -R ${postgresUid}:${postgresGid} var/lib/postgresql
+      mkdir -p run/postgresql
+      chown ${postgresUid}:${postgresGid} run/postgresql
+      mkdir -p root
+      mkdir -p tmp
+      chmod 1777 tmp
+    '';
+
+    config = {
+      Labels = {
+        "org.opencontainers.image.source" = "https://github.com/wellmaintained/packages";
+        "org.opencontainers.image.description" = "PostgreSQL 17 database — Nix-built minimal OCI image";
+        "org.opencontainers.image.licenses" = "PostgreSQL";
+        "org.opencontainers.image.vendor" = "wellmaintained";
+        "org.opencontainers.image.title" = "PostgreSQL";
+        "org.opencontainers.image.version" = pkgs.postgresql_17.version;
+      };
+      Entrypoint = [ "${entrypoint}" ];
+      ExposedPorts = {
+        "5432/tcp" = {};
+      };
+      Env = [
+        "PGDATA=/var/lib/postgresql/data"
+      ];
+      User = "${postgresUid}:${postgresGid}";
+    };
+  };
+
+  sbom = {
+    closure = pkgs.symlinkJoin {
+      name = "postgres-closure";
+      paths = [ pkgs.postgresql_17 pkgs.cacert pkgs.bash pkgs.coreutils ];
+    };
+    metadata = {
+      name = "postgres";
+      version = pkgs.postgresql_17.version;
+      license = pkgs.postgresql_17.meta.license.spdxId;
+      sbomifyComponentId = "M8rixM6mMEPe";
+    };
   };
 }
