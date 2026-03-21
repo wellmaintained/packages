@@ -36,15 +36,18 @@
       url = "github:sbomify/sbomify/v0.27.0";
       flake = false;
     };
+    nix-cyclonedx-inator = {
+      url = "path:./nix-cyclonedx-inator";
+    };
   };
 
-  outputs = { self, nixpkgs, flake-utils, bombon, pyproject-nix, uv2nix, pyproject-build-systems, uv2nix-hammer-overrides, bun2nix, sbomify-src }:
+  outputs = { self, nixpkgs, flake-utils, bombon, pyproject-nix, uv2nix, pyproject-build-systems, uv2nix-hammer-overrides, bun2nix, sbomify-src, nix-cyclonedx-inator }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs {
           inherit system;
           config.allowUnfree = false;
-          overlays = [ bun2nix.overlays.default ];
+          overlays = [ bun2nix.overlays.default nix-cyclonedx-inator.overlays.default ];
         };
 
         # Shared Python dev tools (version-agnostic); pass pythonXXXPackages as argument
@@ -239,6 +242,28 @@
         sbomqs = import ./pkgs/sbomqs { inherit pkgs; };
         sbomlyze = import ./pkgs/sbomlyze { inherit pkgs; };
 
+        # CycloneDX 1.7 SBOM targets — wrap with withSbomAll to add .sbom-cyclonedx-1-7 passthru
+        sbomTargets = {
+          minio = pkgs.minio;
+          minio-client = pkgs.minio-client;
+          postgres = pkgs.postgresql_17;
+          redis = pkgs.redis;
+          sbomify-app = sbomifyApp;
+          sbomify-keycloak = pkgs.symlinkJoin {
+            name = "sbomify-keycloak-closure";
+            paths = [ pkgs.keycloak pkgs.cacert pkgs.bashInteractive pkgs.coreutils pkgs.gnugrep pkgs.gnused pkgs.findutils pkgs.curl pkgs.jq ];
+          };
+          sbomify-caddy-dev = pkgs.symlinkJoin {
+            name = "sbomify-caddy-dev-closure";
+            paths = [ pkgs.caddy pkgs.cacert pkgs.wget ];
+          };
+          sbomify-minio-init = pkgs.symlinkJoin {
+            name = "sbomify-minio-init-closure";
+            paths = [ pkgs.minio-client pkgs.bashInteractive pkgs.coreutils ];
+          };
+        };
+        wrappedPackages = pkgs.withSbomAll sbomTargets (builtins.attrNames sbomTargets);
+
       in
       {
         # Export package sets for downstream consumers
@@ -254,7 +279,6 @@
           postgres-image = postgres.image;
           redis-image = redis.image;
           minio-image = minio.image;
-
 
           # CycloneDX SBOMs — build with: nix build .#<name>-sbom
           # Each exposes passthru.imageMetadata so CI can: nix eval --json .#<name>-sbom.imageMetadata

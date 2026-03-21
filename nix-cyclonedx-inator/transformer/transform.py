@@ -230,8 +230,13 @@ def build_bom(
     buildtime: list[dict],
     runtime: list[str],
     root_name: str,
+    references: dict[str, dict] | None = None,
 ) -> Bom:
-    """Build a CycloneDX 1.7 BOM from Nix metadata."""
+    """Build a CycloneDX 1.7 BOM from Nix metadata.
+
+    If references is provided (from nix path-info --recursive), use it for
+    runtime reference edges. Otherwise fall back to buildtime dependency edges.
+    """
     bom = Bom()
 
     # Tool metadata
@@ -263,21 +268,34 @@ def build_bom(
             path_to_bom_ref[store_path] = component.bom_ref
             components_by_path[store_path] = component
 
-    # Build the dependency graph from buildtime edge data.
-    # Index buildtime deps by path for edge lookup.
-    bt_by_path = {dep["path"]: dep for dep in buildtime if "path" in dep}
-
     root_dep = Dependency(ref=bom.metadata.component.bom_ref)
-    for store_path, bom_ref in path_to_bom_ref.items():
-        dep_node = Dependency(ref=bom_ref)
-        bt_entry = bt_by_path.get(store_path, {})
-        for child_path in bt_entry.get("dependencies", []):
-            if child_path in path_to_bom_ref:
-                dep_node.dependencies.add(
-                    Dependency(ref=path_to_bom_ref[child_path])
-                )
-        bom.dependencies.add(dep_node)
-        root_dep.dependencies.add(Dependency(ref=bom_ref))
+
+    if references:
+        # Use runtime reference edges from nix path-info
+        for store_path, bom_ref in path_to_bom_ref.items():
+            dep_node = Dependency(ref=bom_ref)
+            ref_entry = references.get(store_path, {})
+            for ref_path in ref_entry.get("references", []):
+                if ref_path in path_to_bom_ref and ref_path != store_path:
+                    dep_node.dependencies.add(
+                        Dependency(ref=path_to_bom_ref[ref_path])
+                    )
+            bom.dependencies.add(dep_node)
+            root_dep.dependencies.add(Dependency(ref=bom_ref))
+    else:
+        # Fall back to buildtime dependency edges
+        bt_by_path = {dep["path"]: dep for dep in buildtime if "path" in dep}
+
+        for store_path, bom_ref in path_to_bom_ref.items():
+            dep_node = Dependency(ref=bom_ref)
+            bt_entry = bt_by_path.get(store_path, {})
+            for child_path in bt_entry.get("dependencies", []):
+                if child_path in path_to_bom_ref:
+                    dep_node.dependencies.add(
+                        Dependency(ref=path_to_bom_ref[child_path])
+                    )
+            bom.dependencies.add(dep_node)
+            root_dep.dependencies.add(Dependency(ref=bom_ref))
 
     bom.dependencies.add(root_dep)
 
@@ -288,6 +306,7 @@ def transform(
     buildtime_path: str,
     runtime_path: str,
     root_name: str,
+    references_path: str | None = None,
 ) -> str:
     """Main transform: read JSON files, produce CycloneDX 1.7 JSON string."""
     with open(buildtime_path) as f:
@@ -296,7 +315,12 @@ def transform(
     with open(runtime_path) as f:
         runtime = json.load(f)
 
-    bom = build_bom(buildtime, runtime, root_name)
+    references = None
+    if references_path:
+        with open(references_path) as f:
+            references = json.load(f)
+
+    bom = build_bom(buildtime, runtime, root_name, references)
 
     outputter = JsonV1Dot7(bom)
     return outputter.output_as_string()
@@ -322,13 +346,17 @@ def main():
         help="Name of the root component (e.g. my-app-closure)",
     )
     parser.add_argument(
+        "--references",
+        help="Path to runtime-reference-graph.json (from nix path-info)",
+    )
+    parser.add_argument(
         "--output",
         "-o",
         help="Output file path (default: stdout)",
     )
 
     args = parser.parse_args()
-    result = transform(args.buildtime, args.runtime, args.name)
+    result = transform(args.buildtime, args.runtime, args.name, args.references)
 
     # Pretty-print the JSON
     formatted = json.dumps(json.loads(result), indent=2)

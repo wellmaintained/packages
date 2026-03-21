@@ -283,6 +283,62 @@ class TestBuildBom:
         libunistring_deps = deps_by_ref.get(libunistring_comp["bom-ref"], [])
         assert libunistring_deps == []
 
+    def test_dependency_graph_with_references(self):
+        """When references are provided, use runtime edges instead of buildtime."""
+        references = {
+            "/nix/store/1xakvg5jqmaiawwk0n1sbhvsvrdya512-libunistring-1.4.1": {
+                "references": []
+            },
+            "/nix/store/abc12345678901234567890123456789-bash-5.2p26": {
+                "references": [
+                    "/nix/store/1xakvg5jqmaiawwk0n1sbhvsvrdya512-libunistring-1.4.1"
+                ]
+            },
+            "/nix/store/def12345678901234567890123456789-unknown-runtime-2.0": {
+                "references": [
+                    "/nix/store/abc12345678901234567890123456789-bash-5.2p26"
+                ]
+            },
+        }
+        bom = build_bom(SAMPLE_BUILDTIME, SAMPLE_RUNTIME, "test-closure", references)
+        from cyclonedx.output.json import JsonV1Dot7
+
+        outputter = JsonV1Dot7(bom)
+        output = json.loads(outputter.output_as_string())
+
+        deps_by_ref = {d["ref"]: d.get("dependsOn", []) for d in output["dependencies"]}
+
+        # unknown-runtime -> bash (runtime edge, not present in buildtime data)
+        unknown_comp = next(c for c in output["components"] if c["name"] == "unknown-runtime")
+        bash_comp = next(c for c in output["components"] if c["name"] == "bash")
+        unknown_deps = deps_by_ref.get(unknown_comp["bom-ref"], [])
+        assert bash_comp["bom-ref"] in unknown_deps
+
+        # bash -> libunistring (runtime edge)
+        libunistring_comp = next(c for c in output["components"] if c["name"] == "libunistring")
+        bash_deps = deps_by_ref.get(bash_comp["bom-ref"], [])
+        assert libunistring_comp["bom-ref"] in bash_deps
+
+        # libunistring is a leaf
+        libunistring_deps = deps_by_ref.get(libunistring_comp["bom-ref"], [])
+        assert libunistring_deps == []
+
+    def test_dependency_graph_without_references_backwards_compat(self):
+        """Without references, falls back to buildtime edges (backwards compat)."""
+        bom = build_bom(SAMPLE_BUILDTIME, SAMPLE_RUNTIME, "test-closure")
+        from cyclonedx.output.json import JsonV1Dot7
+
+        outputter = JsonV1Dot7(bom)
+        output = json.loads(outputter.output_as_string())
+
+        deps_by_ref = {d["ref"]: d.get("dependsOn", []) for d in output["dependencies"]}
+
+        # bash -> libunistring still works via buildtime edges
+        bash_comp = next(c for c in output["components"] if c["name"] == "bash")
+        libunistring_comp = next(c for c in output["components"] if c["name"] == "libunistring")
+        bash_deps = deps_by_ref.get(bash_comp["bom-ref"], [])
+        assert libunistring_comp["bom-ref"] in bash_deps
+
     def test_components_have_required_fields(self):
         bom = build_bom(SAMPLE_BUILDTIME, SAMPLE_RUNTIME, "test-closure")
         from cyclonedx.output.json import JsonV1Dot7
@@ -339,6 +395,73 @@ class TestTransformEndToEnd:
         finally:
             os.unlink(bt_path)
             os.unlink(rt_path)
+
+    def test_roundtrip_with_references(self):
+        """End-to-end test with runtime reference graph edges."""
+        references = {
+            "/nix/store/1xakvg5jqmaiawwk0n1sbhvsvrdya512-libunistring-1.4.1": {
+                "references": []
+            },
+            "/nix/store/abc12345678901234567890123456789-bash-5.2p26": {
+                "references": [
+                    "/nix/store/1xakvg5jqmaiawwk0n1sbhvsvrdya512-libunistring-1.4.1"
+                ]
+            },
+            "/nix/store/def12345678901234567890123456789-unknown-runtime-2.0": {
+                "references": [
+                    "/nix/store/abc12345678901234567890123456789-bash-5.2p26"
+                ]
+            },
+        }
+
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".json", delete=False
+        ) as bt:
+            json.dump(SAMPLE_BUILDTIME, bt)
+            bt_path = bt.name
+
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".json", delete=False
+        ) as rt:
+            json.dump(SAMPLE_RUNTIME, rt)
+            rt_path = rt.name
+
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".json", delete=False
+        ) as rf:
+            json.dump(references, rf)
+            rf_path = rf.name
+
+        try:
+            result = transform(bt_path, rt_path, "test-app-closure", rf_path)
+            output = json.loads(result)
+
+            deps_by_ref = {
+                d["ref"]: d.get("dependsOn", []) for d in output["dependencies"]
+            }
+
+            # bash depends on libunistring via runtime reference
+            bash_comp = next(c for c in output["components"] if c["name"] == "bash")
+            libunistring_comp = next(
+                c for c in output["components"] if c["name"] == "libunistring"
+            )
+            bash_deps = deps_by_ref.get(bash_comp["bom-ref"], [])
+            assert libunistring_comp["bom-ref"] in bash_deps
+
+            # unknown-runtime depends on bash via runtime reference
+            unknown_comp = next(
+                c for c in output["components"] if c["name"] == "unknown-runtime"
+            )
+            unknown_deps = deps_by_ref.get(unknown_comp["bom-ref"], [])
+            assert bash_comp["bom-ref"] in unknown_deps
+
+            # libunistring is a leaf
+            libunistring_deps = deps_by_ref.get(libunistring_comp["bom-ref"], [])
+            assert libunistring_deps == []
+        finally:
+            os.unlink(bt_path)
+            os.unlink(rt_path)
+            os.unlink(rf_path)
 
     def test_empty_inputs(self):
         with tempfile.NamedTemporaryFile(

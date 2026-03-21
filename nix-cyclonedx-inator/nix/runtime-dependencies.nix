@@ -1,7 +1,7 @@
 # runtime-dependencies.nix
 #
-# Produces a newline-separated list of store paths in the runtime
-# closure of a derivation, using nixpkgs' closureInfo.
+# Produces a JSON array of store path strings in the runtime closure
+# of a derivation, using nixpkgs' closureInfo.
 #
 # These are the store paths that actually ship at runtime — a subset
 # of the full buildtime dependency graph. The Python transformer
@@ -11,9 +11,14 @@
 {
   runCommand,
   closureInfo,
+  jq,
 }:
 
 drv: extraPaths:
-runCommand "${drv.name}-runtime-dependencies.txt" { } ''
-  cat ${closureInfo { rootPaths = [ drv ] ++ extraPaths; }}/store-paths > $out
+let
+  closure = closureInfo { rootPaths = [ drv ] ++ extraPaths; };
+in
+runCommand "${drv.name}-runtime-dependencies.json" { } ''
+  ${jq}/bin/jq -R -s '[split("\n") | .[] | select(length > 0)]' \
+    < ${closure}/store-paths > $out
 ''
