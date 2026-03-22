@@ -300,20 +300,20 @@ class TestBuildBom:
         tool_names = {t.name for t in bom.metadata.tools.components}
         assert "nix-cyclonedx-inator" in tool_names
 
-    def test_spec_version_is_1_7(self):
+    def test_spec_version_is_1_6(self):
         bom = build_bom(SAMPLE_BUILDTIME, SAMPLE_RUNTIME, "test-closure")
-        from cyclonedx.output.json import JsonV1Dot7
+        from cyclonedx.output.json import JsonV1Dot6
 
-        outputter = JsonV1Dot7(bom)
+        outputter = JsonV1Dot6(bom)
         output = json.loads(outputter.output_as_string())
-        assert output["specVersion"] == "1.7"
+        assert output["specVersion"] == "1.6"
         assert output["bomFormat"] == "CycloneDX"
 
     def test_dependency_graph(self):
         bom = build_bom(SAMPLE_BUILDTIME, SAMPLE_RUNTIME, "test-closure")
-        from cyclonedx.output.json import JsonV1Dot7
+        from cyclonedx.output.json import JsonV1Dot6
 
-        outputter = JsonV1Dot7(bom)
+        outputter = JsonV1Dot6(bom)
         output = json.loads(outputter.output_as_string())
 
         deps_by_ref = {d["ref"]: d.get("dependsOn", []) for d in output["dependencies"]}
@@ -351,9 +351,9 @@ class TestBuildBom:
             },
         }
         bom = build_bom(SAMPLE_BUILDTIME, SAMPLE_RUNTIME, "test-closure", references)
-        from cyclonedx.output.json import JsonV1Dot7
+        from cyclonedx.output.json import JsonV1Dot6
 
-        outputter = JsonV1Dot7(bom)
+        outputter = JsonV1Dot6(bom)
         output = json.loads(outputter.output_as_string())
 
         deps_by_ref = {d["ref"]: d.get("dependsOn", []) for d in output["dependencies"]}
@@ -376,9 +376,9 @@ class TestBuildBom:
     def test_dependency_graph_without_references_backwards_compat(self):
         """Without references, falls back to buildtime edges (backwards compat)."""
         bom = build_bom(SAMPLE_BUILDTIME, SAMPLE_RUNTIME, "test-closure")
-        from cyclonedx.output.json import JsonV1Dot7
+        from cyclonedx.output.json import JsonV1Dot6
 
-        outputter = JsonV1Dot7(bom)
+        outputter = JsonV1Dot6(bom)
         output = json.loads(outputter.output_as_string())
 
         deps_by_ref = {d["ref"]: d.get("dependsOn", []) for d in output["dependencies"]}
@@ -391,9 +391,9 @@ class TestBuildBom:
 
     def test_components_have_required_fields(self):
         bom = build_bom(SAMPLE_BUILDTIME, SAMPLE_RUNTIME, "test-closure")
-        from cyclonedx.output.json import JsonV1Dot7
+        from cyclonedx.output.json import JsonV1Dot6
 
-        outputter = JsonV1Dot7(bom)
+        outputter = JsonV1Dot6(bom)
         output = json.loads(outputter.output_as_string())
 
         for comp in output["components"]:
@@ -428,7 +428,7 @@ class TestTransformEndToEnd:
             result = transform(bt_path, rt_path, "test-app-closure")
             output = json.loads(result)
 
-            assert output["specVersion"] == "1.7"
+            assert output["specVersion"] == "1.6"
             assert output["bomFormat"] == "CycloneDX"
             assert output["metadata"]["component"]["name"] == "test-app-closure"
             assert len(output["components"]) == 3  # libunistring, bash, unknown-runtime
@@ -529,7 +529,7 @@ class TestTransformEndToEnd:
         try:
             result = transform(bt_path, rt_path, "empty-closure")
             output = json.loads(result)
-            assert output["specVersion"] == "1.7"
+            assert output["specVersion"] == "1.6"
             assert output.get("components", []) == []
         finally:
             os.unlink(bt_path)

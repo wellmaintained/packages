@@ -1,8 +1,8 @@
-"""Transform Nix metadata JSON into CycloneDX 1.7 SBOM.
+"""Transform Nix metadata JSON into CycloneDX 1.6 SBOM.
 
 Reads buildtime-dependencies.json and runtime-dependencies.json produced by
 the Nix metadata extraction phase, joins them, and outputs a valid CycloneDX
-1.7 JSON document.
+1.6 JSON document.
 
 Usage:
     python transform.py --buildtime buildtime-dependencies.json \
@@ -28,7 +28,7 @@ from cyclonedx.model.bom import Bom
 from cyclonedx.model.component import Component, ComponentScope, ComponentType
 from cyclonedx.model.dependency import Dependency
 from cyclonedx.model.license import DisjunctiveLicense
-from cyclonedx.output.json import JsonV1Dot7
+from cyclonedx.output.json import JsonV1Dot6
 from packageurl import PackageURL
 
 TOOL_NAME = "nix-cyclonedx-inator"
@@ -249,7 +249,7 @@ def build_bom(
     root_name: str,
     references: dict[str, dict] | None = None,
 ) -> Bom:
-    """Build a CycloneDX 1.7 BOM from Nix metadata.
+    """Build a CycloneDX 1.6 BOM from Nix metadata.
 
     If references is provided (from nix path-info --recursive), use it for
     runtime reference edges. Otherwise fall back to buildtime dependency edges.
@@ -325,7 +325,7 @@ def transform(
     root_name: str,
     references_path: str | None = None,
 ) -> str:
-    """Main transform: read JSON files, produce CycloneDX 1.7 JSON string."""
+    """Main transform: read JSON files, produce CycloneDX 1.6 JSON string."""
     with open(buildtime_path) as f:
         buildtime = json.load(f)
 
@@ -339,13 +339,13 @@ def transform(
 
     bom = build_bom(buildtime, runtime, root_name, references)
 
-    outputter = JsonV1Dot7(bom)
+    outputter = JsonV1Dot6(bom)
     return outputter.output_as_string()
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Transform Nix metadata JSON into CycloneDX 1.7 SBOM"
+        description="Transform Nix metadata JSON into CycloneDX 1.6 SBOM"
     )
     parser.add_argument(
         "--buildtime",
