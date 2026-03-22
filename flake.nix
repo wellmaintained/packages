@@ -5,10 +5,6 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     flake-utils.url = "github:numtide/flake-utils";
-    bombon = {
-      url = "github:nikstur/bombon";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     pyproject-nix = {
       url = "github:pyproject-nix/pyproject.nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -41,7 +37,7 @@
     };
   };
 
-  outputs = { self, nixpkgs, flake-utils, bombon, pyproject-nix, uv2nix, pyproject-build-systems, uv2nix-hammer-overrides, bun2nix, sbomify-src, nix-cyclonedx-inator }:
+  outputs = { self, nixpkgs, flake-utils, pyproject-nix, uv2nix, pyproject-build-systems, uv2nix-hammer-overrides, bun2nix, sbomify-src, nix-cyclonedx-inator }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs {
@@ -242,27 +238,17 @@
         sbomqs = import ./pkgs/sbomqs { inherit pkgs; };
         sbomlyze = import ./pkgs/sbomlyze { inherit pkgs; };
 
-        # CycloneDX 1.7 SBOM targets — wrap with withSbomAll to add .sbom-cyclonedx-1-7 passthru
-        sbomTargets = {
-          minio = pkgs.minio;
-          minio-client = pkgs.minio-client;
-          postgres = pkgs.postgresql_17;
-          redis = pkgs.redis;
-          sbomify-app = sbomifyApp;
-          sbomify-keycloak = pkgs.symlinkJoin {
-            name = "sbomify-keycloak-closure";
-            paths = [ pkgs.keycloak pkgs.cacert pkgs.bashInteractive pkgs.coreutils pkgs.gnugrep pkgs.gnused pkgs.findutils pkgs.curl pkgs.jq ];
-          };
-          sbomify-caddy-dev = pkgs.symlinkJoin {
-            name = "sbomify-caddy-dev-closure";
-            paths = [ pkgs.caddy pkgs.cacert pkgs.wget ];
-          };
-          sbomify-minio-init = pkgs.symlinkJoin {
-            name = "sbomify-minio-init-closure";
-            paths = [ pkgs.minio-client pkgs.bashInteractive pkgs.coreutils ];
-          };
+        # CycloneDX 1.7 SBOM targets from image specs — wrap with withSbomAll to add .sbom-cyclonedx-1-7 passthru
+        sbomOnlyTargets = {
+          postgres = postgres.sbom.closure;
+          redis = redis.sbom.closure;
+          minio = minio.sbom.closure;
+          sbomify-app = sbomifyAppSpec.sbom.closure;
+          sbomify-keycloak = sbomifyKeycloakSpec.sbom.closure;
+          sbomify-caddy-dev = sbomifyCaddyDevSpec.sbom.closure;
+          sbomify-minio-init = sbomifyMinioInitSpec.sbom.closure;
         };
-        wrappedPackages = pkgs.withSbomAll sbomTargets (builtins.attrNames sbomTargets);
+        sbomOnlyWrapped = pkgs.withSbomAll sbomOnlyTargets (builtins.attrNames sbomOnlyTargets);
 
       in
       {
@@ -270,26 +256,35 @@
         inherit packageSets;
 
         # OCI images + SBOM derivations
-        packages = let
-          # Build a CycloneDX SBOM from a spec's { closure, metadata }
-          mkSbom = spec: (bombon.lib.${system}.buildBom spec.closure {}).overrideAttrs {
-            passthru.imageMetadata = spec.metadata;
-          };
-        in {
+        packages = {
           postgres-image = postgres.image;
           redis-image = redis.image;
           minio-image = minio.image;
 
-          # CycloneDX SBOMs — build with: nix build .#<name>-sbom
+          # CycloneDX 1.7 SBOMs — build with: nix build .#<name>-sbom
           # Each exposes passthru.imageMetadata so CI can: nix eval --json .#<name>-sbom.imageMetadata
-          postgres-sbom = mkSbom postgres.sbom;
-          redis-sbom = mkSbom redis.sbom;
-          minio-sbom = mkSbom minio.sbom;
+          postgres-sbom = sbomOnlyWrapped.postgres.sbom-cyclonedx-1-7.overrideAttrs {
+            passthru.imageMetadata = postgres.sbom.metadata;
+          };
+          redis-sbom = sbomOnlyWrapped.redis.sbom-cyclonedx-1-7.overrideAttrs {
+            passthru.imageMetadata = redis.sbom.metadata;
+          };
+          minio-sbom = sbomOnlyWrapped.minio.sbom-cyclonedx-1-7.overrideAttrs {
+            passthru.imageMetadata = minio.sbom.metadata;
+          };
 
-          sbomify-app-sbom = mkSbom sbomifyAppSpec.sbom;
-          sbomify-keycloak-sbom = mkSbom sbomifyKeycloakSpec.sbom;
-          sbomify-caddy-dev-sbom = mkSbom sbomifyCaddyDevSpec.sbom;
-          sbomify-minio-init-sbom = mkSbom sbomifyMinioInitSpec.sbom;
+          sbomify-app-sbom = sbomOnlyWrapped.sbomify-app.sbom-cyclonedx-1-7.overrideAttrs {
+            passthru.imageMetadata = sbomifyAppSpec.sbom.metadata;
+          };
+          sbomify-keycloak-sbom = sbomOnlyWrapped.sbomify-keycloak.sbom-cyclonedx-1-7.overrideAttrs {
+            passthru.imageMetadata = sbomifyKeycloakSpec.sbom.metadata;
+          };
+          sbomify-caddy-dev-sbom = sbomOnlyWrapped.sbomify-caddy-dev.sbom-cyclonedx-1-7.overrideAttrs {
+            passthru.imageMetadata = sbomifyCaddyDevSpec.sbom.metadata;
+          };
+          sbomify-minio-init-sbom = sbomOnlyWrapped.sbomify-minio-init.sbom-cyclonedx-1-7.overrideAttrs {
+            passthru.imageMetadata = sbomifyMinioInitSpec.sbom.metadata;
+          };
 
           # SBOM quality tools
           inherit sbomqs sbomlyze;
