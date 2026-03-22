@@ -88,6 +88,7 @@ let
       // lib.optionalAttrs (licenses != null) { license = licenses; }
       // lib.optionalAttrs (meta ? homepage) { homepage = meta.homepage; }
       // lib.optionalAttrs (meta ? description) { description = meta.description; }
+      // lib.optionalAttrs (meta ? identifiers) { identifiers = meta.identifiers; }
     );
 
   # Serialize patches to store paths or string paths.

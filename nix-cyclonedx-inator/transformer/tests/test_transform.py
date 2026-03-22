@@ -14,6 +14,7 @@ from transform import (
     build_component,
     extract_external_references,
     extract_licenses,
+    generate_cpe,
     join_dependencies,
     make_bom_ref,
     parse_store_path,
@@ -34,6 +35,9 @@ SAMPLE_BUILDTIME = [
             "description": "Unicode string library",
             "homepage": "https://www.gnu.org/software/libunistring/",
             "license": [{"spdxId": "LGPL-3.0-or-later"}],
+            "identifiers": {
+                "cpe": "cpe:2.3:a:gnu:libunistring:1.4.1:*:*:*:*:*:*:*",
+            },
         },
         "src": {
             "urls": [
@@ -265,6 +269,62 @@ class TestExtractExternalReferences:
         assert len(refs) == 0
 
 
+# -- generate_cpe tests --
+
+
+class TestGenerateCpe:
+    def test_preformatted_cpe_string(self):
+        dep = {
+            "meta": {
+                "identifiers": {
+                    "cpe": "cpe:2.3:a:gnu:libunistring:1.4.1:*:*:*:*:*:*:*",
+                },
+            },
+        }
+        assert generate_cpe(dep) == "cpe:2.3:a:gnu:libunistring:1.4.1:*:*:*:*:*:*:*"
+
+    def test_cpe_parts_with_vendor(self):
+        dep = {
+            "pname": "openssl",
+            "version": "3.1.4",
+            "meta": {
+                "identifiers": {
+                    "cpeParts": {
+                        "product": "openssl",
+                        "vendor": "openssl",
+                    },
+                },
+            },
+        }
+        assert generate_cpe(dep) == "cpe:2.3:a:openssl:openssl:3.1.4:*:*:*:*:*:*:*"
+
+    def test_cpe_parts_without_vendor(self):
+        dep = {
+            "pname": "curl",
+            "version": "8.5.0",
+            "meta": {
+                "identifiers": {
+                    "cpeParts": {
+                        "product": "curl",
+                    },
+                },
+            },
+        }
+        assert generate_cpe(dep) == "cpe:2.3:a:curl:curl:8.5.0:*:*:*:*:*:*:*"
+
+    def test_no_identifiers(self):
+        dep = {
+            "pname": "somepkg",
+            "version": "1.0",
+            "meta": {},
+        }
+        assert generate_cpe(dep) is None
+
+    def test_no_meta(self):
+        dep = {"pname": "somepkg", "version": "1.0"}
+        assert generate_cpe(dep) is None
+
+
 # -- build_component tests --
 
 
@@ -278,6 +338,7 @@ class TestBuildComponent:
         assert comp.description == "Unicode string library"
         assert len(comp.licenses) == 1
         assert len(comp.external_references) == 2  # source + homepage
+        assert comp.cpe == "cpe:2.3:a:gnu:libunistring:1.4.1:*:*:*:*:*:*:*"
 
     def test_minimal_component(self):
         dep = {"name": "simple", "version": "1.0", "storePath": "/nix/store/aaa-simple-1.0"}

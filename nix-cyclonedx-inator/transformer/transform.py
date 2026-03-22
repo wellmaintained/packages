@@ -208,6 +208,36 @@ def extract_external_references(
     return refs
 
 
+def generate_cpe(dep: dict) -> str | None:
+    """Generate a CPE 2.3 string from Nix package identifiers.
+
+    Strategy 1: Use preformatted identifiers.cpe string if available.
+    Strategy 2: Build from cpeParts (product required, vendor defaults to product).
+    Returns None if no CPE data available.
+    """
+    meta = dep.get("meta", {})
+    identifiers = meta.get("identifiers")
+    if not identifiers:
+        return None
+
+    # Strategy 1: preformatted CPE string
+    cpe = identifiers.get("cpe")
+    if cpe:
+        return cpe
+
+    # Strategy 2: build from cpeParts
+    cpe_parts = identifiers.get("cpeParts")
+    if cpe_parts:
+        product = cpe_parts.get("product")
+        if not product:
+            return None
+        vendor = cpe_parts.get("vendor", product)
+        version = dep.get("version", "*")
+        return f"cpe:2.3:a:{vendor}:{product}:{version}:*:*:*:*:*:*:*"
+
+    return None
+
+
 def build_component(dep: dict) -> Component:
     """Build a CycloneDX Component from a joined dependency entry."""
     name = dep.get("pname") or dep.get("name", "unknown")
@@ -218,6 +248,8 @@ def build_component(dep: dict) -> Component:
     purl = PackageURL(type="nix", name=name, version=version or None)
     bom_ref = make_bom_ref(store_path, name, version)
 
+    cpe = generate_cpe(dep)
+
     component = Component(
         name=name,
         version=version,
@@ -225,6 +257,7 @@ def build_component(dep: dict) -> Component:
         scope=ComponentScope.REQUIRED,
         purl=purl,
         bom_ref=bom_ref,
+        cpe=cpe,
     )
 
     # Description
