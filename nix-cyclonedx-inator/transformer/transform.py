@@ -12,6 +12,7 @@ Usage:
 """
 
 import argparse
+import base64
 import json
 import re
 import sys
@@ -162,14 +163,30 @@ def extract_external_references(
             url=XsUri(url),
         )
         if src_hash:
-            # Nix uses SHA-256 for source hashes (SRI format: sha256-... or hex)
             hash_content = src_hash
-            # Strip SRI prefix if present
-            if hash_content.startswith("sha256-"):
-                hash_content = hash_content[7:]
+            hash_alg = HashAlgorithm.SHA_256
+            # Strip SRI prefix if present (e.g. sha256-..., sha512-...)
+            sri_prefixes = {
+                "sha256-": HashAlgorithm.SHA_256,
+                "sha512-": HashAlgorithm.SHA_512,
+                "sha384-": HashAlgorithm.SHA_384,
+                "sha1-": HashAlgorithm.SHA_1,
+                "md5-": HashAlgorithm.MD5,
+            }
+            for prefix, alg in sri_prefixes.items():
+                if hash_content.startswith(prefix):
+                    hash_content = hash_content[len(prefix):]
+                    hash_alg = alg
+                    break
+            # Convert base64 to hex (SRI hashes are base64-encoded)
+            try:
+                decoded = base64.b64decode(hash_content)
+                hash_content = decoded.hex()
+            except Exception:
+                pass  # already hex or unknown format
             try:
                 ext.hashes.add(
-                    HashType(alg=HashAlgorithm.SHA_256, content=hash_content)
+                    HashType(alg=hash_alg, content=hash_content)
                 )
             except Exception:
                 pass

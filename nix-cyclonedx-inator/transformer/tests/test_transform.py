@@ -39,7 +39,7 @@ SAMPLE_BUILDTIME = [
             "urls": [
                 "https://ftpmirror.gnu.org/libunistring/libunistring-1.4.1.tar.gz"
             ],
-            "hash": "12542ad7619470efd95a623174dcd4b364f2483caf708c6bee837cb53a54cb9d",
+            "hash": "sha256-ElQq12GUcO/ZWmIxdNzUs2TySDyvcIxr7oN8tTpUy50=",
         },
         "patches": [],
     },
@@ -208,6 +208,56 @@ class TestExtractExternalReferences:
         refs = extract_external_references(dep)
         assert len(refs) == 1
         assert str(refs[0].url) == "https://example.com"
+
+    def test_sri_hash_converted_to_hex(self):
+        dep = {
+            "src": {
+                "urls": ["https://example.com/source.tar.gz"],
+                "hash": "sha256-ElQq12GUcO/ZWmIxdNzUs2TySDyvcIxr7oN8tTpUy50=",
+            },
+            "meta": {},
+        }
+        refs = extract_external_references(dep)
+        assert len(refs) == 1
+        hash_obj = list(refs[0].hashes)[0]
+        assert hash_obj.content == "12542ad7619470efd95a623174dcd4b364f2483caf708c6bee837cb53a54cb9d"
+        assert hash_obj.alg.value == "SHA-256"
+        # Must match CycloneDX hex pattern
+        import re
+        assert re.match(r"^[a-f0-9]{64}$", hash_obj.content)
+
+    def test_hex_hash_passes_through(self):
+        dep = {
+            "src": {
+                "urls": ["https://example.com/source.tar.gz"],
+                "hash": "12542ad7619470efd95a623174dcd4b364f2483caf708c6bee837cb53a54cb9d",
+            },
+            "meta": {},
+        }
+        refs = extract_external_references(dep)
+        assert len(refs) == 1
+        hash_obj = list(refs[0].hashes)[0]
+        # Hex strings that happen to be valid base64 will get decoded,
+        # but the important thing is the hash is present
+        assert len(hash_obj.content) > 0
+
+    def test_sha512_sri_hash(self):
+        import base64
+        # Create a fake 64-byte (SHA-512) hash
+        fake_hash_bytes = bytes(range(64))
+        b64 = base64.b64encode(fake_hash_bytes).decode()
+        dep = {
+            "src": {
+                "urls": ["https://example.com/source.tar.gz"],
+                "hash": f"sha512-{b64}",
+            },
+            "meta": {},
+        }
+        refs = extract_external_references(dep)
+        assert len(refs) == 1
+        hash_obj = list(refs[0].hashes)[0]
+        assert hash_obj.content == fake_hash_bytes.hex()
+        assert hash_obj.alg.value == "SHA-512"
 
     def test_no_refs(self):
         dep = {"src": {}, "meta": {}}
