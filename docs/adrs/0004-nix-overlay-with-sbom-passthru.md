@@ -5,6 +5,7 @@ Date: 2026-03-21
 ## Status
 
 accepted
+superseded by ADR 0007 — buildCompliantImage and rename to nix-compliance-inator
 
 ## Context
 
