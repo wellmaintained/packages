@@ -3,7 +3,7 @@
 # Integration layer that wires together:
 #   - nix/buildtime-dependencies.nix  (Nix metadata extraction)
 #   - nix/runtime-dependencies.nix    (runtime store-path closure)
-#   - transformer/transform.py        (JSON → CycloneDX 1.7)
+#   - transformer/transform.py        (JSON → CycloneDX 1.6)
 #
 # Exposes:
 #   overlays.default  — adds buildSbom, withSbom, and withSbomAll to the package set
@@ -11,7 +11,7 @@
 #   lib.withSbomAll   — batch wrapper: withSbomAll pkgs [ "hello" "curl" ] → attrset
 #   lib.buildSbom     — raw SBOM builder: buildSbom drv extraPaths → CycloneDX JSON
 {
-  description = "nix-cyclonedx-inator — generate CycloneDX 1.7 SBOMs from Nix derivations";
+  description = "nix-cyclonedx-inator — generate CycloneDX 1.6 SBOMs from Nix derivations";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
@@ -48,7 +48,7 @@
         runtimeDeps = pkgs.callPackage ./nix/runtime-dependencies.nix {};
         runtimeRefGraph = pkgs.callPackage ./nix/runtime-reference-graph.nix {};
 
-        # Core SBOM build function: derivation → CycloneDX 1.7 JSON
+        # Core SBOM build function: derivation → CycloneDX 1.6 JSON
         buildSbom = drv: extraPaths:
           let
             buildtimeJson = buildtimeDeps drv extraPaths;
@@ -56,7 +56,7 @@
             refGraphJson = runtimeRefGraph drv extraPaths;
             drvName = drv.name or drv.pname or "unknown";
           in
-          pkgs.runCommand "${drvName}-sbom-cyclonedx-1-7.json" {
+          pkgs.runCommand "${drvName}-sbom-cyclonedx-1-6.json" {
             nativeBuildInputs = [ transformerPython ];
           } ''
             python3 ${./transformer/transform.py} \
@@ -67,15 +67,15 @@
               --output "$out"
           '';
 
-        # Explicit wrapper: adds .sbom-cyclonedx-1-7 passthru to any derivation
+        # Explicit wrapper: adds .sbom-cyclonedx-1-6 passthru to any derivation
         withSbom = drv:
           drv.overrideAttrs (old: {
             passthru = (old.passthru or {}) // {
-              sbom-cyclonedx-1-7 = buildSbom drv [];
+              sbom-cyclonedx-1-6 = buildSbom drv [];
             };
           });
 
-        # Batch wrapper: adds .sbom-cyclonedx-1-7 passthru to multiple packages
+        # Batch wrapper: adds .sbom-cyclonedx-1-6 passthru to multiple packages
         # Usage: withSbomAll pkgs [ "hello" "curl" "jq" ]
         # Returns: { hello = <wrapped>; curl = <wrapped>; jq = <wrapped>; }
         withSbomAll = sourcePkgs: names:

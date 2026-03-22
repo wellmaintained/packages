@@ -238,7 +238,7 @@
         sbomqs = import ./pkgs/sbomqs { inherit pkgs; };
         sbomlyze = import ./pkgs/sbomlyze { inherit pkgs; };
 
-        # CycloneDX 1.7 SBOM targets from image specs — wrap with withSbomAll to add .sbom-cyclonedx-1-7 passthru
+        # CycloneDX 1.6 SBOM targets from image specs — wrap with withSbomAll to add .sbom-cyclonedx-1-6 passthru
         sbomOnlyTargets = {
           postgres = postgres.sbom.closure;
           redis = redis.sbom.closure;
@@ -261,28 +261,28 @@
           redis-image = redis.image;
           minio-image = minio.image;
 
-          # CycloneDX 1.7 SBOMs — build with: nix build .#<name>-sbom
+          # CycloneDX 1.6 SBOMs — build with: nix build .#<name>-sbom
           # Each exposes passthru.imageMetadata so CI can: nix eval --json .#<name>-sbom.imageMetadata
-          postgres-sbom = sbomOnlyWrapped.postgres.sbom-cyclonedx-1-7.overrideAttrs {
+          postgres-sbom = sbomOnlyWrapped.postgres.sbom-cyclonedx-1-6.overrideAttrs {
             passthru.imageMetadata = postgres.sbom.metadata;
           };
-          redis-sbom = sbomOnlyWrapped.redis.sbom-cyclonedx-1-7.overrideAttrs {
+          redis-sbom = sbomOnlyWrapped.redis.sbom-cyclonedx-1-6.overrideAttrs {
             passthru.imageMetadata = redis.sbom.metadata;
           };
-          minio-sbom = sbomOnlyWrapped.minio.sbom-cyclonedx-1-7.overrideAttrs {
+          minio-sbom = sbomOnlyWrapped.minio.sbom-cyclonedx-1-6.overrideAttrs {
             passthru.imageMetadata = minio.sbom.metadata;
           };
 
-          sbomify-app-sbom = sbomOnlyWrapped.sbomify-app.sbom-cyclonedx-1-7.overrideAttrs {
+          sbomify-app-sbom = sbomOnlyWrapped.sbomify-app.sbom-cyclonedx-1-6.overrideAttrs {
             passthru.imageMetadata = sbomifyAppSpec.sbom.metadata;
           };
-          sbomify-keycloak-sbom = sbomOnlyWrapped.sbomify-keycloak.sbom-cyclonedx-1-7.overrideAttrs {
+          sbomify-keycloak-sbom = sbomOnlyWrapped.sbomify-keycloak.sbom-cyclonedx-1-6.overrideAttrs {
             passthru.imageMetadata = sbomifyKeycloakSpec.sbom.metadata;
           };
-          sbomify-caddy-dev-sbom = sbomOnlyWrapped.sbomify-caddy-dev.sbom-cyclonedx-1-7.overrideAttrs {
+          sbomify-caddy-dev-sbom = sbomOnlyWrapped.sbomify-caddy-dev.sbom-cyclonedx-1-6.overrideAttrs {
             passthru.imageMetadata = sbomifyCaddyDevSpec.sbom.metadata;
           };
-          sbomify-minio-init-sbom = sbomOnlyWrapped.sbomify-minio-init.sbom-cyclonedx-1-7.overrideAttrs {
+          sbomify-minio-init-sbom = sbomOnlyWrapped.sbomify-minio-init.sbom-cyclonedx-1-6.overrideAttrs {
             passthru.imageMetadata = sbomifyMinioInitSpec.sbom.metadata;
           };
 
