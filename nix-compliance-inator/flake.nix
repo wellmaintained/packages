@@ -26,11 +26,16 @@
         overlays.default = final: prev:
           let
             system = final.stdenv.hostPlatform.system;
+            innerBuildCompliantImage = self.lib.${system}.buildCompliantImage;
           in {
             buildSbom = self.lib.${system}.buildSbom;
             withSbom = self.lib.${system}.withSbom;
             withSbomAll = self.lib.${system}.withSbomAll;
-            buildCompliantImage = self.lib.${system}.buildCompliantImage;
+            # Auto-inject sbomqs from the consumer's package set if available
+            buildCompliantImage = args:
+              innerBuildCompliantImage (args // {
+                sbomqs = args.sbomqs or (final.sbomqs or null);
+              });
           };
       };
     in
@@ -99,7 +104,8 @@
           extraContents ? [],
           imageConfig ? {},
           extraMetadata ? {},
-          fakeRootCommands ? ""
+          fakeRootCommands ? "",
+          sbomqs ? null
         }:
           let
             # Build the SBOM from a closure of all packages
@@ -129,6 +135,23 @@
                 Labels = (imageConfig.Labels or {}) // labels;
               };
             };
+
+            # sbomqs compliance reports (only when sbomqs is provided)
+            ntiaReport = if sbomqs != null then
+              pkgs.runCommand "${name}-ntia-compliance.json" {
+                nativeBuildInputs = [ sbomqs ];
+              } ''
+                sbomqs compliance --ntia --json ${sbom} > $out
+              ''
+            else null;
+
+            bsiReport = if sbomqs != null then
+              pkgs.runCommand "${name}-bsi-compliance.json" {
+                nativeBuildInputs = [ sbomqs ];
+              } ''
+                sbomqs compliance --bsi --json ${sbom} > $out
+              ''
+            else null;
           in {
             inherit image;
 
@@ -144,10 +167,10 @@
             compliance = {
               ntia-minimum-elements = {
                 inherit sbom;
-              };
+              } // (if ntiaReport != null then { sbomqs = ntiaReport; } else {});
               bsi-tr-03183-2 = {
                 inherit sbom;
-              };
+              } // (if bsiReport != null then { sbomqs = bsiReport; } else {});
               oci-image-spec = {
                 inherit labels;
               };

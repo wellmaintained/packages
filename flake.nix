@@ -43,7 +43,14 @@
         pkgs = import nixpkgs {
           inherit system;
           config.allowUnfree = false;
-          overlays = [ bun2nix.overlays.default nix-compliance-inator.overlays.default ];
+          overlays = [
+            bun2nix.overlays.default
+            # Inject sbomqs into pkgs so the compliance-inator overlay can pick it up
+            (final: prev: {
+              sbomqs = import ./pkgs/sbomqs { pkgs = final; };
+            })
+            nix-compliance-inator.overlays.default
+          ];
         };
 
         # Shared Python dev tools (version-agnostic); pass pythonXXXPackages as argument
@@ -234,8 +241,8 @@
           sbomifySrc = sbomify-src;
         };
 
-        # SBOM quality tools
-        sbomqs = import ./pkgs/sbomqs { inherit pkgs; };
+        # SBOM quality tools (sbomqs injected via overlay above, sbomlyze built here)
+        sbomqs = pkgs.sbomqs;
         sbomlyze = import ./pkgs/sbomlyze { inherit pkgs; };
 
         # Helper: wrap an SBOM derivation with imageMetadata passthru for CI compatibility
