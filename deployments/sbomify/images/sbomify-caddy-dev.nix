@@ -8,49 +8,44 @@ let
   '';
 in
 
-{
-  image = pkgs.dockerTools.buildLayeredImage {
-    name = "sbomify-caddy-dev";
-    tag = "dev";
+pkgs.buildCompliantImage {
+  name = "sbomify-caddy-dev";
+  version = pkgs.caddy.version;
+  license = pkgs.caddy.meta.license.spdxId;
+  description = "sbomify Caddy (dev) — Nix-built OCI image with development Caddyfile";
 
-    contents = [
-      pkgs.caddy
-      pkgs.cacert
-      pkgs.wget
-      caddyConfig
-    ];
-
-    config = {
-      Labels = {
-        "org.opencontainers.image.source" = "https://github.com/wellmaintained/packages";
-        "org.opencontainers.image.description" = "sbomify Caddy (dev) — Nix-built OCI image with development Caddyfile";
-        "org.opencontainers.image.licenses" = pkgs.caddy.meta.license.spdxId;
-        "org.opencontainers.image.vendor" = "wellmaintained";
-        "org.opencontainers.image.title" = "sbomify Caddy (dev)";
-        "org.opencontainers.image.version" = pkgs.caddy.version;
-      };
-      Entrypoint = [ "${pkgs.caddy}/bin/caddy" ];
-      Cmd = [ "run" "--config" "/etc/caddy/Caddyfile" "--adapter" "caddyfile" ];
-      ExposedPorts = {
-        "80/tcp" = {};
-      };
-      Env = [
-        "XDG_DATA_HOME=/data"
-        "XDG_CONFIG_HOME=/config"
-      ];
-    };
+  creator = {
+    name = "Caddy project";
+    url = "https://caddyserver.com";
+  };
+  packager = {
+    name = "wellmaintained";
+    url = "https://github.com/wellmaintained/packages";
   };
 
-  sbom = {
-    closure = pkgs.symlinkJoin {
-      name = "sbomify-caddy-dev-closure";
-      paths = [ pkgs.caddy pkgs.cacert pkgs.wget ];
+  packages = [
+    pkgs.caddy
+    pkgs.cacert
+    pkgs.wget
+  ];
+
+  extraContents = [
+    caddyConfig
+  ];
+
+  imageConfig = {
+    Entrypoint = [ "${pkgs.caddy}/bin/caddy" ];
+    Cmd = [ "run" "--config" "/etc/caddy/Caddyfile" "--adapter" "caddyfile" ];
+    ExposedPorts = {
+      "80/tcp" = {};
     };
-    metadata = {
-      name = "sbomify-caddy-dev";
-      version = pkgs.caddy.version;
-      license = pkgs.caddy.meta.license.spdxId;
-      sbomifyComponentId = "zYDq6NtrOBuo";
-    };
+    Env = [
+      "XDG_DATA_HOME=/data"
+      "XDG_CONFIG_HOME=/config"
+    ];
+  };
+
+  extraMetadata = {
+    sbomifyComponentId = "zYDq6NtrOBuo";
   };
 }

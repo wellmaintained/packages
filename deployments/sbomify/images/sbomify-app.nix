@@ -1,42 +1,42 @@
 { pkgs, sbomifyApp, sbomifyVersion }:
 
-{
-  image = pkgs.dockerTools.buildLayeredImage {
-    name = "sbomify-app";
-    tag = "dev";
+pkgs.buildCompliantImage {
+  name = "sbomify-app";
+  version = sbomifyVersion;
+  license = "Apache-2.0";
+  description = "sbomify web application — Nix-built OCI image";
 
-    contents = [
-      sbomifyApp
-      pkgs.bashInteractive
-      pkgs.coreutils
-      pkgs.cacert
-      pkgs.osv-scanner
-      pkgs.cosign
-    ];
-
-    config = {
-      Entrypoint = [ "${sbomifyApp}/bin/sbomify-web" ];
-      ExposedPorts = {
-        "8000/tcp" = {};
-      };
-      Env = [
-        "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
-        "PYTHONDONTWRITEBYTECODE=1"
-      ];
-      WorkingDir = "${sbomifyApp}/app";
-    };
+  creator = {
+    name = "sbomify";
+    url = "https://sbomify.com";
+  };
+  packager = {
+    name = "wellmaintained";
+    url = "https://github.com/wellmaintained/packages";
   };
 
-  sbom = {
-    closure = pkgs.symlinkJoin {
-      name = "sbomify-app-closure";
-      paths = [ sbomifyApp pkgs.bashInteractive pkgs.coreutils pkgs.cacert pkgs.osv-scanner pkgs.cosign ];
+  packages = [
+    sbomifyApp
+    pkgs.bashInteractive
+    pkgs.coreutils
+    pkgs.cacert
+    pkgs.osv-scanner
+    pkgs.cosign
+  ];
+
+  imageConfig = {
+    Entrypoint = [ "${sbomifyApp}/bin/sbomify-web" ];
+    ExposedPorts = {
+      "8000/tcp" = {};
     };
-    metadata = {
-      name = "sbomify-app";
-      version = sbomifyVersion;
-      license = "Apache-2.0";
-      sbomifyComponentId = "VP42I4XQgpDE";
-    };
+    Env = [
+      "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
+      "PYTHONDONTWRITEBYTECODE=1"
+    ];
+    WorkingDir = "${sbomifyApp}/app";
+  };
+
+  extraMetadata = {
+    sbomifyComponentId = "VP42I4XQgpDE";
   };
 }

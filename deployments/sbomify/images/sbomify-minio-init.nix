@@ -10,41 +10,36 @@ let
   '';
 in
 
-{
-  image = pkgs.dockerTools.buildLayeredImage {
-    name = "sbomify-minio-init";
-    tag = "dev";
+pkgs.buildCompliantImage {
+  name = "sbomify-minio-init";
+  version = sbomifyVersion;
+  license = "Apache-2.0";
+  description = "sbomify MinIO Init — creates buckets for sbomify deployment";
 
-    contents = [
-      pkgs.minio-client
-      pkgs.bashInteractive
-      pkgs.coreutils
-      initScript
-    ];
-
-    config = {
-      Labels = {
-        "org.opencontainers.image.source" = "https://github.com/wellmaintained/packages";
-        "org.opencontainers.image.description" = "sbomify MinIO Init — creates buckets for sbomify deployment";
-        "org.opencontainers.image.licenses" = "Apache-2.0";
-        "org.opencontainers.image.vendor" = "wellmaintained";
-        "org.opencontainers.image.title" = "sbomify MinIO Init";
-        "org.opencontainers.image.version" = pkgs.minio-client.version;
-      };
-      Entrypoint = [ "/opt/bin/create-minio-buckets.sh" ];
-    };
+  creator = {
+    name = "sbomify";
+    url = "https://sbomify.com";
+  };
+  packager = {
+    name = "wellmaintained";
+    url = "https://github.com/wellmaintained/packages";
   };
 
-  sbom = {
-    closure = pkgs.symlinkJoin {
-      name = "sbomify-minio-init-closure";
-      paths = [ pkgs.minio-client pkgs.bashInteractive pkgs.coreutils ];
-    };
-    metadata = {
-      name = "sbomify-minio-init";
-      version = sbomifyVersion;
-      license = "Apache-2.0";
-      sbomifyComponentId = "PLACEHOLDER_SBOMIFY_MINIO_INIT";
-    };
+  packages = [
+    pkgs.minio-client
+    pkgs.bashInteractive
+    pkgs.coreutils
+  ];
+
+  extraContents = [
+    initScript
+  ];
+
+  imageConfig = {
+    Entrypoint = [ "/opt/bin/create-minio-buckets.sh" ];
+  };
+
+  extraMetadata = {
+    sbomifyComponentId = "PLACEHOLDER_SBOMIFY_MINIO_INIT";
   };
 }
