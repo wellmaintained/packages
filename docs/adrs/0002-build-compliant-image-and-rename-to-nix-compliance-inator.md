@@ -1,4 +1,4 @@
-# 0007. buildCompliantImage and rename to nix-compliance-inator
+# 0002. buildCompliantImage and rename to nix-compliance-inator
 
 Date: 2026-03-22
 
@@ -170,21 +170,12 @@ generation for non-image derivations.
 
 ### Relation to other ADRs
 
-Supersedes ADR 0004 (Nix overlay with .sbom passthru). ADR 0004 established
-the overlay pattern with `withSbom` and `withSbomAll`. This ADR introduces
-`buildCompliantImage` as the primary API for image consumers, relegating
-`withSbom`/`withSbomAll` to lower-level use. The overlay mechanism itself
-is preserved.
-
-Builds on ADR 0002 (independence from bombon) and ADR 0003
-(cyclonedx-python-lib). The rename to nix-compliance-inator continues the
-trajectory of ADR 0002 — the tool's identity is defined by its purpose
-(compliance), not its output format (CycloneDX).
-
-ADR 0006 (CycloneDX 1.6 output) remains in effect. The initial
-`metadata.sbom` entry is `cyclonedx-1-6`. When sbomqs supports 1.7,
-`cyclonedx-1-7` is added alongside it — both can coexist in the metadata
-tree.
+None. This ADR supersedes the earlier incremental decisions (originally
+ADRs 0002-0006) that were removed during consolidation. Key design choices
+carried forward: independence from bombon, use of cyclonedx-python-lib for
+SBOM generation, the Nix overlay pattern with `withSbom`/`withSbomAll`
+(now relegated to lower-level API), and CycloneDX 1.6 as the initial
+output format.
 
 ## Consequences
 

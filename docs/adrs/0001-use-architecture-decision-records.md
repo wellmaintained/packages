@@ -32,8 +32,8 @@ extensions:
 
 ### Relation to other ADRs
 
-This is the foundational ADR. All subsequent ADRs (0002-0005) follow the
-conventions established here.
+This is the foundational ADR. All subsequent ADRs follow the conventions
+established here.
 
 ## Consequences
 
