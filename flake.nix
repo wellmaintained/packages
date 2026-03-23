@@ -5,10 +5,6 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     flake-utils.url = "github:numtide/flake-utils";
-    bombon = {
-      url = "github:nikstur/bombon";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     pyproject-nix = {
       url = "github:pyproject-nix/pyproject.nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -36,15 +32,18 @@
       url = "github:sbomify/sbomify/v0.27.0";
       flake = false;
     };
+    nix-compliance-inator = {
+      url = "path:./nix-compliance-inator";
+    };
   };
 
-  outputs = { self, nixpkgs, flake-utils, bombon, pyproject-nix, uv2nix, pyproject-build-systems, uv2nix-hammer-overrides, bun2nix, sbomify-src }:
+  outputs = { self, nixpkgs, flake-utils, pyproject-nix, uv2nix, pyproject-build-systems, uv2nix-hammer-overrides, bun2nix, sbomify-src, nix-compliance-inator }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs {
           inherit system;
           config.allowUnfree = false;
-          overlays = [ bun2nix.overlays.default ];
+          overlays = [ bun2nix.overlays.default nix-compliance-inator.overlays.default ];
         };
 
         # Shared Python dev tools (version-agnostic); pass pythonXXXPackages as argument
@@ -162,7 +161,7 @@
           ];
         };
 
-        # OCI images — each returns { image, sbom }
+        # OCI images — each returns { image; metadata; compliance; }
         postgres = import ./images/postgres.nix { inherit pkgs; };
         redis = import ./images/redis.nix { inherit pkgs; };
         minio = import ./images/minio.nix { inherit pkgs; };
@@ -239,33 +238,40 @@
         sbomqs = import ./pkgs/sbomqs { inherit pkgs; };
         sbomlyze = import ./pkgs/sbomlyze { inherit pkgs; };
 
+        # Helper: wrap an SBOM derivation with imageMetadata passthru for CI compatibility
+        # CI uses: nix eval --json .#<name>-sbom.imageMetadata
+        withImageMetadata = spec:
+          spec.metadata.sbom.cyclonedx-1-6.overrideAttrs {
+            passthru.imageMetadata = {
+              inherit (spec.metadata) name version license;
+            } // spec.metadata.extra;
+          };
+
       in
       {
         # Export package sets for downstream consumers
         inherit packageSets;
 
         # OCI images + SBOM derivations
-        packages = let
-          # Build a CycloneDX SBOM from a spec's { closure, metadata }
-          mkSbom = spec: (bombon.lib.${system}.buildBom spec.closure {}).overrideAttrs {
-            passthru.imageMetadata = spec.metadata;
-          };
-        in {
+        packages = {
+          # Images
           postgres-image = postgres.image;
           redis-image = redis.image;
           minio-image = minio.image;
+          sbomify-app-image = sbomifyAppSpec.image;
+          sbomify-keycloak-image = sbomifyKeycloakSpec.image;
+          sbomify-caddy-dev-image = sbomifyCaddyDevSpec.image;
+          sbomify-minio-init-image = sbomifyMinioInitSpec.image;
 
-
-          # CycloneDX SBOMs — build with: nix build .#<name>-sbom
+          # CycloneDX 1.6 SBOMs — build with: nix build .#<name>-sbom
           # Each exposes passthru.imageMetadata so CI can: nix eval --json .#<name>-sbom.imageMetadata
-          postgres-sbom = mkSbom postgres.sbom;
-          redis-sbom = mkSbom redis.sbom;
-          minio-sbom = mkSbom minio.sbom;
-
-          sbomify-app-sbom = mkSbom sbomifyAppSpec.sbom;
-          sbomify-keycloak-sbom = mkSbom sbomifyKeycloakSpec.sbom;
-          sbomify-caddy-dev-sbom = mkSbom sbomifyCaddyDevSpec.sbom;
-          sbomify-minio-init-sbom = mkSbom sbomifyMinioInitSpec.sbom;
+          postgres-sbom = withImageMetadata postgres;
+          redis-sbom = withImageMetadata redis;
+          minio-sbom = withImageMetadata minio;
+          sbomify-app-sbom = withImageMetadata sbomifyAppSpec;
+          sbomify-keycloak-sbom = withImageMetadata sbomifyKeycloakSpec;
+          sbomify-caddy-dev-sbom = withImageMetadata sbomifyCaddyDevSpec;
+          sbomify-minio-init-sbom = withImageMetadata sbomifyMinioInitSpec;
 
           # SBOM quality tools
           inherit sbomqs sbomlyze;
@@ -274,10 +280,6 @@
           sbomify-venv = sbomifyVenv;
           sbomify-frontend = sbomifyFrontend;
           sbomify-app = sbomifyApp;
-          sbomify-app-image = sbomifyAppSpec.image;
-          sbomify-keycloak-image = sbomifyKeycloakSpec.image;
-          sbomify-caddy-dev-image = sbomifyCaddyDevSpec.image;
-          sbomify-minio-init-image = sbomifyMinioInitSpec.image;
         };
 
         # DevShells - ready-to-use development environments

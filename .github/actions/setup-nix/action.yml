@@ -1,16 +1,16 @@
 name: Setup Nix
-description: Install Nix with Determinate Systems and configure Nix store cache
+description: Install Nix with Determinate Systems and persistent Nix store via Blacksmith sticky disk
 
 runs:
   using: composite
   steps:
+    - name: Persist Nix store
+      uses: useblacksmith/stickydisk@v1
+      with:
+        key: ${{ github.repository }}-nix-${{ runner.os }}
+        path: /nix
+
     - name: Install Nix
       uses: DeterminateSystems/determinate-nix-action@v3
       with:
         diagnostic-endpoint: ""
-
-    - name: Cache Nix store
-      uses: nix-community/cache-nix-action@v7
-      with:
-        primary-key: nix-${{ runner.os }}-${{ hashFiles('flake.lock') }}
-        restore-prefixes-first-match: nix-${{ runner.os }}-

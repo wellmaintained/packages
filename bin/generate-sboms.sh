@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Generate CycloneDX SBOMs for all Nix-built OCI images using bombon.
+# Generate CycloneDX SBOMs for all Nix-built OCI images using nix-compliance-inator.
 # Each SBOM is built via `nix build .#<name>-sbom` and copied to sboms/<name>.cdx.json.
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -40,10 +40,7 @@ for target in "${SBOM_TARGETS[@]}"; do
     fi
 
     cp -L "$sbom_file" "${SBOM_DIR}/${target}.cdx.json"
-
-    # Convert bombon's CycloneDX 1.5 output to 1.6
-    "${REPO_ROOT}/bin/convert-sbom-to-cdx16" "${SBOM_DIR}/${target}.cdx.json"
-    echo "  -> ${SBOM_DIR}/${target}.cdx.json (CycloneDX 1.6)"
+    echo "  -> ${SBOM_DIR}/${target}.cdx.json"
 
     # Quick verification
     bom_format=$(jq -r '.bomFormat // empty' "${SBOM_DIR}/${target}.cdx.json" 2>/dev/null || true)

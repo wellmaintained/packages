@@ -1,0 +1,15 @@
+[project]
+name = "nix-compliance-inator-transformer"
+version = "0.1.0"
+description = "Transform Nix metadata JSON into CycloneDX 1.6 SBOMs"
+requires-python = ">=3.10"
+dependencies = [
+    "cyclonedx-python-lib>=11.4.0",
+    "packageurl-python>=0.15.0",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=7.0"]
+
+[project.scripts]
+nix-compliance-transform = "transform:main"
