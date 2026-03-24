@@ -82,16 +82,18 @@ cmd_push() {
   [[ -z "$registry" || -z "$tag" ]] && { echo "ERROR: --registry and --tag required" >&2; usage; }
 
   echo "==> Loading image into Docker" >&2
-  docker load < result
+  local load_output
+  load_output=$(docker load < result)
+  echo "${load_output}" >&2
 
   local loaded_image
-  loaded_image=$(docker load < result 2>&1 | grep -oP 'Loaded image: \K.*')
+  loaded_image=$(echo "${load_output}" | grep -oP 'Loaded image: \K.*')
 
   echo "==> Tagging as ${registry}:${tag}" >&2
   docker tag "${loaded_image}" "${registry}:${tag}"
 
   echo "==> Pushing ${registry}:${tag}" >&2
-  docker push "${registry}:${tag}"
+  docker push "${registry}:${tag}" >&2
 
   # Output the digest (consumed by caller)
   local digest
