@@ -4,15 +4,20 @@ description: Install Nix with Determinate Systems and persistent Nix store via B
 runs:
   using: composite
   steps:
-    - name: Create /nix directory
-      shell: bash
-      run: sudo mkdir -p /nix/store
-
     - name: Persist Nix store
       uses: useblacksmith/stickydisk@v1
       with:
-        key: ${{ github.repository }}-nix-store-${{ runner.os }}
-        path: /nix/store
+        key: ${{ github.repository }}-nix-v2-${{ runner.os }}
+        path: /nix
+
+    - name: Prepare for Nix install
+      shell: bash
+      run: |
+        # Remove receipt.json so the installer doesn't skip when /nix
+        # has been restored from stickydisk cache. The installer needs
+        # to run each time to set up the daemon binary and systemd
+        # units (which live outside /nix and aren't cached).
+        sudo rm -f /nix/receipt.json
 
     - name: Install Nix
       uses: DeterminateSystems/determinate-nix-action@v3
