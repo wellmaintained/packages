@@ -14,6 +14,7 @@ runs:
       uses: DeterminateSystems/determinate-nix-action@v3
       with:
         diagnostic-endpoint: ""
+        reinstall: true
 
     - name: Register nix daemon cleanup for stickydisk
       uses: ./.github/actions/stop-nix-daemon
