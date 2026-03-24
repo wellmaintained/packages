@@ -52,7 +52,7 @@ CALVER=$(date -u '+%Y%m%d%H%M')
 echo "==> Promoting ${REPO}:${PR_TAG}"
 
 # Resolve the digest of the PR-tagged image
-DIGEST=$(crane digest "${REPO}:${PR_TAG}" 2>/dev/null) || {
+DIGEST=$(crane digest "${REPO}:${PR_TAG}") || {
   echo "ERROR: PR tag '${PR_TAG}' not found for ${REPO}."
   echo "This means the image was not built on the PR. Promotion without a build is a bug."
   exit 1
