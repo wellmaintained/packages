@@ -121,10 +121,6 @@ jobs:
           name: sbom-quality-gate-${{ steps.meta.outputs.name }}
           path: results/
 
-      - name: Teardown Nix
-        uses: ./.github/actions/teardown-nix
-        if: always()
-
   report:
     needs: score
     # Run even if some score jobs failed, but not if the entire score job

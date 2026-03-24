@@ -76,10 +76,6 @@ jobs:
           docker push "${GHCR_REPO}:${VERSION}"
           docker push "${GHCR_REPO}:${VERSION}-${CALVER}"
 
-      - name: Teardown Nix
-        uses: ./.github/actions/teardown-nix
-        if: always()
-
   build-and-push-sbomify-images:
     runs-on: blacksmith-4vcpu-ubuntu-2404
     strategy:
@@ -116,7 +112,7 @@ jobs:
       - name: Build image
         run: nix build .#${{ matrix.image.package }}
 
-      - name: Load and push sbomify image
+      - name: Load and push image
         run: |
           # Load the Nix-built image into Docker
           docker load < result
@@ -136,7 +132,3 @@ jobs:
           docker push "${GHCR_REPO}:latest"
           docker push "${GHCR_REPO}:${VERSION}"
           docker push "${GHCR_REPO}:${VERSION}-${CALVER}"
-
-      - name: Teardown Nix
-        uses: ./.github/actions/teardown-nix
-        if: always()
