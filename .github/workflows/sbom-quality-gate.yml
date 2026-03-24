@@ -44,13 +44,6 @@ jobs:
       - name: Setup Nix
         uses: ./.github/actions/setup-nix
 
-      - name: Build sbomqs and sbomlyze
-        run: |
-          nix build .#sbomqs -o sbomqs-bin
-          nix build .#sbomlyze -o sbomlyze-bin
-          echo "$PWD/sbomqs-bin/bin" >> "$GITHUB_PATH"
-          echo "$PWD/sbomlyze-bin/bin" >> "$GITHUB_PATH"
-
       - name: Download PR SBOM
         uses: actions/download-artifact@v4
         with:

@@ -51,19 +51,6 @@ CALVER=$(date -u '+%Y%m%d%H%M')
 
 echo "==> Promoting ${REPO}:${PR_TAG}"
 
-# Ensure crane can authenticate with GHCR (nix-built crane may not find
-# Docker's config.json automatically)
-if [[ -f "$HOME/.docker/config.json" ]]; then
-  export DOCKER_CONFIG="$HOME/.docker"
-fi
-
-# Verify crane is available
-if ! command -v crane &>/dev/null; then
-  echo "ERROR: crane not found on PATH"
-  echo "PATH=$PATH"
-  exit 1
-fi
-
 # Resolve the digest of the PR-tagged image
 DIGEST=$(crane digest "${REPO}:${PR_TAG}" 2>&1) || {
   echo "ERROR: crane digest failed with: ${DIGEST}"

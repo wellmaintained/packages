@@ -93,12 +93,6 @@ jobs:
       - name: Setup Nix
         uses: ./.github/actions/setup-nix
 
-      - name: Install crane
-        run: |
-          CRANE_PATH=$(nix build nixpkgs#crane --print-out-paths --no-link)
-          echo "${CRANE_PATH}/bin" >> "$GITHUB_PATH"
-          "${CRANE_PATH}/bin/crane" version
-
       - name: Log in to GHCR
         uses: docker/login-action@v4
         with:

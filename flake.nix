@@ -283,6 +283,17 @@
             ];
           };
 
+          # CI: tools needed by GitHub Actions workflows
+          ci = pkgs.mkShell {
+            name = "packages-ci";
+            packages = with pkgs; [
+              cosign
+              crane
+              sbomqs
+              sbomlyze
+            ];
+          };
+
           # sbomify: Python 3.13 + Bun + Django dev environment
           sbomify = pkgs.mkShell {
             name = "sbomify-dev";
