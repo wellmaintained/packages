@@ -1,5 +1,5 @@
 name: Setup Nix
-description: Install Nix with Determinate Systems and persistent Nix store via Blacksmith sticky disk
+description: Install Nix with persistent Nix store via Blacksmith sticky disk
 
 runs:
   using: composite
@@ -11,10 +11,7 @@ runs:
         path: /nix
 
     - name: Install Nix
-      uses: DeterminateSystems/determinate-nix-action@v3
+      uses: nixbuild/nix-quick-install-action@v30
       with:
-        diagnostic-endpoint: ""
-        reinstall: true
-
-    - name: Register nix daemon cleanup for stickydisk
-      uses: ./.github/actions/stop-nix-daemon
+        nix_conf: |
+          no-update-lock-file = true
