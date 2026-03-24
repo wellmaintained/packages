@@ -24,7 +24,10 @@ jobs:
         run: echo "matrix=$(jq -c . .github/image-matrix.json)" >> "$GITHUB_OUTPUT"
 
   cleanup-pr:
-    if: github.event_name == 'pull_request'
+    # Only clean up when PR is closed WITHOUT merging.
+    # Merged PRs need their images for the promote workflow;
+    # the weekly sweep handles cleanup after promotion.
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
     needs: load-matrix
     runs-on: blacksmith-2vcpu-ubuntu-2404
     strategy:
