@@ -1,17 +1,23 @@
 name: Setup Nix
-description: Install Nix with persistent Nix store via Blacksmith sticky disk
+description: Install Nix with Determinate Systems and persistent Nix store via Blacksmith sticky disk
 
 runs:
   using: composite
   steps:
+    - name: Create /nix directory
+      shell: bash
+      run: sudo mkdir -p /nix/store
+
     - name: Persist Nix store
       uses: useblacksmith/stickydisk@v1
       with:
-        key: ${{ github.repository }}-nix-${{ runner.os }}
-        path: /nix
+        key: ${{ github.repository }}-nix-store-${{ runner.os }}
+        path: /nix/store
 
     - name: Install Nix
-      uses: nixbuild/nix-quick-install-action@v30
+      uses: DeterminateSystems/determinate-nix-action@v3
       with:
-        nix_conf: |
-          no-update-lock-file = true
+        diagnostic-endpoint: ""
+
+    - name: Register nix daemon cleanup for stickydisk
+      uses: ./.github/actions/stop-nix-daemon
