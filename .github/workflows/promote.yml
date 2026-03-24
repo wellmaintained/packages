@@ -63,8 +63,7 @@ jobs:
 
   promote:
     needs: [load-matrix, resolve-pr]
-    if: needs.resolve-pr.outputs.skip != 'true'
-    runs-on: blacksmith-2vcpu-ubuntu-2404
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     strategy:
       fail-fast: false
       matrix:
@@ -99,6 +98,7 @@ jobs:
 
       - name: Promote image
         id: promote
+        if: needs.resolve-pr.outputs.skip != 'true'
         run: |
           if bin/promote-image \
             --image "${{ matrix.image.name }}" \
@@ -112,7 +112,7 @@ jobs:
           fi
 
       - name: Fallback — build and push with release tags
-        if: steps.promote.outputs.fallback == 'true'
+        if: needs.resolve-pr.outputs.skip == 'true' || steps.promote.outputs.fallback == 'true'
         run: |
           VERSION="${{ steps.meta.outputs.version }}"
           CALVER=$(date -u '+%Y%m%d%H%M')
