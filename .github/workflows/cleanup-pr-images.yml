@@ -1,14 +1,13 @@
 name: Cleanup PR images
 
-# Deletes PR-tagged images from GHCR (ADR-0003 section 6).
+# Weekly sweep of stale PR-tagged images from GHCR (ADR-0003 section 6).
 # Logic lives in bin/cleanup-pr-images; this workflow is a thin wrapper.
 
 on:
-  pull_request:
-    types: [closed]
   schedule:
     # Weekly sweep: Sundays at 03:00 UTC
     - cron: '0 3 * * 0'
+  workflow_dispatch:
 
 permissions:
   packages: write
@@ -23,29 +22,7 @@ jobs:
       - id: set
         run: echo "matrix=$(jq -c . .github/image-matrix.json)" >> "$GITHUB_OUTPUT"
 
-  cleanup-pr:
-    # Only clean up when PR is closed WITHOUT merging.
-    # Merged PRs need their images for the promote workflow;
-    # the weekly sweep handles cleanup after promotion.
-    if: github.event_name == 'pull_request' && github.event.pull_request.merged == false
-    needs: load-matrix
-    runs-on: blacksmith-2vcpu-ubuntu-2404
-    strategy:
-      fail-fast: false
-      matrix:
-        image: ${{ fromJson(needs.load-matrix.outputs.matrix) }}
-    steps:
-      - uses: actions/checkout@v5
-      - name: Delete PR images
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          bin/cleanup-pr-images pr \
-            --image "${{ matrix.image.name }}" \
-            --pr-number "${{ github.event.pull_request.number }}"
-
   weekly-sweep:
-    if: github.event_name == 'schedule'
     needs: load-matrix
     runs-on: blacksmith-2vcpu-ubuntu-2404
     strategy:

@@ -63,7 +63,8 @@ jobs:
 
   promote:
     needs: [load-matrix, resolve-pr]
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    if: needs.resolve-pr.outputs.skip != 'true'
+    runs-on: blacksmith-2vcpu-ubuntu-2404
     strategy:
       fail-fast: false
       matrix:
@@ -97,36 +98,12 @@ jobs:
           echo "name=$(echo "$META" | jq -r .name)" >> "$GITHUB_OUTPUT"
 
       - name: Promote image
-        id: promote
-        if: needs.resolve-pr.outputs.skip != 'true'
         run: |
-          if bin/promote-image \
+          bin/promote-image \
             --image "${{ matrix.image.name }}" \
             --pr "${{ needs.resolve-pr.outputs.pr_number }}" \
             --sha "${{ needs.resolve-pr.outputs.head_sha7 }}" \
-            --version "${{ steps.meta.outputs.version }}"; then
-            echo "fallback=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "WARNING: PR image not found — falling back to build-and-promote"
-            echo "fallback=true" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Fallback — build and push with release tags
-        if: needs.resolve-pr.outputs.skip == 'true' || steps.promote.outputs.fallback == 'true'
-        run: |
-          VERSION="${{ steps.meta.outputs.version }}"
-          CALVER=$(date -u '+%Y%m%d%H%M')
-          GHCR_REPO="ghcr.io/wellmaintained/packages/${{ matrix.image.name }}"
-
-          bin/build-and-push build --package "${{ matrix.image.package }}"
-
-          for TAG in "latest" "${VERSION}" "${VERSION}-${CALVER}"; do
-            echo "==> Pushing ${GHCR_REPO}:${TAG}"
-            bin/build-and-push push \
-              --registry "${GHCR_REPO}" \
-              --tag "${TAG}"
-          done
-          echo "==> Fallback build-and-promote complete for ${{ matrix.image.name }}"
+            --version "${{ steps.meta.outputs.version }}"
 
       - name: Download SBOM from build workflow
         uses: actions/download-artifact@v4
