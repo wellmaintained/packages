@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+# bin/cleanup-pr-images — Delete PR-tagged images from GHCR.
+#
+# Subcommands:
+#   pr    — Delete images for a specific PR number
+#   sweep — Delete all pr-* tagged images older than N days
+#
+# Requires: gh (GitHub CLI) with packages:write permission
+
+set -euo pipefail
+
+ORG="${GHCR_ORG:-wellmaintained}"
+
+usage() {
+  cat >&2 <<EOF
+Usage: $0 <subcommand> [options]
+
+Subcommands:
+  pr    --image NAME --pr-number NUMBER
+  sweep --image NAME [--days N]  (default: 7 days)
+
+Environment:
+  GHCR_ORG   Organization name (default: wellmaintained)
+  GH_TOKEN   GitHub token with packages:write
+EOF
+  exit 1
+}
+
+delete_versions() {
+  local image="$1"
+  local jq_filter="$2"
+  local encoded_name="packages%2F${image}"
+
+  local version_ids
+  version_ids=$(gh api \
+    "/orgs/${ORG}/packages/container/${encoded_name}/versions" \
+    --paginate \
+    --jq "${jq_filter}" \
+    2>/dev/null || true)
+
+  if [[ -z "$version_ids" ]]; then
+    echo "  No matching images found." >&2
+    return 0
+  fi
+
+  local count=0
+  while IFS= read -r version_id; do
+    [[ -z "$version_id" ]] && continue
+    echo "  Deleting version ${version_id}..." >&2
+    gh api --method DELETE \
+      "/orgs/${ORG}/packages/container/${encoded_name}/versions/${version_id}" \
+      2>/dev/null || echo "  WARNING: Failed to delete version ${version_id}" >&2
+    count=$((count + 1))
+  done <<< "$version_ids"
+
+  echo "  Deleted ${count} version(s)." >&2
+}
+
+cmd_pr() {
+  local image="" pr_number=""
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --image) image="$2"; shift 2 ;;
+      --pr-number) pr_number="$2"; shift 2 ;;
+      *) echo "Unknown option: $1" >&2; usage ;;
+    esac
+  done
+  [[ -z "$image" || -z "$pr_number" ]] && { echo "ERROR: --image and --pr-number required" >&2; usage; }
+
+  echo "==> Cleaning up pr-${pr_number} images for ${image}" >&2
+  delete_versions "$image" \
+    ".[] | select(.metadata.container.tags[] | startswith(\"pr-${pr_number}-\")) | .id"
+}
+
+cmd_sweep() {
+  local image="" days=7
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --image) image="$2"; shift 2 ;;
+      --days) days="$2"; shift 2 ;;
+      *) echo "Unknown option: $1" >&2; usage ;;
+    esac
+  done
+  [[ -z "$image" ]] && { echo "ERROR: --image required" >&2; usage; }
+
+  local cutoff
+  cutoff=$(date -u -d "${days} days ago" '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null \
+    || date -u -v-"${days}"d '+%Y-%m-%dT%H:%M:%SZ')
+
+  echo "==> Sweeping stale PR images for ${image} (older than ${cutoff})" >&2
+  delete_versions "$image" \
+    ".[] | select((.metadata.container.tags | length > 0) and (.metadata.container.tags[] | startswith(\"pr-\")) and (.updated_at < \"${cutoff}\")) | .id"
+}
+
+case "${1:-}" in
+  pr)    shift; cmd_pr "$@" ;;
+  sweep) shift; cmd_sweep "$@" ;;
+  *) usage ;;
+esac

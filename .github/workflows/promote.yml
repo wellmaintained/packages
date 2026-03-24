@@ -1,0 +1,125 @@
+name: Promote images
+
+# On merge to main, promote PR-built images by digest (ADR-0003).
+# Logic lives in bin/promote-image; this workflow is a thin wrapper.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - images/**
+      - deployments/sbomify/**
+      - flake.nix
+      - flake.lock
+      - nix-compliance-inator/**
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+  packages: write
+
+jobs:
+  load-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v5
+      - id: set
+        run: echo "matrix=$(jq -c . .github/image-matrix.json)" >> "$GITHUB_OUTPUT"
+
+  resolve-pr:
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    outputs:
+      pr_number: ${{ steps.pr.outputs.pr_number }}
+      head_sha7: ${{ steps.pr.outputs.head_sha7 }}
+      skip: ${{ steps.pr.outputs.skip }}
+    steps:
+      - name: Resolve PR from merge commit
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Find the PR that was merged to produce this push
+          PR_NUMBER=$(gh api \
+            "repos/${{ github.repository }}/commits/${{ github.sha }}/pulls" \
+            --jq '.[0].number' 2>/dev/null || true)
+
+          if [ -z "$PR_NUMBER" ] || [ "$PR_NUMBER" = "null" ]; then
+            echo "WARNING: Could not resolve PR for commit ${{ github.sha }}"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          HEAD_SHA=$(gh pr view "$PR_NUMBER" \
+            --repo "${{ github.repository }}" \
+            --json headRefOid --jq '.headRefOid')
+          SHA7="${HEAD_SHA::7}"
+
+          echo "pr_number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
+          echo "head_sha7=${SHA7}" >> "$GITHUB_OUTPUT"
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+
+  promote:
+    needs: [load-matrix, resolve-pr]
+    if: needs.resolve-pr.outputs.skip != 'true'
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ${{ fromJson(needs.load-matrix.outputs.matrix) }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Nix
+        uses: ./.github/actions/setup-nix
+
+      - name: Install crane
+        run: |
+          nix build nixpkgs#crane -o crane-bin
+          echo "$PWD/crane-bin/bin" >> "$GITHUB_PATH"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get upstream version
+        id: meta
+        run: |
+          META=$(bin/build-and-push metadata --package "${{ matrix.image.package }}")
+          echo "version=$(echo "$META" | jq -r .version)" >> "$GITHUB_OUTPUT"
+          echo "sbomify_component_id=$(echo "$META" | jq -r .sbomifyComponentId)" >> "$GITHUB_OUTPUT"
+          echo "name=$(echo "$META" | jq -r .name)" >> "$GITHUB_OUTPUT"
+
+      - name: Promote image
+        run: |
+          bin/promote-image \
+            --image "${{ matrix.image.name }}" \
+            --pr "${{ needs.resolve-pr.outputs.pr_number }}" \
+            --sha "${{ needs.resolve-pr.outputs.head_sha7 }}" \
+            --version "${{ steps.meta.outputs.version }}"
+
+      - name: Download SBOM from build workflow
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: ${{ matrix.image.name }}-sbom
+          path: sbom/
+          github-token: ${{ github.token }}
+
+      - name: Upload SBOM to sbomify.com
+        if: ${{ !startsWith(steps.meta.outputs.sbomify_component_id, 'PLACEHOLDER') }}
+        uses: sbomify/sbomify-action@master
+        continue-on-error: true
+        env:
+          TOKEN: ${{ secrets.SBOMIFY_TOKEN }}
+          COMPONENT_ID: ${{ steps.meta.outputs.sbomify_component_id }}
+          SBOM_FILE: sbom/${{ steps.meta.outputs.name }}.enriched.cdx.json
+          SBOM_FORMAT: cyclonedx
+          UPLOAD: true

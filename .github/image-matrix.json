@@ -1,0 +1,9 @@
+[
+  { "name": "postgres",            "package": "postgres-image" },
+  { "name": "redis",               "package": "redis-image" },
+  { "name": "minio",               "package": "minio-image" },
+  { "name": "sbomify-app",         "package": "sbomify-app-image" },
+  { "name": "sbomify-keycloak",    "package": "sbomify-keycloak-image" },
+  { "name": "sbomify-caddy-dev",   "package": "sbomify-caddy-dev-image" },
+  { "name": "sbomify-minio-init",  "package": "sbomify-minio-init-image" }
+]

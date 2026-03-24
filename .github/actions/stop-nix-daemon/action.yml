@@ -5,6 +5,6 @@ description: >
   post step runs BEFORE stickydisk's post step (reverse order).
 
 runs:
-  using: node22
+  using: node24
   main: main.js
   post: post.js
