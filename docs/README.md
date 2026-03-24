@@ -8,6 +8,7 @@ ADRs document significant architectural and design decisions.
 |---|----------|--------|
 | [0001](adrs/0001-use-architecture-decision-records.md) | Use Architecture Decision Records | accepted |
 | [0002](adrs/0002-build-compliant-image-and-rename-to-nix-compliance-inator.md) | buildCompliantImage and rename to nix-compliance-inator | proposed |
+| [0003](adrs/0003-build-once-promote-on-merge.md) | Build once, promote on merge | accepted |
 
 ## When to Write an ADR
 
