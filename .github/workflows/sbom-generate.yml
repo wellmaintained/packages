@@ -99,3 +99,4 @@ jobs:
           path: |
             ${{ steps.meta.outputs.name }}.enriched.cdx.json
             metadata.json
+

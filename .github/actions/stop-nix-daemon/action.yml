@@ -1,0 +1,10 @@
+name: Stop Nix daemon for stickydisk cleanup
+description: >
+  Stops the Nix daemon in a post step so that /nix can be unmounted
+  by stickydisk. Place this action AFTER the Nix install step so its
+  post step runs BEFORE stickydisk's post step (reverse order).
+
+runs:
+  using: node22
+  main: main.js
+  post: post.js
