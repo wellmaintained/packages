@@ -57,15 +57,11 @@ if [[ -f "$HOME/.docker/config.json" ]]; then
   export DOCKER_CONFIG="$HOME/.docker"
 fi
 
-# If crane isn't on PATH, check the nix output link created by CI
+# Verify crane is available
 if ! command -v crane &>/dev/null; then
-  if [[ -x "./crane-bin/bin/crane" ]]; then
-    export PATH="$(cd ./crane-bin/bin && pwd):$PATH"
-  else
-    echo "ERROR: crane not found on PATH or at ./crane-bin/bin/crane"
-    echo "PATH=$PATH"
-    exit 1
-  fi
+  echo "ERROR: crane not found on PATH"
+  echo "PATH=$PATH"
+  exit 1
 fi
 
 # Resolve the digest of the PR-tagged image
