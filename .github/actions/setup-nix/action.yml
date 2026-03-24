@@ -12,3 +12,6 @@ runs:
 
     - name: Install Nix
       uses: nixbuild/nix-quick-install-action@v30
+      with:
+        nix_conf: |
+          allow-dirty = true
