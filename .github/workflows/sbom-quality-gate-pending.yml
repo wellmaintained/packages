@@ -1,7 +1,7 @@
 name: SBOM quality gate (pending)
 
 # Posts an early "pending" sticky PR comment so authors see visual feedback
-# while sbom-generate.yml runs. Uses the same sticky header as the quality
+# while build.yml runs. Uses the same sticky header as the quality
 # gate report so the real scores replace this placeholder automatically.
 
 on:
@@ -12,6 +12,7 @@ on:
       - deployments/sbomify/**
       - flake.nix
       - flake.lock
+      - nix-compliance-inator/**
       - bin/patch-sbom-root
 
 permissions:

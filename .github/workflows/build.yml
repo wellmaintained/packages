@@ -1,0 +1,153 @@
+name: Build images and SBOMs
+
+# Combined image + SBOM build for PRs (ADR-0003: build once, promote on merge).
+# Logic lives in bin/build-and-push; this workflow is a thin wrapper.
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - images/**
+      - deployments/sbomify/**
+      - flake.nix
+      - flake.lock
+      - nix-compliance-inator/**
+      - bin/build-and-push
+      - .github/workflows/build.yml
+      - .github/image-matrix.json
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: read
+  packages: write
+  id-token: write
+
+jobs:
+  load-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v5
+      - id: set
+        run: echo "matrix=$(jq -c . .github/image-matrix.json)" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: load-matrix
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ${{ fromJson(needs.load-matrix.outputs.matrix) }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Nix
+        uses: ./.github/actions/setup-nix
+
+      - name: Install CI tools (cosign, crane)
+        run: |
+          nix build nixpkgs#cosign -o cosign-bin
+          nix build nixpkgs#crane -o crane-bin
+          echo "$PWD/cosign-bin/bin" >> "$GITHUB_PATH"
+          echo "$PWD/crane-bin/bin" >> "$GITHUB_PATH"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get image metadata
+        id: meta
+        run: |
+          META=$(bin/build-and-push metadata --package "${{ matrix.image.package }}")
+          echo "$META" > metadata.json
+          echo "name=$(echo "$META" | jq -r .name)" >> "$GITHUB_OUTPUT"
+          echo "version=$(echo "$META" | jq -r .version)" >> "$GITHUB_OUTPUT"
+          echo "sbomify_component_id=$(echo "$META" | jq -r .sbomifyComponentId)" >> "$GITHUB_OUTPUT"
+
+      - name: Build image
+        run: bin/build-and-push build --package "${{ matrix.image.package }}"
+
+      - name: Compute PR tag
+        id: tag
+        run: |
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          SHA7="${HEAD_SHA::7}"
+          echo "pr_tag=pr-${PR_NUMBER}-${SHA7}" >> "$GITHUB_OUTPUT"
+          echo "ghcr_repo=ghcr.io/wellmaintained/packages/${{ matrix.image.name }}" >> "$GITHUB_OUTPUT"
+
+      - name: Push image to GHCR
+        id: push
+        run: |
+          DIGEST=$(bin/build-and-push push \
+            --registry "${{ steps.tag.outputs.ghcr_repo }}" \
+            --tag "${{ steps.tag.outputs.pr_tag }}")
+          echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
+
+      - name: Sign image
+        run: |
+          bin/build-and-push sign \
+            --image-ref "${{ steps.tag.outputs.ghcr_repo }}@${{ steps.push.outputs.digest }}"
+
+      - name: Build SBOM
+        id: sbom
+        run: |
+          SBOM_PATH=$(bin/build-and-push sbom \
+            --package "${{ matrix.image.package }}" \
+            --name "${{ matrix.image.name }}")
+          echo "path=${SBOM_PATH}" >> "$GITHUB_OUTPUT"
+
+      - name: Enrich SBOM
+        uses: sbomify/sbomify-action@master
+        continue-on-error: true
+        env:
+          TOKEN: ${{ secrets.SBOMIFY_TOKEN }}
+          COMPONENT_ID: ${{ steps.meta.outputs.sbomify_component_id }}
+          COMPONENT_NAME: ${{ steps.meta.outputs.name }}
+          COMPONENT_VERSION: ${{ steps.meta.outputs.version }}
+          SBOM_FILE: ${{ steps.sbom.outputs.path }}
+          SBOM_FORMAT: cyclonedx
+          AUGMENT: true
+          ENRICH: true
+          UPLOAD: false
+          OUTPUT_FILE: ${{ matrix.image.name }}.enriched.cdx.json
+
+      - name: Fall back to raw SBOM if enrichment skipped
+        run: |
+          if [ ! -f "${{ matrix.image.name }}.enriched.cdx.json" ]; then
+            cp "${{ steps.sbom.outputs.path }}" "${{ matrix.image.name }}.enriched.cdx.json"
+          fi
+
+      - name: Attest SBOM and provenance
+        run: |
+          IMAGE_REF="${{ steps.tag.outputs.ghcr_repo }}@${{ steps.push.outputs.digest }}"
+
+          # Generate SLSA provenance
+          bin/build-and-push provenance \
+            --run-id "${{ github.run_id }}" \
+            --server-url "${{ github.server_url }}" \
+            --repository "${{ github.repository }}" \
+            --ref "${{ github.ref }}" \
+            --sha "${{ github.sha }}" \
+            > provenance.json
+
+          # Attach both attestations
+          bin/build-and-push attest \
+            --image-ref "${IMAGE_REF}" \
+            --sbom-file "${{ matrix.image.name }}.enriched.cdx.json" \
+            --provenance-file provenance.json
+
+      - name: Upload enriched SBOM
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ matrix.image.name }}-sbom
+          path: |
+            ${{ matrix.image.name }}.enriched.cdx.json
+            metadata.json

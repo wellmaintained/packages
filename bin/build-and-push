@@ -1,0 +1,221 @@
+#!/usr/bin/env bash
+# bin/build-and-push — Build a Nix OCI image, push to GHCR, sign and attest.
+#
+# Subcommands:
+#   metadata  — Extract image metadata from nix package (outputs JSON to stdout)
+#   build     — Build the OCI image via nix
+#   push      — Load, tag, and push image to GHCR; outputs digest
+#   sbom      — Build patched SBOM, enrich if possible; outputs SBOM path
+#   sign      — Cosign sign the image
+#   attest    — Attach SBOM and SLSA provenance attestations
+#
+# Each subcommand can be called independently or composed in a pipeline.
+
+set -euo pipefail
+
+usage() {
+  cat >&2 <<EOF
+Usage: $0 <subcommand> [options]
+
+Subcommands:
+  metadata  --package PKG
+  build     --package PKG
+  push      --registry REPO --tag TAG
+  sbom      --package PKG --name NAME
+  sign      --image-ref REPO@DIGEST
+  attest    --image-ref REPO@DIGEST --sbom-file PATH [--provenance-file PATH]
+
+Common options:
+  --package PKG     Nix package name (e.g. postgres-image)
+  --name NAME       Image short name (e.g. postgres)
+  --registry REPO   Full GHCR repo path (e.g. ghcr.io/wellmaintained/packages/postgres)
+  --tag TAG         Image tag (e.g. pr-42-abc1234)
+  --image-ref REF   Image reference with digest (REPO@sha256:...)
+  --sbom-file PATH  Path to SBOM file
+  --provenance-file PATH  Path to SLSA provenance JSON
+  --run-id ID       GitHub Actions run ID (for provenance)
+  --server-url URL  GitHub server URL (for provenance)
+  --repository REPO GitHub repository (for provenance)
+  --ref REF         Git ref (for provenance)
+  --sha SHA         Git commit SHA (for provenance)
+EOF
+  exit 1
+}
+
+cmd_metadata() {
+  local package=""
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --package) package="$2"; shift 2 ;;
+      *) echo "Unknown option: $1" >&2; usage ;;
+    esac
+  done
+  [[ -z "$package" ]] && { echo "ERROR: --package required" >&2; usage; }
+
+  nix eval --json ".#${package}.imageMetadata"
+}
+
+cmd_build() {
+  local package=""
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --package) package="$2"; shift 2 ;;
+      *) echo "Unknown option: $1" >&2; usage ;;
+    esac
+  done
+  [[ -z "$package" ]] && { echo "ERROR: --package required" >&2; usage; }
+
+  echo "==> Building image: ${package}" >&2
+  nix build ".#${package}"
+  echo "==> Image built: result" >&2
+}
+
+cmd_push() {
+  local registry="" tag=""
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --registry) registry="$2"; shift 2 ;;
+      --tag) tag="$2"; shift 2 ;;
+      *) echo "Unknown option: $1" >&2; usage ;;
+    esac
+  done
+  [[ -z "$registry" || -z "$tag" ]] && { echo "ERROR: --registry and --tag required" >&2; usage; }
+
+  echo "==> Loading image into Docker" >&2
+  local load_output
+  load_output=$(docker load < result)
+  echo "${load_output}" >&2
+
+  local loaded_image
+  loaded_image=$(echo "${load_output}" | grep -oP 'Loaded image: \K.*')
+
+  echo "==> Tagging as ${registry}:${tag}" >&2
+  docker tag "${loaded_image}" "${registry}:${tag}"
+
+  echo "==> Pushing ${registry}:${tag}" >&2
+  docker push "${registry}:${tag}" >&2
+
+  # Output the digest (consumed by caller)
+  local digest
+  digest=$(docker inspect --format='{{index .RepoDigests 0}}' "${registry}:${tag}" | cut -d@ -f2)
+  echo "${digest}"
+}
+
+cmd_sbom() {
+  local package="" name=""
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --package) package="$2"; shift 2 ;;
+      --name) name="$2"; shift 2 ;;
+      *) echo "Unknown option: $1" >&2; usage ;;
+    esac
+  done
+  [[ -z "$package" || -z "$name" ]] && { echo "ERROR: --package and --name required" >&2; usage; }
+
+  echo "==> Building patched SBOM for ${name}" >&2
+  nix build ".#${package}.patchedSbom"
+  cp -L result "${name}.cdx.json"
+  echo "==> SBOM written to ${name}.cdx.json" >&2
+
+  # Output the SBOM path (consumed by caller)
+  echo "${name}.cdx.json"
+}
+
+cmd_sign() {
+  local image_ref=""
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --image-ref) image_ref="$2"; shift 2 ;;
+      *) echo "Unknown option: $1" >&2; usage ;;
+    esac
+  done
+  [[ -z "$image_ref" ]] && { echo "ERROR: --image-ref required" >&2; usage; }
+
+  echo "==> Signing ${image_ref}" >&2
+  cosign sign --yes "${image_ref}"
+}
+
+cmd_attest() {
+  local image_ref="" sbom_file="" provenance_file=""
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --image-ref) image_ref="$2"; shift 2 ;;
+      --sbom-file) sbom_file="$2"; shift 2 ;;
+      --provenance-file) provenance_file="$2"; shift 2 ;;
+      *) echo "Unknown option: $1" >&2; usage ;;
+    esac
+  done
+  [[ -z "$image_ref" ]] && { echo "ERROR: --image-ref required" >&2; usage; }
+
+  if [[ -n "$sbom_file" ]]; then
+    echo "==> Attesting SBOM on ${image_ref}" >&2
+    cosign attest --yes \
+      --predicate "${sbom_file}" \
+      --type cyclonedx \
+      "${image_ref}"
+  fi
+
+  if [[ -n "$provenance_file" ]]; then
+    echo "==> Attesting SLSA provenance on ${image_ref}" >&2
+    cosign attest --yes \
+      --predicate "${provenance_file}" \
+      --type slsaprovenance \
+      "${image_ref}"
+  fi
+}
+
+cmd_provenance() {
+  local run_id="" server_url="" repository="" ref="" sha=""
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --run-id) run_id="$2"; shift 2 ;;
+      --server-url) server_url="$2"; shift 2 ;;
+      --repository) repository="$2"; shift 2 ;;
+      --ref) ref="$2"; shift 2 ;;
+      --sha) sha="$2"; shift 2 ;;
+      *) echo "Unknown option: $1" >&2; usage ;;
+    esac
+  done
+  [[ -z "$run_id" || -z "$server_url" || -z "$repository" || -z "$ref" || -z "$sha" ]] && {
+    echo "ERROR: --run-id, --server-url, --repository, --ref, --sha all required" >&2; usage
+  }
+
+  jq -n \
+    --arg buildType "https://github.com/wellmaintained/packages/build/nix/v1" \
+    --arg builderId "${server_url}/${repository}/actions/runs/${run_id}" \
+    --arg configUri "git+${server_url}/${repository}@${ref}" \
+    --arg sha "${sha}" \
+    --arg runId "${run_id}" \
+    --arg materialsUri "git+${server_url}/${repository}" \
+    '{
+      buildType: $buildType,
+      builder: { id: $builderId },
+      invocation: {
+        configSource: {
+          uri: $configUri,
+          digest: { sha1: $sha },
+          entryPoint: ".github/workflows/build.yml"
+        }
+      },
+      metadata: {
+        buildInvocationId: $runId,
+        completeness: { parameters: true, environment: false, materials: true }
+      },
+      materials: [{
+        uri: $materialsUri,
+        digest: { sha1: $sha }
+      }]
+    }'
+}
+
+# Dispatch subcommand
+case "${1:-}" in
+  metadata)   shift; cmd_metadata "$@" ;;
+  build)      shift; cmd_build "$@" ;;
+  push)       shift; cmd_push "$@" ;;
+  sbom)       shift; cmd_sbom "$@" ;;
+  sign)       shift; cmd_sign "$@" ;;
+  attest)     shift; cmd_attest "$@" ;;
+  provenance) shift; cmd_provenance "$@" ;;
+  *) usage ;;
+esac

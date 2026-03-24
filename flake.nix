@@ -238,23 +238,18 @@
         sbomqs = import ./pkgs/sbomqs { inherit pkgs; };
         sbomlyze = import ./pkgs/sbomlyze { inherit pkgs; };
 
-        # Helper: wrap an SBOM derivation with imageMetadata passthru for CI compatibility
-        # CI uses: nix eval --json .#<name>-sbom.imageMetadata
-        withImageMetadata = spec:
-          spec.metadata.sbom.cyclonedx-1-6.overrideAttrs {
-            passthru.imageMetadata = {
-              inherit (spec.metadata) name version license;
-            } // spec.metadata.extra;
-          };
-
       in
       {
         # Export package sets for downstream consumers
         inherit packageSets;
 
-        # OCI images + SBOM derivations
+        # OCI images — each carries passthru: .sbom, .patchedSbom, .imageMetadata
+        # CI uses a single package ref per image:
+        #   nix build .#postgres-image            → OCI image tarball
+        #   nix build .#postgres-image.patchedSbom → patched CycloneDX 1.6 SBOM
+        #   nix eval --json .#postgres-image.imageMetadata → { name, version, ... }
         packages = {
-          # Images
+          # Images (unified: image + SBOM + metadata from one package)
           postgres-image = postgres.image;
           redis-image = redis.image;
           minio-image = minio.image;
@@ -262,16 +257,6 @@
           sbomify-keycloak-image = sbomifyKeycloakSpec.image;
           sbomify-caddy-dev-image = sbomifyCaddyDevSpec.image;
           sbomify-minio-init-image = sbomifyMinioInitSpec.image;
-
-          # CycloneDX 1.6 SBOMs — build with: nix build .#<name>-sbom
-          # Each exposes passthru.imageMetadata so CI can: nix eval --json .#<name>-sbom.imageMetadata
-          postgres-sbom = withImageMetadata postgres;
-          redis-sbom = withImageMetadata redis;
-          minio-sbom = withImageMetadata minio;
-          sbomify-app-sbom = withImageMetadata sbomifyAppSpec;
-          sbomify-keycloak-sbom = withImageMetadata sbomifyKeycloakSpec;
-          sbomify-caddy-dev-sbom = withImageMetadata sbomifyCaddyDevSpec;
-          sbomify-minio-init-sbom = withImageMetadata sbomifyMinioInitSpec;
 
           # SBOM quality tools
           inherit sbomqs sbomlyze;
@@ -293,6 +278,8 @@
               direnv
               nix-direnv
               cyclonedx-cli
+              cosign
+              crane
             ];
           };
 

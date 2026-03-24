@@ -86,7 +86,37 @@
             value = withSbom sourcePkgs.${name};
           }) names);
 
+        # Patch an SBOM's root component with OCI image metadata
+        patchSbomRoot = { sbom, name, version, license, imagePrefix ? "wellmaintained/packages" }:
+          let
+            fullName = "${imagePrefix}/${name}-image";
+            purl = "pkg:docker/${imagePrefix}/${name}@${version}";
+          in
+          pkgs.runCommand "${name}-sbom-patched.cdx.json" {
+            nativeBuildInputs = [ pkgs.jq ];
+          } ''
+            jq --arg name "${fullName}" \
+               --arg version "${version}" \
+               --arg purl "${purl}" \
+               --arg license "${license}" \
+               '
+              .metadata.component.name = $name |
+              .metadata.component.version = $version |
+              .metadata.component.type = "container" |
+              .metadata.component.purl = $purl |
+              .metadata.component.licenses = [{"license": {"id": $license}}] |
+              .metadata.component["bom-ref"] as $root |
+              .dependencies = [
+                {"ref": $root, "dependsOn": [.components[]?["bom-ref"]]}
+              ] + [.dependencies[]? | select(.ref != $root)]
+            ' < ${sbom} > "$out"
+          '';
+
         # High-level API: image definition → { image; metadata; compliance; }
+        #
+        # Returns { image; metadata; compliance; } where image carries passthru
+        # attributes (.sbom, .patchedSbom, .imageMetadata) so CI can reference
+        # a single package for both image and SBOM.
         buildCompliantImage = {
           name,
           version,
@@ -109,6 +139,14 @@
             };
             sbom = buildSbom closure [];
 
+            # Pre-patched SBOM with OCI image root component metadata
+            patchedSbom = patchSbomRoot { inherit sbom name version license; };
+
+            # Metadata for CI consumption (nix eval --json .#<image>.imageMetadata)
+            imageMetadata = {
+              inherit name version license;
+            } // extraMetadata;
+
             # OCI annotation labels derived from inputs
             labels = {
               "org.opencontainers.image.title" = name;
@@ -122,13 +160,17 @@
               "org.opencontainers.image.source" = packager.url;
             } else {});
 
-            image = pkgs.dockerTools.buildLayeredImage {
+            image = (pkgs.dockerTools.buildLayeredImage {
               inherit name tag fakeRootCommands;
               contents = packages ++ extraContents;
               config = imageConfig // {
                 Labels = (imageConfig.Labels or {}) // labels;
               };
-            };
+            }).overrideAttrs (old: {
+              passthru = (old.passthru or {}) // {
+                inherit sbom patchedSbom imageMetadata;
+              };
+            });
           in {
             inherit image;
 
