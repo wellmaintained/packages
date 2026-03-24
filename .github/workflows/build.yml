@@ -1,4 +1,4 @@
-name: Generate SBOMs
+name: Build images and SBOMs
 
 # Combined image + SBOM build for PRs (ADR-0003: build once, promote on merge).
 # Logic lives in bin/build-and-push; this workflow is a thin wrapper.

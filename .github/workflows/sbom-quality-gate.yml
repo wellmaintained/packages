@@ -3,12 +3,12 @@ name: SBOM quality gate
 # Scores the PR's SBOMs and compares against the baseline from main.
 # Blocks merging if any image's quality score regresses.
 #
-# Requires the "Generate SBOMs" workflow to have run first on this PR
+# Requires the "Build images and SBOMs" workflow to have run first on this PR
 # (it produces the enriched SBOM artifacts we score here).
 
 on:
   workflow_run:
-    workflows: ["Generate SBOMs"]
+    workflows: ["Build images and SBOMs"]
     types: [completed]
 
 permissions:
@@ -76,12 +76,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # Find the latest successful Generate SBOMs run, excluding
+          # Find the latest successful Build images and SBOMs run, excluding
           # the current triggering run. The build workflow runs on PRs only;
           # the most recent prior successful run serves as baseline.
           CURRENT_RUN_ID="${{ github.event.workflow_run.id }}"
           RUN_ID=$(gh run list \
-            --workflow="Generate SBOMs" \
+            --workflow="Build images and SBOMs" \
             --status=success \
             --limit=10 \
             --json databaseId \
