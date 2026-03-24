@@ -97,6 +97,8 @@ jobs:
         run: |
           nix build nixpkgs#crane -o crane-bin
           echo "$PWD/crane-bin/bin" >> "$GITHUB_PATH"
+          # Verify crane is available
+          ./crane-bin/bin/crane version
 
       - name: Log in to GHCR
         uses: docker/login-action@v4

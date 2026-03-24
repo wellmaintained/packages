@@ -57,13 +57,18 @@ if [[ -f "$HOME/.docker/config.json" ]]; then
   export DOCKER_CONFIG="$HOME/.docker"
 fi
 
-# Debug: verify crane is available and auth is configured
-echo "    crane path: $(command -v crane 2>&1 || echo 'NOT FOUND')"
-echo "    DOCKER_CONFIG: ${DOCKER_CONFIG:-<unset>}"
-echo "    docker config exists: $(test -f "${DOCKER_CONFIG:-$HOME/.docker}/config.json" && echo yes || echo no)"
+# If crane isn't on PATH, check the nix output link created by CI
+if ! command -v crane &>/dev/null; then
+  if [[ -x "./crane-bin/bin/crane" ]]; then
+    export PATH="$(cd ./crane-bin/bin && pwd):$PATH"
+  else
+    echo "ERROR: crane not found on PATH or at ./crane-bin/bin/crane"
+    echo "PATH=$PATH"
+    exit 1
+  fi
+fi
 
 # Resolve the digest of the PR-tagged image
-echo "    Running: crane digest ${REPO}:${PR_TAG}"
 DIGEST=$(crane digest "${REPO}:${PR_TAG}" 2>&1) || {
   echo "ERROR: crane digest failed with: ${DIGEST}"
   echo "PR tag '${PR_TAG}' not found for ${REPO}."
