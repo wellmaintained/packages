@@ -99,3 +99,7 @@ jobs:
           path: |
             ${{ steps.meta.outputs.name }}.enriched.cdx.json
             metadata.json
+
+      - name: Teardown Nix
+        uses: ./.github/actions/teardown-nix
+        if: always()
