@@ -16,6 +16,12 @@ permissions:
   contents: read
   packages: write
 
+# useblacksmith/setup-docker-builder and build-push-action still ship node20
+# with no node24 releases available. Opt in early ahead of the June 2026
+# forced migration.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build-and-push:
     runs-on: blacksmith-4vcpu-ubuntu-2404
