@@ -27,13 +27,8 @@ runs:
     - name: Activate CI devshell
       shell: bash
       run: |
-        # Add CI tools (cosign, crane, sbomqs, sbomlyze) to PATH.
-        # Uses nix print-dev-env instead of `nix build -o` to avoid the
-        # broken symlink issue on Blacksmith runners with stickydisk.
-        CI_PATH=$(nix print-dev-env .#ci --json | jq -r '.variables.PATH.value')
-        echo "$CI_PATH" | tr ':' '\n' | grep '^/nix/store' | while read -r p; do
-          echo "$p" >> "$GITHUB_PATH"
-        done
+        # Add CI tools (cosign, crane, sbomqs, sbomlyze) to PATH
+        nix develop .#ci -c bash -c 'echo "$PATH"' | tr ':' '\n' | grep '^/nix/store' >> "$GITHUB_PATH"
 
     - name: Register nix daemon cleanup for stickydisk
       uses: ./.github/actions/stop-nix-daemon
