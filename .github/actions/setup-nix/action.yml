@@ -1,5 +1,5 @@
 name: Setup Nix
-description: Install Nix with Determinate Systems, persistent Nix store via Blacksmith sticky disk, and CI tools from devShells.ci
+description: Install Nix with Determinate Systems and persistent Nix store via Blacksmith sticky disk
 
 runs:
   using: composite
@@ -23,12 +23,6 @@ runs:
       uses: DeterminateSystems/determinate-nix-action@v3
       with:
         diagnostic-endpoint: ""
-
-    - name: Activate CI devshell
-      shell: bash
-      run: |
-        # Add CI tools (cosign, crane, sbomqs, sbomlyze) to PATH
-        nix develop .#ci -c bash -c 'echo "$PATH"' | tr ':' '\n' | grep '^/nix/store' >> "$GITHUB_PATH"
 
     - name: Register nix daemon cleanup for stickydisk
       uses: ./.github/actions/stop-nix-daemon

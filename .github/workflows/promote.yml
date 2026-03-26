@@ -81,6 +81,9 @@ jobs:
     needs: [load-matrix, resolve-pr]
     if: needs.resolve-pr.outputs.skip != 'true'
     runs-on: blacksmith-2vcpu-ubuntu-2404
+    defaults:
+      run:
+        shell: nix develop .#ci -c bash -e {0}
     strategy:
       fail-fast: false
       matrix:
