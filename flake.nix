@@ -1,4 +1,4 @@
-# flake.nix
+# flake.nix — CI trigger (noop)
 {
   description = "Wellmaintained packages - curated Nix package sets and devShells";
 
