@@ -122,20 +122,11 @@ jobs:
       - name: Extract SBOM from OCI attestation
         continue-on-error: true
         run: |
-          REPO="ghcr.io/wellmaintained/packages/${{ matrix.image.name }}"
-          PR_TAG="pr-${{ needs.resolve-pr.outputs.pr_number }}-${{ needs.resolve-pr.outputs.head_sha7 }}"
-          DIGEST=$(crane digest "${REPO}:${PR_TAG}")
-          IMAGE_REF="${REPO}@${DIGEST}"
-
-          echo "==> Extracting SBOM attestation from ${IMAGE_REF}"
-          mkdir -p sbom
-          cosign download attestation \
-            --predicate-type https://cyclonedx.org/bom \
-            "${IMAGE_REF}" \
-            | jq -r '.payload' | base64 -d | jq '.predicate' \
-            > "sbom/${{ steps.meta.outputs.name }}.enriched.cdx.json"
-
-          echo "==> SBOM extracted to sbom/${{ steps.meta.outputs.name }}.enriched.cdx.json"
+          bin/extract-sbom-attestation \
+            --image "${{ matrix.image.name }}" \
+            --pr "${{ needs.resolve-pr.outputs.pr_number }}" \
+            --sha "${{ needs.resolve-pr.outputs.head_sha7 }}" \
+            --output "sbom/${{ steps.meta.outputs.name }}.enriched.cdx.json"
 
       - name: Upload SBOM to sbomify.com
         if: ${{ !startsWith(steps.meta.outputs.sbomify_component_id, 'PLACEHOLDER') }}
