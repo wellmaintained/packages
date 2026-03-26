@@ -1,13 +1,26 @@
 name: Setup Nix
 description: Install Nix with persistent Nix store via Blacksmith sticky disk
 
+inputs:
+  stickydisk-suffix:
+    description: >
+      Suffix appended to the stickydisk key. Use a unique value per matrix job
+      (e.g. the image name) to avoid Last-Write-Wins races between parallel jobs.
+    required: true
+  nix-package:
+    description: >
+      Flake package attribute to root before GC (e.g. "redis-image"). If set,
+      this package's closure is preserved in the stickydisk cache across runs.
+    required: false
+    default: ""
+
 runs:
   using: composite
   steps:
     - name: Persist Nix store
       uses: useblacksmith/stickydisk@v1
       with:
-        key: ${{ github.repository }}-nix-v2-${{ runner.os }}
+        key: ${{ github.repository }}-${{ inputs.stickydisk-suffix }}-nix-${{ runner.os }}
         path: /nix
 
     - name: Prepare for Nix install
@@ -24,6 +37,11 @@ runs:
       with:
         determinate: false
         diagnostic-endpoint: ""
+
+    - name: Export nix package for GC rooting
+      if: inputs.nix-package != ''
+      shell: bash
+      run: echo "NIX_GC_ROOT_PACKAGE=${{ inputs.nix-package }}" >> "$GITHUB_ENV"
 
     - name: Register nix daemon cleanup for stickydisk
       uses: ./.github/actions/stop-nix-daemon
