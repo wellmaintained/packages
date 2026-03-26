@@ -135,8 +135,12 @@ let
 
   metadataList = map (item: extractMetadata item.drv) allDeps;
 
+  # builtins.toJSON serializes store paths as strings but preserves their
+  # string context, causing nix to warn that the writeText derivation
+  # references store paths it doesn't actually need as build inputs.
+  # We only record paths as metadata — discard context to silence the warning.
   rawJson = writeText "${drv.name}-buildtime-deps-raw.json" (
-    builtins.toJSON metadataList
+    builtins.unsafeDiscardStringContext (builtins.toJSON metadataList)
   );
 in
 # Pretty-print the JSON so downstream tools can report errors with
