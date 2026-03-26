@@ -285,7 +285,6 @@
 
           # CI: tools needed by GitHub Actions workflows
           ci = pkgs.mkShell {
-            name = "packages-ci";
             packages = with pkgs; [
               cosign
               crane
