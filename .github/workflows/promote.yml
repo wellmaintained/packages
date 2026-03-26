@@ -119,13 +119,14 @@ jobs:
             --sha "${{ needs.resolve-pr.outputs.head_sha7 }}" \
             --version "${{ steps.meta.outputs.version }}"
 
-      - name: Download SBOM from build workflow
-        uses: actions/download-artifact@v4
+      - name: Extract SBOM from OCI attestation
         continue-on-error: true
-        with:
-          name: ${{ matrix.image.name }}-sbom
-          path: sbom/
-          github-token: ${{ github.token }}
+        run: |
+          bin/extract-sbom-attestation \
+            --image "${{ matrix.image.name }}" \
+            --pr "${{ needs.resolve-pr.outputs.pr_number }}" \
+            --sha "${{ needs.resolve-pr.outputs.head_sha7 }}" \
+            --output "sbom/${{ steps.meta.outputs.name }}.enriched.cdx.json"
 
       - name: Upload SBOM to sbomify.com
         if: ${{ !startsWith(steps.meta.outputs.sbomify_component_id, 'PLACEHOLDER') }}
