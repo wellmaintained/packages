@@ -1,0 +1,35 @@
+name: Cleanup Nix store on stickydisk
+
+# Weekly garbage collection of the persistent /nix store cached via stickydisk.
+# Without this, the store grows unboundedly as new derivations are built on each
+# PR run but never reclaimed.
+
+on:
+  schedule:
+    # Weekly: Sundays at 04:00 UTC (after PR image cleanup at 03:00)
+    - cron: '0 4 * * 0'
+  workflow_dispatch:
+
+jobs:
+  gc:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Nix (mounts stickydisk cache)
+        uses: ./.github/actions/setup-nix
+
+      - name: Report store size before GC
+        run: |
+          echo "### Nix store before GC" >> "$GITHUB_STEP_SUMMARY"
+          du -sh /nix/store | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "Store paths: $(ls /nix/store | wc -l)" | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Run nix garbage collection
+        run: nix store gc
+
+      - name: Report store size after GC
+        run: |
+          echo "### Nix store after GC" >> "$GITHUB_STEP_SUMMARY"
+          du -sh /nix/store | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "Store paths: $(ls /nix/store | wc -l)" | tee -a "$GITHUB_STEP_SUMMARY"
