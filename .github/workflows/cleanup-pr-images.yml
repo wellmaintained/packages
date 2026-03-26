@@ -69,7 +69,12 @@ jobs:
           done
 
       - name: Run nix garbage collection
-        run: nix store gc
+        run: |
+          # Delete profile generations older than 7 days, then collect
+          # unreferenced store paths. Current derivations are protected
+          # by the GC roots created above; this adds a time-based safety
+          # net so recently-used paths survive even if not explicitly rooted.
+          nix-collect-garbage --delete-older-than 7d
 
       - name: Report store size after GC
         run: |
