@@ -18,7 +18,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  actions: write
+  actions: read
   contents: read
   packages: write
   id-token: write
@@ -139,11 +139,3 @@ jobs:
             --image-ref "${IMAGE_REF}" \
             --sbom-file "${{ matrix.image.name }}.enriched.cdx.json" \
             --provenance-file provenance.json
-
-      - name: Upload enriched SBOM
-        uses: actions/upload-artifact@v6
-        with:
-          name: ${{ matrix.image.name }}-sbom
-          path: |
-            ${{ matrix.image.name }}.enriched.cdx.json
-            metadata.json
