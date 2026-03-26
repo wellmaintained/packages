@@ -1,9 +1,12 @@
-name: Cleanup PR images
+name: Weekly cleanup
 
-# Weekly sweep of stale PR-tagged images from GHCR (ADR-0003 section 6).
-# Logic lives in bin/cleanup-pr-images; this workflow is a thin wrapper.
+# Weekly maintenance: sweep stale PR-tagged images from GHCR (ADR-0003
+# section 6) and garbage-collect the persistent Nix store on stickydisk.
+# Image cleanup logic lives in bin/cleanup-pr-images.
 
 on:
+  push:
+    branches: [weekly-cleanup-pr-runs-nix-garbage-collect-on-stickydisk]  # TEMPORARY: remove before merge
   schedule:
     # Weekly sweep: Sundays at 03:00 UTC
     - cron: '0 3 * * 0'
@@ -38,3 +41,26 @@ jobs:
           bin/cleanup-pr-images sweep \
             --image "${{ matrix.image.name }}" \
             --days 7
+
+  nix-store-gc:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Nix (mounts stickydisk cache)
+        uses: ./.github/actions/setup-nix
+
+      - name: Report store size before GC
+        run: |
+          echo "### Nix store before GC" >> "$GITHUB_STEP_SUMMARY"
+          du -sh /nix/store | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "Store paths: $(ls /nix/store | wc -l)" | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Run nix garbage collection
+        run: nix store gc
+
+      - name: Report store size after GC
+        run: |
+          echo "### Nix store after GC" >> "$GITHUB_STEP_SUMMARY"
+          du -sh /nix/store | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "Store paths: $(ls /nix/store | wc -l)" | tee -a "$GITHUB_STEP_SUMMARY"
