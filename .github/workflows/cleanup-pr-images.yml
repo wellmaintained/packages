@@ -57,7 +57,16 @@ jobs:
           echo "Store paths: $(ls /nix/store | wc -l)" | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Root current derivations
-        run: nix develop .#ci --command true
+        run: |
+          # Root devshells so CI tools stay cached
+          nix develop .#ci --command true
+          nix develop .#default --command true
+
+          # Root all image builds from the matrix so their deps survive GC
+          for pkg in $(jq -r '.[].package' .github/image-matrix.json); do
+            echo "Rooting .#$pkg"
+            nix build --no-link ".#$pkg"
+          done
 
       - name: Run nix garbage collection
         run: nix store gc
