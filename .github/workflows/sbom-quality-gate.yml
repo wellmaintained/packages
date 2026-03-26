@@ -32,6 +32,9 @@ jobs:
   score:
     needs: load-matrix
     runs-on: blacksmith-2vcpu-ubuntu-2404
+    defaults:
+      run:
+        shell: nix develop .#ci -c bash -e {0}
     strategy:
       fail-fast: false
       matrix:
@@ -43,13 +46,6 @@ jobs:
 
       - name: Setup Nix
         uses: ./.github/actions/setup-nix
-
-      - name: Build sbomqs and sbomlyze
-        run: |
-          nix build .#sbomqs -o sbomqs-bin
-          nix build .#sbomlyze -o sbomlyze-bin
-          echo "$PWD/sbomqs-bin/bin" >> "$GITHUB_PATH"
-          echo "$PWD/sbomlyze-bin/bin" >> "$GITHUB_PATH"
 
       - name: Download PR SBOM
         uses: actions/download-artifact@v4
