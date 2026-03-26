@@ -1,5 +1,5 @@
 name: Setup Nix
-description: Install Nix with Determinate Systems and persistent Nix store via Blacksmith sticky disk
+description: Install Nix with persistent Nix store via Blacksmith sticky disk
 
 runs:
   using: composite
@@ -20,8 +20,9 @@ runs:
         sudo rm -f /nix/receipt.json
 
     - name: Install Nix
-      uses: DeterminateSystems/determinate-nix-action@v3
+      uses: DeterminateSystems/nix-installer-action@v21
       with:
+        determinate: false
         diagnostic-endpoint: ""
 
     - name: Register nix daemon cleanup for stickydisk
