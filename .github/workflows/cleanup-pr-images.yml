@@ -56,6 +56,9 @@ jobs:
           du -sh /nix/store | tee -a "$GITHUB_STEP_SUMMARY"
           echo "Store paths: $(ls /nix/store | wc -l)" | tee -a "$GITHUB_STEP_SUMMARY"
 
+      - name: Root current derivations
+        run: nix develop .#ci --command true
+
       - name: Run nix garbage collection
         run: nix store gc
 
