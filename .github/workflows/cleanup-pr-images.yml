@@ -5,8 +5,6 @@ name: Weekly cleanup
 # Image cleanup logic lives in bin/cleanup-pr-images.
 
 on:
-  push:
-    branches: [weekly-cleanup-pr-runs-nix-garbage-collect-on-stickydisk]  # TEMPORARY: remove before merge
   schedule:
     # Weekly sweep: Sundays at 03:00 UTC
     - cron: '0 3 * * 0'
