@@ -71,7 +71,7 @@ jobs:
         run: |
           mkdir -p results
           SBOM=$(ls current/*.cdx.json | head -1)
-          bin/sbom-score --image "${{ steps.meta.outputs.name }}" "$SBOM" \
+          common/lib/scripts/sbom-score --image "${{ steps.meta.outputs.name }}" "$SBOM" \
             > results/score-${{ steps.meta.outputs.name }}.json
 
       - name: Fetch baseline SBOM
@@ -109,7 +109,7 @@ jobs:
         if: steps.baseline.outputs.has_baseline == 'true'
         run: |
           SBOM=$(ls baseline/*.cdx.json | head -1)
-          bin/sbom-score --image "${{ steps.meta.outputs.name }}" "$SBOM" \
+          common/lib/scripts/sbom-score --image "${{ steps.meta.outputs.name }}" "$SBOM" \
             > results/baseline-${{ steps.meta.outputs.name }}.json
 
       - name: Compare SBOMs
@@ -117,7 +117,7 @@ jobs:
         run: |
           BASELINE=$(ls baseline/*.cdx.json | head -1)
           CURRENT=$(ls current/*.cdx.json | head -1)
-          bin/sbom-compare \
+          common/lib/scripts/sbom-compare \
             --baseline "$BASELINE" \
             --current "$CURRENT" \
             --image "${{ steps.meta.outputs.name }}" \
@@ -154,7 +154,7 @@ jobs:
       - name: Generate report
         id: report
         run: |
-          bin/sbom-report --scores-dir results/ > pr-comment.md 2>report-stderr.txt || {
+          common/lib/scripts/sbom-report --scores-dir results/ > pr-comment.md 2>report-stderr.txt || {
             cat report-stderr.txt >&2
             echo "failed=true" >> "$GITHUB_OUTPUT"
           }

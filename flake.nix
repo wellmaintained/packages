@@ -33,7 +33,7 @@
       flake = false;
     };
     nix-compliance-inator = {
-      url = "path:./nix-compliance-inator";
+      url = "path:./common/lib/nix-compliance-inator";
     };
   };
 
@@ -162,9 +162,9 @@
         };
 
         # OCI images — each returns { image; metadata; compliance; }
-        postgres = import ./images/postgres.nix { inherit pkgs; };
-        redis = import ./images/redis.nix { inherit pkgs; };
-        minio = import ./images/minio.nix { inherit pkgs; };
+        postgres = import ./common/images/postgres.nix { inherit pkgs; };
+        redis = import ./common/images/redis.nix { inherit pkgs; };
+        minio = import ./common/images/minio.nix { inherit pkgs; };
 
         # uv2nix: Python virtualenv from sbomify's uv.lock
         sbomifyWorkspace = uv2nix.lib.workspace.loadWorkspace {
@@ -202,12 +202,12 @@
 
         sbomifyVenv = pythonSet.mkVirtualEnv "sbomify-venv" sbomifyWorkspace.deps.default;
 
-        sbomifyFrontend = import ./deployments/sbomify/pkgs/sbomify-frontend {
+        sbomifyFrontend = import ./apps/sbomify/deployments/build-support/sbomify-frontend {
           inherit pkgs;
           sbomifySrc = sbomify-src;
         };
 
-        sbomifyApp = import ./deployments/sbomify/pkgs/sbomify-app {
+        sbomifyApp = import ./apps/sbomify/deployments/build-support/sbomify-app {
           inherit pkgs sbomifyVenv sbomifyFrontend;
           sbomifySrc = sbomify-src;
         };
@@ -215,28 +215,28 @@
         # Version derived from the pinned sbomify-src input's pyproject.toml
         sbomifyVersion = (builtins.fromTOML (builtins.readFile (sbomify-src + "/pyproject.toml"))).project.version;
 
-        sbomifyAppSpec = import ./deployments/sbomify/images/sbomify-app.nix {
+        sbomifyAppSpec = import ./apps/sbomify/images/sbomify-app.nix {
           inherit pkgs sbomifyApp sbomifyVersion;
         };
 
-        sbomifyKeycloakSpec = import ./deployments/sbomify/images/sbomify-keycloak.nix {
+        sbomifyKeycloakSpec = import ./apps/sbomify/images/sbomify-keycloak.nix {
           inherit pkgs;
           sbomifySrc = sbomify-src;
         };
 
-        sbomifyCaddyDevSpec = import ./deployments/sbomify/images/sbomify-caddy-dev.nix {
+        sbomifyCaddyDevSpec = import ./apps/sbomify/images/sbomify-caddy-dev.nix {
           inherit pkgs;
           sbomifySrc = sbomify-src;
         };
 
-        sbomifyMinioInitSpec = import ./deployments/sbomify/images/sbomify-minio-init.nix {
+        sbomifyMinioInitSpec = import ./apps/sbomify/images/sbomify-minio-init.nix {
           inherit pkgs sbomifyVersion;
           sbomifySrc = sbomify-src;
         };
 
         # SBOM quality tools
-        sbomqs = import ./pkgs/sbomqs { inherit pkgs; };
-        sbomlyze = import ./pkgs/sbomlyze { inherit pkgs; };
+        sbomqs = import ./common/pkgs/sbomqs { inherit pkgs; };
+        sbomlyze = import ./common/pkgs/sbomlyze { inherit pkgs; };
 
       in
       {

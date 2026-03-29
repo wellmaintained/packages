@@ -1,15 +1,15 @@
 # shellcheck shell=sh
-Describe "bin/build-and-push"
+Describe "common/lib/scripts/build-and-push"
 
   Describe "subcommand dispatch"
     It "shows usage when no subcommand given"
-      When run bin/build-and-push
+      When run common/lib/scripts/build-and-push
       The status should be failure
       The stderr should include "Usage"
     End
 
     It "shows usage for unknown subcommand"
-      When run bin/build-and-push foobar
+      When run common/lib/scripts/build-and-push foobar
       The status should be failure
       The stderr should include "Usage"
     End
@@ -17,13 +17,13 @@ Describe "bin/build-and-push"
 
   Describe "metadata subcommand"
     It "fails when --package is missing"
-      When run bin/build-and-push metadata
+      When run common/lib/scripts/build-and-push metadata
       The status should be failure
       The stderr should include "--package required"
     End
 
     It "fails for unknown option"
-      When run bin/build-and-push metadata --bogus foo
+      When run common/lib/scripts/build-and-push metadata --bogus foo
       The status should be failure
       The stderr should include "Unknown option"
     End
@@ -31,7 +31,7 @@ Describe "bin/build-and-push"
 
   Describe "build subcommand"
     It "fails when --package is missing"
-      When run bin/build-and-push build
+      When run common/lib/scripts/build-and-push build
       The status should be failure
       The stderr should include "--package required"
     End
@@ -39,13 +39,13 @@ Describe "bin/build-and-push"
 
   Describe "push subcommand"
     It "fails when --registry is missing"
-      When run bin/build-and-push push --tag pr-1-abc
+      When run common/lib/scripts/build-and-push push --tag pr-1-abc
       The status should be failure
       The stderr should include "--registry and --tag required"
     End
 
     It "fails when --tag is missing"
-      When run bin/build-and-push push --registry ghcr.io/example/img
+      When run common/lib/scripts/build-and-push push --registry ghcr.io/example/img
       The status should be failure
       The stderr should include "--registry and --tag required"
     End
@@ -53,13 +53,13 @@ Describe "bin/build-and-push"
 
   Describe "sbom subcommand"
     It "fails when --package is missing"
-      When run bin/build-and-push sbom --name postgres
+      When run common/lib/scripts/build-and-push sbom --name postgres
       The status should be failure
       The stderr should include "--package and --name required"
     End
 
     It "fails when --name is missing"
-      When run bin/build-and-push sbom --package postgres-image
+      When run common/lib/scripts/build-and-push sbom --package postgres-image
       The status should be failure
       The stderr should include "--package and --name required"
     End
@@ -67,7 +67,7 @@ Describe "bin/build-and-push"
 
   Describe "sign subcommand"
     It "fails when --image-ref is missing"
-      When run bin/build-and-push sign
+      When run common/lib/scripts/build-and-push sign
       The status should be failure
       The stderr should include "--image-ref required"
     End
@@ -75,7 +75,7 @@ Describe "bin/build-and-push"
 
   Describe "attest subcommand"
     It "fails when --image-ref is missing"
-      When run bin/build-and-push attest --sbom-file foo.json
+      When run common/lib/scripts/build-and-push attest --sbom-file foo.json
       The status should be failure
       The stderr should include "--image-ref required"
     End
@@ -83,14 +83,14 @@ Describe "bin/build-and-push"
 
   Describe "provenance subcommand"
     It "fails when required args are missing"
-      When run bin/build-and-push provenance --run-id 123
+      When run common/lib/scripts/build-and-push provenance --run-id 123
       The status should be failure
       The stderr should include "required"
     End
 
     Describe "JSON output"
       provenance_field() {
-        bin/build-and-push provenance \
+        common/lib/scripts/build-and-push provenance \
           --run-id 12345 \
           --server-url https://github.com \
           --repository wellmaintained/packages \
@@ -100,7 +100,7 @@ Describe "bin/build-and-push"
       }
 
       It "outputs valid JSON"
-        When run bin/build-and-push provenance \
+        When run common/lib/scripts/build-and-push provenance \
           --run-id 12345 \
           --server-url https://github.com \
           --repository wellmaintained/packages \

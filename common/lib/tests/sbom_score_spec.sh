@@ -1,5 +1,5 @@
 # shellcheck shell=sh
-Describe "bin/sbom-score"
+Describe "common/lib/scripts/sbom-score"
   setup() {
     SBOM_FILE="$(mktemp)"
     cat > "$SBOM_FILE" <<'JSON'
@@ -14,13 +14,13 @@ JSON
 
   Describe "argument validation"
     It "fails when no SBOM file is given"
-      When run bin/sbom-score
+      When run common/lib/scripts/sbom-score
       The status should be failure
       The stderr should include "Usage"
     End
 
     It "fails when SBOM file does not exist"
-      When run bin/sbom-score /nonexistent/file.json
+      When run common/lib/scripts/sbom-score /nonexistent/file.json
       The status should be failure
       The stderr should include "not found"
     End
@@ -47,7 +47,7 @@ SCRIPT
 
     It "outputs valid JSON with score and image name"
       MOCK_SBOMQS="$(mock_sbomqs)"
-      When run bin/sbom-score --sbomqs-cmd "$MOCK_SBOMQS" --image postgres "$SBOM_FILE"
+      When run common/lib/scripts/sbom-score --sbomqs-cmd "$MOCK_SBOMQS" --image postgres "$SBOM_FILE"
       The status should be success
       The output should include '"image"'
       The output should include '"score"'
@@ -56,7 +56,7 @@ SCRIPT
 
     jq_field() {
       MOCK_SBOMQS="$(mock_sbomqs)"
-      bin/sbom-score --sbomqs-cmd "$MOCK_SBOMQS" --image postgres "$SBOM_FILE" | jq -r "$1"
+      common/lib/scripts/sbom-score --sbomqs-cmd "$MOCK_SBOMQS" --image postgres "$SBOM_FILE" | jq -r "$1"
       cleanup_mock
     }
 
@@ -91,7 +91,7 @@ SCRIPT
       MOCK_FAIL="$(mktemp)"
       printf '#!/bin/sh\necho "error" >&2\nexit 1\n' > "$MOCK_FAIL"
       chmod +x "$MOCK_FAIL"
-      When run bin/sbom-score --sbomqs-cmd "$MOCK_FAIL" --image postgres "$SBOM_FILE"
+      When run common/lib/scripts/sbom-score --sbomqs-cmd "$MOCK_FAIL" --image postgres "$SBOM_FILE"
       The status should be failure
       The stderr should include "sbomqs"
       rm -f "$MOCK_FAIL"

@@ -1,18 +1,16 @@
 name: Build images and SBOMs
 
 # Combined image + SBOM build for PRs (ADR-0003: build once, promote on merge).
-# Logic lives in bin/build-and-push; this workflow is a thin wrapper.
+# Logic lives in common/lib/scripts/build-and-push; this workflow is a thin wrapper.
 
 on:
   pull_request:
     branches: [main]
     paths:
-      - images/**
-      - deployments/sbomify/**
+      - common/**
+      - apps/**
       - flake.nix
       - flake.lock
-      - nix-compliance-inator/**
-      - bin/build-and-push
       - .github/workflows/build.yml
       - .github/image-matrix.json
   workflow_dispatch:
@@ -70,14 +68,14 @@ jobs:
       - name: Get image metadata
         id: meta
         run: |
-          META=$(bin/build-and-push metadata --package "${{ matrix.image.package }}")
+          META=$(common/lib/scripts/build-and-push metadata --package "${{ matrix.image.package }}")
           echo "$META" > metadata.json
           echo "name=$(echo "$META" | jq -r .name)" >> "$GITHUB_OUTPUT"
           echo "version=$(echo "$META" | jq -r .version)" >> "$GITHUB_OUTPUT"
           echo "sbomify_component_id=$(echo "$META" | jq -r .sbomifyComponentId)" >> "$GITHUB_OUTPUT"
 
       - name: Build image
-        run: bin/build-and-push build --package "${{ matrix.image.package }}"
+        run: common/lib/scripts/build-and-push build --package "${{ matrix.image.package }}"
 
       - name: Compute PR tag
         id: tag
@@ -91,20 +89,20 @@ jobs:
       - name: Push image to GHCR
         id: push
         run: |
-          DIGEST=$(bin/build-and-push push \
+          DIGEST=$(common/lib/scripts/build-and-push push \
             --registry "${{ steps.tag.outputs.ghcr_repo }}" \
             --tag "${{ steps.tag.outputs.pr_tag }}")
           echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
 
       - name: Sign image
         run: |
-          bin/build-and-push sign \
+          common/lib/scripts/build-and-push sign \
             --image-ref "${{ steps.tag.outputs.ghcr_repo }}@${{ steps.push.outputs.digest }}"
 
       - name: Build SBOM
         id: sbom
         run: |
-          SBOM_PATH=$(bin/build-and-push sbom \
+          SBOM_PATH=$(common/lib/scripts/build-and-push sbom \
             --package "${{ matrix.image.package }}" \
             --name "${{ matrix.image.name }}")
           echo "path=${SBOM_PATH}" >> "$GITHUB_OUTPUT"
@@ -135,7 +133,7 @@ jobs:
           IMAGE_REF="${{ steps.tag.outputs.ghcr_repo }}@${{ steps.push.outputs.digest }}"
 
           # Generate SLSA provenance
-          bin/build-and-push provenance \
+          common/lib/scripts/build-and-push provenance \
             --run-id "${{ github.run_id }}" \
             --server-url "${{ github.server_url }}" \
             --repository "${{ github.repository }}" \
@@ -144,7 +142,7 @@ jobs:
             > provenance.json
 
           # Attach both attestations
-          bin/build-and-push attest \
+          common/lib/scripts/build-and-push attest \
             --image-ref "${IMAGE_REF}" \
             --sbom-file "${{ matrix.image.name }}.enriched.cdx.json" \
             --provenance-file provenance.json

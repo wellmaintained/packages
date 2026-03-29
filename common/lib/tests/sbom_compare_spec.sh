@@ -1,5 +1,5 @@
 # shellcheck shell=sh
-Describe "bin/sbom-compare"
+Describe "common/lib/scripts/sbom-compare"
   setup() {
     BASELINE="$(mktemp)"
     CURRENT="$(mktemp)"
@@ -22,25 +22,25 @@ JSON
 
   Describe "argument validation"
     It "fails when no arguments are given"
-      When run bin/sbom-compare
+      When run common/lib/scripts/sbom-compare
       The status should be failure
       The stderr should include "Usage"
     End
 
     It "fails when baseline file does not exist"
-      When run bin/sbom-compare --baseline /nonexistent --current "$CURRENT" --image postgres
+      When run common/lib/scripts/sbom-compare --baseline /nonexistent --current "$CURRENT" --image postgres
       The status should be failure
       The stderr should include "not found"
     End
 
     It "fails when current file does not exist"
-      When run bin/sbom-compare --baseline "$BASELINE" --current /nonexistent --image postgres
+      When run common/lib/scripts/sbom-compare --baseline "$BASELINE" --current /nonexistent --image postgres
       The status should be failure
       The stderr should include "not found"
     End
 
     It "fails when --image is missing"
-      When run bin/sbom-compare --baseline "$BASELINE" --current "$CURRENT"
+      When run common/lib/scripts/sbom-compare --baseline "$BASELINE" --current "$CURRENT"
       The status should be failure
       The stderr should include "--image"
     End
@@ -80,7 +80,7 @@ SCRIPT
 
     It "outputs JSON with image name and diff results"
       MOCK="$(mock_sbomlyze)"
-      When run bin/sbom-compare --sbomlyze-cmd "$MOCK" --baseline "$BASELINE" --current "$CURRENT" --image postgres
+      When run common/lib/scripts/sbom-compare --sbomlyze-cmd "$MOCK" --baseline "$BASELINE" --current "$CURRENT" --image postgres
       The status should be success
       The output should include '"image"'
       The output should include '"postgres"'
@@ -89,7 +89,7 @@ SCRIPT
 
     jq_field() {
       MOCK="$(mock_sbomlyze)"
-      bin/sbom-compare --sbomlyze-cmd "$MOCK" --baseline "$BASELINE" --current "$CURRENT" --image postgres | jq -r "$1"
+      common/lib/scripts/sbom-compare --sbomlyze-cmd "$MOCK" --baseline "$BASELINE" --current "$CURRENT" --image postgres | jq -r "$1"
       cleanup_mock
     }
 
@@ -129,7 +129,7 @@ SCRIPT
 
     jq_field_fail() {
       MOCK="$(mock_sbomlyze_fail)"
-      bin/sbom-compare --sbomlyze-cmd "$MOCK" --baseline "$BASELINE" --current "$CURRENT" --image postgres --policy "$POLICY" | jq -r "$1"
+      common/lib/scripts/sbom-compare --sbomlyze-cmd "$MOCK" --baseline "$BASELINE" --current "$CURRENT" --image postgres --policy "$POLICY" | jq -r "$1"
       rm -f "$MOCK"
     }
 
@@ -140,7 +140,7 @@ SCRIPT
 
     It "still succeeds (exit 0) even with policy violations"
       MOCK="$(mock_sbomlyze_fail)"
-      When run bin/sbom-compare --sbomlyze-cmd "$MOCK" --baseline "$BASELINE" --current "$CURRENT" --image postgres --policy "$POLICY"
+      When run common/lib/scripts/sbom-compare --sbomlyze-cmd "$MOCK" --baseline "$BASELINE" --current "$CURRENT" --image postgres --policy "$POLICY"
       The status should be success
       The output should include '"policy_pass"'
       rm -f "$MOCK"

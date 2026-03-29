@@ -8,12 +8,10 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - images/**
-      - deployments/sbomify/**
+      - common/**
+      - apps/**
       - flake.nix
       - flake.lock
-      - nix-compliance-inator/**
-      - bin/patch-sbom-root
 
 permissions:
   pull-requests: write

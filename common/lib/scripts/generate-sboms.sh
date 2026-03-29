@@ -4,7 +4,7 @@ set -euo pipefail
 # Generate CycloneDX SBOMs for all Nix-built OCI images using nix-compliance-inator.
 # Each SBOM is built via `nix build .#<name>-sbom` and copied to sboms/<name>.cdx.json.
 
-REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+REPO_ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
 SBOM_DIR="${REPO_ROOT}/sboms"
 
 # All image SBOM targets (must match flake.nix packages)

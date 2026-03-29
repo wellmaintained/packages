@@ -1,17 +1,16 @@
 name: Promote images
 
 # On merge to main, promote PR-built images by digest (ADR-0003).
-# Logic lives in bin/promote-image; this workflow is a thin wrapper.
+# Logic lives in common/lib/scripts/promote-image; this workflow is a thin wrapper.
 
 on:
   push:
     branches: [main]
     paths:
-      - images/**
-      - deployments/sbomify/**
+      - common/**
+      - apps/**
       - flake.nix
       - flake.lock
-      - nix-compliance-inator/**
   workflow_dispatch:
     inputs:
       pr_number:
@@ -114,14 +113,14 @@ jobs:
       - name: Get upstream version
         id: meta
         run: |
-          META=$(bin/build-and-push metadata --package "${{ matrix.image.package }}")
+          META=$(common/lib/scripts/build-and-push metadata --package "${{ matrix.image.package }}")
           echo "version=$(echo "$META" | jq -r .version)" >> "$GITHUB_OUTPUT"
           echo "sbomify_component_id=$(echo "$META" | jq -r .sbomifyComponentId)" >> "$GITHUB_OUTPUT"
           echo "name=$(echo "$META" | jq -r .name)" >> "$GITHUB_OUTPUT"
 
       - name: Promote image
         run: |
-          bin/promote-image \
+          common/lib/scripts/promote-image \
             --image "${{ matrix.image.name }}" \
             --pr "${{ needs.resolve-pr.outputs.pr_number }}" \
             --sha "${{ needs.resolve-pr.outputs.head_sha7 }}" \
@@ -130,7 +129,7 @@ jobs:
       - name: Extract SBOM from OCI attestation
         continue-on-error: true
         run: |
-          bin/extract-sbom-attestation \
+          common/lib/scripts/extract-sbom-attestation \
             --image "${{ matrix.image.name }}" \
             --pr "${{ needs.resolve-pr.outputs.pr_number }}" \
             --sha "${{ needs.resolve-pr.outputs.head_sha7 }}" \
