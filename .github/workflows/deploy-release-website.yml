@@ -1,0 +1,54 @@
+name: Deploy release website
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - apps/sbomify/release-website/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v3
+        with:
+          hugo-version: '0.159.0'
+          extended: true
+
+      - name: Setup Go (for Hugo modules)
+        uses: actions/setup-go@v5
+        with:
+          go-version: 'stable'
+
+      - name: Build site
+        working-directory: apps/sbomify/release-website
+        run: hugo --minify
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/sbomify/release-website/public
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
