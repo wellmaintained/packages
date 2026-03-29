@@ -1,5 +1,5 @@
 # shellcheck shell=sh
-Describe "bin/patch-sbom-root"
+Describe "common/lib/scripts/patch-sbom-root"
   setup() {
     # Minimal bombon-like CycloneDX SBOM with a synthetic root component
     SAMPLE_SBOM='{
@@ -38,25 +38,25 @@ Describe "bin/patch-sbom-root"
 
   Describe "argument validation"
     It "fails when --name is missing"
-      When run sh -c 'echo "$1" | bin/patch-sbom-root --version 17.4 --purl pkg:docker/x/p@1 --license PostgreSQL' _ "$SAMPLE_SBOM"
+      When run sh -c 'echo "$1" | common/lib/scripts/patch-sbom-root --version 17.4 --purl pkg:docker/x/p@1 --license PostgreSQL' _ "$SAMPLE_SBOM"
       The status should be failure
       The stderr should include "--name"
     End
 
     It "fails when --version is missing"
-      When run sh -c 'echo "$1" | bin/patch-sbom-root --name x --purl pkg:docker/x/p@1 --license PostgreSQL' _ "$SAMPLE_SBOM"
+      When run sh -c 'echo "$1" | common/lib/scripts/patch-sbom-root --name x --purl pkg:docker/x/p@1 --license PostgreSQL' _ "$SAMPLE_SBOM"
       The status should be failure
       The stderr should include "--version"
     End
 
     It "fails when --purl is missing"
-      When run sh -c 'echo "$1" | bin/patch-sbom-root --name x --version 1 --license PostgreSQL' _ "$SAMPLE_SBOM"
+      When run sh -c 'echo "$1" | common/lib/scripts/patch-sbom-root --name x --version 1 --license PostgreSQL' _ "$SAMPLE_SBOM"
       The status should be failure
       The stderr should include "--purl"
     End
 
     It "fails when --license is missing"
-      When run sh -c 'echo "$1" | bin/patch-sbom-root --name x --version 1 --purl pkg:docker/x/p@1' _ "$SAMPLE_SBOM"
+      When run sh -c 'echo "$1" | common/lib/scripts/patch-sbom-root --name x --version 1 --purl pkg:docker/x/p@1' _ "$SAMPLE_SBOM"
       The status should be failure
       The stderr should include "--license"
     End
@@ -64,7 +64,7 @@ Describe "bin/patch-sbom-root"
 
   Describe "root component patching"
     jq_query() {
-      echo "$SAMPLE_SBOM" | bin/patch-sbom-root $all_args | jq -r "$1"
+      echo "$SAMPLE_SBOM" | common/lib/scripts/patch-sbom-root $all_args | jq -r "$1"
     }
 
     It "sets the root component name"
@@ -100,7 +100,7 @@ Describe "bin/patch-sbom-root"
 
   Describe "dependency graph wiring"
     jq_query() {
-      echo "$SAMPLE_SBOM" | bin/patch-sbom-root $all_args | jq -r "$1"
+      echo "$SAMPLE_SBOM" | common/lib/scripts/patch-sbom-root $all_args | jq -r "$1"
     }
 
     It "creates a dependency entry for the root component"
@@ -126,7 +126,7 @@ Describe "bin/patch-sbom-root"
 
   Describe "passthrough behavior"
     jq_query() {
-      echo "$SAMPLE_SBOM" | bin/patch-sbom-root $all_args | jq -r "$1"
+      echo "$SAMPLE_SBOM" | common/lib/scripts/patch-sbom-root $all_args | jq -r "$1"
     }
 
     It "preserves bomFormat"

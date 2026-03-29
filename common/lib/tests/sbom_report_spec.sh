@@ -1,5 +1,5 @@
 # shellcheck shell=sh
-Describe "bin/sbom-report"
+Describe "common/lib/scripts/sbom-report"
   setup() {
     RESULTS_DIR="$(mktemp -d)"
 
@@ -40,7 +40,7 @@ JSON
 
   Describe "argument validation"
     It "fails when --scores-dir is missing"
-      When run bin/sbom-report
+      When run common/lib/scripts/sbom-report
       The status should be failure
       The stderr should include "Usage"
     End
@@ -48,7 +48,7 @@ JSON
 
   Describe "markdown output"
     It "produces a markdown table header"
-      When run bin/sbom-report --scores-dir "$RESULTS_DIR"
+      When run common/lib/scripts/sbom-report --scores-dir "$RESULTS_DIR"
       The output should include "SBOM Quality Gate"
       The output should include "Image"
       The output should include "Score"
@@ -57,7 +57,7 @@ JSON
     End
 
     It "includes image scores"
-      When run bin/sbom-report --scores-dir "$RESULTS_DIR"
+      When run common/lib/scripts/sbom-report --scores-dir "$RESULTS_DIR"
       The output should include "postgres"
       The output should include "7.2"
       The output should include "redis"
@@ -67,7 +67,7 @@ JSON
     End
 
     It "shows score delta when baselines exist"
-      When run bin/sbom-report --scores-dir "$RESULTS_DIR"
+      When run common/lib/scripts/sbom-report --scores-dir "$RESULTS_DIR"
       The output should include "+0.2"
       The output should include "-0.5"
       The stderr should include "regression"
@@ -75,7 +75,7 @@ JSON
     End
 
     It "includes diff details in collapsible sections"
-      When run bin/sbom-report --scores-dir "$RESULTS_DIR"
+      When run common/lib/scripts/sbom-report --scores-dir "$RESULTS_DIR"
       The output should include "<details>"
       The output should include "1 component added"
       The stderr should include "regression"
@@ -85,7 +85,7 @@ JSON
 
   Describe "regression detection"
     It "exits non-zero when any score regresses"
-      When run bin/sbom-report --scores-dir "$RESULTS_DIR"
+      When run common/lib/scripts/sbom-report --scores-dir "$RESULTS_DIR"
       The status should be failure
       The stderr should include "regression"
       The output should include "SBOM Quality Gate"
@@ -94,7 +94,7 @@ JSON
     It "exits zero when no regressions"
       # Remove the regressed redis baseline so redis has no baseline
       rm -f "$RESULTS_DIR/baseline-redis.json"
-      When run bin/sbom-report --scores-dir "$RESULTS_DIR"
+      When run common/lib/scripts/sbom-report --scores-dir "$RESULTS_DIR"
       The status should be success
       The output should include "postgres"
     End
@@ -104,7 +104,7 @@ JSON
     It "shows N/A for images without baselines"
       rm -f "$RESULTS_DIR/baseline-postgres.json" "$RESULTS_DIR/baseline-redis.json"
       rm -f "$RESULTS_DIR/compare-postgres.json" "$RESULTS_DIR/compare-redis.json"
-      When run bin/sbom-report --scores-dir "$RESULTS_DIR"
+      When run common/lib/scripts/sbom-report --scores-dir "$RESULTS_DIR"
       The status should be success
       The output should include "N/A"
     End

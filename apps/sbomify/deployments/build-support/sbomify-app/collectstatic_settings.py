@@ -8,6 +8,7 @@ DEBUG = False
 
 INSTALLED_APPS = [
     "django.contrib.staticfiles",
+    "django_htmx",
     "django_vite",
 ]
 

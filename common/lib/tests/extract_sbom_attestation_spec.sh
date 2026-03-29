@@ -1,39 +1,39 @@
 # shellcheck shell=sh
-Describe "bin/extract-sbom-attestation"
+Describe "common/lib/scripts/extract-sbom-attestation"
 
   Describe "argument validation"
     It "fails when no arguments given"
-      When run bin/extract-sbom-attestation
+      When run common/lib/scripts/extract-sbom-attestation
       The status should be failure
       The output should include "Usage"
     End
 
     It "fails when --image is missing"
-      When run bin/extract-sbom-attestation --pr 42 --sha abc1234 --output sbom/test.json
+      When run common/lib/scripts/extract-sbom-attestation --pr 42 --sha abc1234 --output sbom/test.json
       The status should be failure
       The output should include "Usage"
     End
 
     It "fails when --pr is missing"
-      When run bin/extract-sbom-attestation --image postgres --sha abc1234 --output sbom/test.json
+      When run common/lib/scripts/extract-sbom-attestation --image postgres --sha abc1234 --output sbom/test.json
       The status should be failure
       The output should include "Usage"
     End
 
     It "fails when --sha is missing"
-      When run bin/extract-sbom-attestation --image postgres --pr 42 --output sbom/test.json
+      When run common/lib/scripts/extract-sbom-attestation --image postgres --pr 42 --output sbom/test.json
       The status should be failure
       The output should include "Usage"
     End
 
     It "fails when --output is missing"
-      When run bin/extract-sbom-attestation --image postgres --pr 42 --sha abc1234
+      When run common/lib/scripts/extract-sbom-attestation --image postgres --pr 42 --sha abc1234
       The status should be failure
       The output should include "Usage"
     End
 
     It "fails for unknown option"
-      When run bin/extract-sbom-attestation --unknown value
+      When run common/lib/scripts/extract-sbom-attestation --unknown value
       The status should be failure
       The output should include "Unknown option"
     End
@@ -82,21 +82,21 @@ SCRIPT
     After "cleanup"
 
     It "extracts the SBOM to the output path"
-      When run sh -c 'PATH="$1:$PATH" bin/extract-sbom-attestation --image postgres --pr 42 --sha abc1234 --output "$2/sbom/postgres.enriched.cdx.json"' _ "$MOCK_BIN" "$OUTPUT_DIR"
+      When run sh -c 'PATH="$1:$PATH" common/lib/scripts/extract-sbom-attestation --image postgres --pr 42 --sha abc1234 --output "$2/sbom/postgres.enriched.cdx.json"' _ "$MOCK_BIN" "$OUTPUT_DIR"
       The status should be success
       The stderr should include "Extracting SBOM attestation"
       The stderr should include "SBOM extracted"
     End
 
     It "creates the output directory if it does not exist"
-      When run sh -c 'PATH="$1:$PATH" bin/extract-sbom-attestation --image postgres --pr 42 --sha abc1234 --output "$2/nested/dir/sbom.json"' _ "$MOCK_BIN" "$OUTPUT_DIR"
+      When run sh -c 'PATH="$1:$PATH" common/lib/scripts/extract-sbom-attestation --image postgres --pr 42 --sha abc1234 --output "$2/nested/dir/sbom.json"' _ "$MOCK_BIN" "$OUTPUT_DIR"
       The status should be success
       The stderr should include "SBOM extracted"
     End
 
     It "writes valid CycloneDX JSON"
       extract_sbom() {
-        PATH="${MOCK_BIN}:$PATH" bin/extract-sbom-attestation \
+        PATH="${MOCK_BIN}:$PATH" common/lib/scripts/extract-sbom-attestation \
           --image postgres --pr 42 --sha abc1234 \
           --output "${OUTPUT_DIR}/sbom.json" 2>/dev/null
         jq -r '.bomFormat' "${OUTPUT_DIR}/sbom.json"
@@ -106,18 +106,18 @@ SCRIPT
     End
 
     It "resolves the PR tag correctly"
-      When run sh -c 'PATH="$1:$PATH" bin/extract-sbom-attestation --image postgres --pr 42 --sha abc1234 --output "$2/sbom.json"' _ "$MOCK_BIN" "$OUTPUT_DIR"
+      When run sh -c 'PATH="$1:$PATH" common/lib/scripts/extract-sbom-attestation --image postgres --pr 42 --sha abc1234 --output "$2/sbom.json"' _ "$MOCK_BIN" "$OUTPUT_DIR"
       The stderr should include "pr-42-abc1234"
     End
 
     It "supports custom registry via --registry"
-      When run sh -c 'PATH="$1:$PATH" bin/extract-sbom-attestation --image postgres --pr 42 --sha abc1234 --output "$2/sbom.json" --registry ghcr.io/custom/repo' _ "$MOCK_BIN" "$OUTPUT_DIR"
+      When run sh -c 'PATH="$1:$PATH" common/lib/scripts/extract-sbom-attestation --image postgres --pr 42 --sha abc1234 --output "$2/sbom.json" --registry ghcr.io/custom/repo' _ "$MOCK_BIN" "$OUTPUT_DIR"
       The status should be success
       The stderr should include "ghcr.io/custom/repo/postgres"
     End
 
     It "supports custom registry via REGISTRY env var"
-      When run sh -c 'PATH="$1:$PATH" REGISTRY=ghcr.io/env/repo bin/extract-sbom-attestation --image redis --pr 10 --sha def5678 --output "$2/sbom.json"' _ "$MOCK_BIN" "$OUTPUT_DIR"
+      When run sh -c 'PATH="$1:$PATH" REGISTRY=ghcr.io/env/repo common/lib/scripts/extract-sbom-attestation --image redis --pr 10 --sha def5678 --output "$2/sbom.json"' _ "$MOCK_BIN" "$OUTPUT_DIR"
       The status should be success
       The stderr should include "ghcr.io/env/repo/redis"
     End
@@ -149,7 +149,7 @@ SCRIPT
     After "cleanup_failing_crane"
 
     It "fails when crane cannot resolve the PR tag"
-      When run sh -c 'PATH="$1:$PATH" bin/extract-sbom-attestation --image postgres --pr 999 --sha missing --output "$2/sbom.json"' _ "$MOCK_BIN" "$OUTPUT_DIR"
+      When run sh -c 'PATH="$1:$PATH" common/lib/scripts/extract-sbom-attestation --image postgres --pr 999 --sha missing --output "$2/sbom.json"' _ "$MOCK_BIN" "$OUTPUT_DIR"
       The status should be failure
       The stderr should include "PR tag"
       The stderr should include "not found"
@@ -183,7 +183,7 @@ SCRIPT
     After "cleanup_failing_cosign"
 
     It "fails when cosign cannot download attestation"
-      When run sh -c 'PATH="$1:$PATH" bin/extract-sbom-attestation --image postgres --pr 42 --sha abc1234 --output "$2/sbom.json"' _ "$MOCK_BIN" "$OUTPUT_DIR"
+      When run sh -c 'PATH="$1:$PATH" common/lib/scripts/extract-sbom-attestation --image postgres --pr 42 --sha abc1234 --output "$2/sbom.json"' _ "$MOCK_BIN" "$OUTPUT_DIR"
       The status should be failure
       The stderr should include "Extracting SBOM attestation"
     End

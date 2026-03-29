@@ -1,7 +1,7 @@
 name: Cleanup PR images
 
 # Weekly sweep of stale PR-tagged images from GHCR (ADR-0003 section 6).
-# Image cleanup logic lives in bin/cleanup-pr-images.
+# Logic lives in common/lib/scripts/cleanup-pr-images; this workflow is a thin wrapper.
 
 on:
   schedule:
@@ -35,6 +35,6 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          bin/cleanup-pr-images sweep \
+          common/lib/scripts/cleanup-pr-images sweep \
             --image "${{ matrix.image.name }}" \
             --days 7

@@ -4,7 +4,7 @@ let
   # Use the compose-specific dev Caddyfile (HTTP-only, no TLS warnings)
   caddyConfig = pkgs.runCommand "sbomify-caddy-dev-config" { } ''
     mkdir -p $out/etc/caddy
-    cp ${../compose/Caddyfile.dev} $out/etc/caddy/Caddyfile
+    cp ${../deployments/compose/Caddyfile.dev} $out/etc/caddy/Caddyfile
   '';
 in
 

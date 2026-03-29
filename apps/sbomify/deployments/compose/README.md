@@ -7,7 +7,7 @@ files required.
 ## Quick Start
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/wellmaintained/packages/main/deployments/sbomify/compose/docker-compose.yml | docker compose -f - up
+curl -fsSL https://raw.githubusercontent.com/wellmaintained/packages/main/apps/sbomify/deployments/compose/docker-compose.yml | docker compose -f - up
 ```
 
 Or clone and run:
