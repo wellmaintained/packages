@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    
+    <title>wellmaintained/packages | wellmaintained/packages — Release Website</title>
+    <meta name="viewport" content="width=device-width,minimum-scale=1">
+    <meta name="description" content="Compliance-ready container images with SBOMs, quality scores, and audit evidence.">
+    <meta name="generator" content="Hugo 0.159.0">
+    
+    
+    
+      <meta name="robots" content="index, follow">
+    
+    
+
+    
+<link rel="stylesheet" href="/packages/ananke/css/main.min.efe4d852f731d5d1fbb87718387202a97aafd768cdcdaed0662bbe6982e91824.css" >
+
+
+
+
+    
+
+
+    
+      
+
+    
+
+    
+    
+      <link href="/packages/index.xml" rel="alternate" type="application/rss+xml" title="wellmaintained/packages — Release Website" />
+      <link href="/packages/index.xml" rel="feed" type="application/rss+xml" title="wellmaintained/packages — Release Website" />
+      
+    
+
+    
+      <link rel="canonical" href="https://wellmaintained.github.io/packages/">
+    
+
+    <meta property="og:url" content="https://wellmaintained.github.io/packages/">
+  <meta property="og:site_name" content="wellmaintained/packages — Release Website">
+  <meta property="og:title" content="wellmaintained/packages">
+  <meta property="og:description" content="Compliance-ready container images with SBOMs, quality scores, and audit evidence.">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="website">
+
+  <meta itemprop="name" content="wellmaintained/packages">
+  <meta itemprop="description" content="Compliance-ready container images with SBOMs, quality scores, and audit evidence.">
+  <meta itemprop="wordCount" content="155">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="wellmaintained/packages">
+  <meta name="twitter:description" content="Compliance-ready container images with SBOMs, quality scores, and audit evidence.">
+
+      
+    
+	
+  </head><body class="ma0 avenir bg-near-white production">
+
+    
+
+  <header>
+    <div class="pb3-m pb6-l bg-dark-blue">
+      <nav class="pv3 ph3 ph4-ns" role="navigation">
+  <div class="flex-l center items-center justify-between">
+    <a href="/packages/" class="f3 fw2 hover-white white-90 dib no-underline">
+      
+        wellmaintained/packages — Release Website
+      
+    </a>
+    <div class="flex-l items-center">
+      
+
+      
+      <div class="ananke-socials"></div>
+
+    </div>
+  </div>
+</nav>
+
+      <div class="tc-l pv3 ph3 ph4-ns">
+        <h1 class="f2 f-subheadline-l fw2 light-silver mb0 lh-title">
+          wellmaintained/packages
+        </h1>
+        
+          <h2 class="fw1 f5 f3-l white-80 measure-wide-l center lh-copy mt3 mb4">
+            Compliance-ready container images with SBOMs, quality scores, and audit evidence.
+          </h2>
+        
+      </div>
+    </div>
+  </header>
+
+
+    <main class="pb7" role="main">
+      
+  <article class="cf ph3 ph5-l pv3 pv4-l f4 tc-l center measure-wide lh-copy nested-links mid-gray">
+    <h2 id="what-is-this-site">What is this site?</h2>
+<p>This is the release website for <a href="https://github.com/wellmaintained/packages">wellmaintained/packages</a> — a repository that builds compliance-ready OCI container images using Nix.</p>
+<p>Every image built by this pipeline comes with:</p>
+<ul>
+<li><strong>CycloneDX SBOMs</strong> — machine-readable software bills of materials</li>
+<li><strong>Quality scores</strong> — sbomqs ratings for SBOM completeness</li>
+<li><strong>Vulnerability summaries</strong> — known CVEs and patch status</li>
+<li><strong>License breakdowns</strong> — full dependency license analysis</li>
+</ul>
+<h2 id="site-sections">Site sections</h2>
+<h3 id="container-images"><a href="/images/">Container Images</a></h3>
+<p>Browse the catalog of available container images. Each image page shows its
+dependencies, applied CVE patches, license breakdown, and quality scores.</p>
+<h3 id="compliance--audit"><a href="/compliance/">Compliance &amp; Audit</a></h3>
+<p>Auditor-facing compliance evidence. Download audit evidence packs formatted
+for GRC tools like Vanta and Drata.</p>
+<h3 id="deployment-guides"><a href="/guides/">Deployment Guides</a></h3>
+<p>Getting started guides and deployment documentation.</p>
+<h2 id="how-it-works">How it works</h2>
+<p>Images are built with Nix using the <code>buildCompliantImage</code> API from
+<a href="https://github.com/wellmaintained/packages">nix-compliance-inator</a>. This
+ensures every image is reproducible and ships with complete compliance
+artifacts. CI publishes images to GHCR and compliance data to both this
+site and the <a href="https://trust.sbomify.com">sbomify Trust Centre</a>.</p>
+
+  </article>
+
+  
+  
+  
+  
+  
+
+  
+    <div class="pa3 pa4-ns w-100 w-70-ns center">
+      
+
+      <section class="w-100 mw8">
+        
+        
+          <div class="w-100 mb4 relative">
+            
+<article class="bb b--black-10">
+  <div class="db pv4 ph3 ph0-l dark-gray no-underline">
+    <div class="flex-column flex-row-ns flex">
+      
+      <div class="blah w-100">
+        <h1 class="f3 fw1 athelas mt0 lh-title">
+          <a href="/packages/compliance/audit-pack/" class="color-inherit dim link">
+            Audit Evidence Pack
+            </a>
+        </h1>
+        <div class="f6 f5-l lh-copy nested-copy-line-height nested-links">
+          <h2 id="whats-in-the-audit-pack">What&rsquo;s in the audit pack?</h2>
+<p>Each release produces a downloadable ZIP containing everything a GRC tool
+(Vanta, Drata, etc.) needs for compliance evidence:</p>
+<ul>
+<li><strong>CycloneDX SBOMs</strong> — one per image</li>
+<li><strong>SPDX SBOMs</strong> — alternative format for tools that prefer it</li>
+<li><strong>Quality score reports</strong> — sbomqs ratings</li>
+<li><strong>Vulnerability reports</strong> — CVE scan results</li>
+<li><strong>License summaries</strong> — per-image license breakdown</li>
+<li><strong>Manifest file</strong> — explains contents and format</li>
+</ul>
+<h2 id="downloads">Downloads</h2>
+<p><em>Audit evidence packs will be available here once CI integration is complete.
+Each release will produce a downloadable ZIP per image and per release.</em></p>
+        </div>
+        <a href="/packages/compliance/audit-pack/" class="ba b--moon-gray bg-light-gray br2 color-inherit dib f7 hover-bg-moon-gray link mt2 ph2 pv1">read more</a>
+      </div>
+    </div>
+  </div>
+</article>
+
+          </div>
+        
+      </section>
+
+      
+
+    </div>
+  
+
+    </main>
+    <footer class="bg-dark-blue bottom-0 w-100 pa3" role="contentinfo">
+  <div class="flex justify-between">
+  <a class="f4 fw4 hover-white white-70 dn dib-ns pv2 ph3 no-underline" href="https://wellmaintained.github.io/packages/" >
+    &copy;  wellmaintained/packages — Release Website 2026 
+  </a>
+    <div><div class="ananke-socials"></div>
+</div>
+  </div>
+</footer>
+
+  </body>
+</html>

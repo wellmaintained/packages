@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>wellmaintained/packages on wellmaintained/packages — Release Website</title>
+    <link>https://wellmaintained.github.io/packages/</link>
+    <description>Recent content in wellmaintained/packages on wellmaintained/packages — Release Website</description>
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <atom:link href="https://wellmaintained.github.io/packages/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Audit Evidence Pack</title>
+      <link>https://wellmaintained.github.io/packages/compliance/audit-pack/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://wellmaintained.github.io/packages/compliance/audit-pack/</guid>
+      <description>&lt;h2 id=&#34;whats-in-the-audit-pack&#34;&gt;What&amp;rsquo;s in the audit pack?&lt;/h2&gt;&#xA;&lt;p&gt;Each release produces a downloadable ZIP containing everything a GRC tool&#xA;(Vanta, Drata, etc.) needs for compliance evidence:&lt;/p&gt;&#xA;&lt;ul&gt;&#xA;&lt;li&gt;&lt;strong&gt;CycloneDX SBOMs&lt;/strong&gt; — one per image&lt;/li&gt;&#xA;&lt;li&gt;&lt;strong&gt;SPDX SBOMs&lt;/strong&gt; — alternative format for tools that prefer it&lt;/li&gt;&#xA;&lt;li&gt;&lt;strong&gt;Quality score reports&lt;/strong&gt; — sbomqs ratings&lt;/li&gt;&#xA;&lt;li&gt;&lt;strong&gt;Vulnerability reports&lt;/strong&gt; — CVE scan results&lt;/li&gt;&#xA;&lt;li&gt;&lt;strong&gt;License summaries&lt;/strong&gt; — per-image license breakdown&lt;/li&gt;&#xA;&lt;li&gt;&lt;strong&gt;Manifest file&lt;/strong&gt; — explains contents and format&lt;/li&gt;&#xA;&lt;/ul&gt;&#xA;&lt;h2 id=&#34;downloads&#34;&gt;Downloads&lt;/h2&gt;&#xA;&lt;p&gt;&lt;em&gt;Audit evidence packs will be available here once CI integration is complete.&#xA;Each release will produce a downloadable ZIP per image and per release.&lt;/em&gt;&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>postgres</title>
+      <link>https://wellmaintained.github.io/packages/images/postgres/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      <guid>https://wellmaintained.github.io/packages/images/postgres/</guid>
+      <description>&lt;h2 id=&#34;overview&#34;&gt;Overview&lt;/h2&gt;&#xA;&lt;p&gt;A compliance-ready PostgreSQL container image built with Nix. This image&#xA;is based on upstream nixpkgs PostgreSQL with additional CVE patches and&#xA;license compliance configuration applied via custom Nix packages.&lt;/p&gt;&#xA;&lt;h2 id=&#34;pull-command&#34;&gt;Pull command&lt;/h2&gt;&#xA;&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;docker pull ghcr.io/wellmaintained/postgres:latest&#xA;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;base-packages&#34;&gt;Base packages&lt;/h2&gt;&#xA;&lt;ul&gt;&#xA;&lt;li&gt;PostgreSQL (from &lt;code&gt;common/pkgs/&lt;/code&gt; with upstream patches)&lt;/li&gt;&#xA;&lt;li&gt;Runtime dependencies managed via Nix&lt;/li&gt;&#xA;&lt;/ul&gt;&#xA;&lt;h2 id=&#34;cve-patches-applied&#34;&gt;CVE patches applied&lt;/h2&gt;&#xA;&lt;p&gt;&lt;em&gt;This section will be populated by CI from build artifacts.&lt;/em&gt;&lt;/p&gt;&#xA;&lt;table&gt;&#xA;  &lt;thead&gt;&#xA;      &lt;tr&gt;&#xA;          &lt;th&gt;CVE ID&lt;/th&gt;&#xA;          &lt;th&gt;Severity&lt;/th&gt;&#xA;          &lt;th&gt;Patch source&lt;/th&gt;&#xA;          &lt;th&gt;Upstream fix version&lt;/th&gt;&#xA;      &lt;/tr&gt;&#xA;  &lt;/thead&gt;&#xA;  &lt;tbody&gt;&#xA;      &lt;tr&gt;&#xA;          &lt;td&gt;—&lt;/td&gt;&#xA;          &lt;td&gt;—&lt;/td&gt;&#xA;          &lt;td&gt;—&lt;/td&gt;&#xA;          &lt;td&gt;—&lt;/td&gt;&#xA;      &lt;/tr&gt;&#xA;  &lt;/tbody&gt;&#xA;&lt;/table&gt;&#xA;&lt;h2 id=&#34;dependency-graph&#34;&gt;Dependency graph&lt;/h2&gt;&#xA;&lt;p&gt;&lt;em&gt;Rendered dependency visualization will appear here once CI integration is complete.&lt;/em&gt;&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>
