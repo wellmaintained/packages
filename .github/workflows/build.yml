@@ -108,7 +108,7 @@ jobs:
           echo "path=${SBOM_PATH}" >> "$GITHUB_OUTPUT"
 
       - name: Enrich SBOM
-        uses: sbomify/sbomify-action@master
+        uses: sbomify/sbomify-action@d96675bf9fcbeba415e618895af758a6216395d0 # v26.1.0
         continue-on-error: true
         env:
           TOKEN: ${{ secrets.SBOMIFY_TOKEN }}
