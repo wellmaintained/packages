@@ -5,10 +5,13 @@ on:
     branches: [main]
     paths:
       - apps/sbomify/release-website/**
+  release:
+    types: [released]
   workflow_dispatch:
 
 permissions:
   contents: read
+  packages: write
   pages: write
   id-token: write
 
@@ -16,7 +19,59 @@ concurrency:
   group: pages
   cancel-in-progress: false
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
+  tag-released:
+    if: github.event_name == 'release'
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    defaults:
+      run:
+        shell: nix develop .#ci -c bash -e {0}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Nix
+        uses: ./.github/actions/setup-nix
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Add released-on tags to collection images
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          RELEASE_BODY="${{ github.event.release.body }}"
+          REGISTRY="ghcr.io/wellmaintained/packages"
+          TIMESTAMP=$(date -u '+%Y-%m-%dT%H:%M:%S')
+
+          echo "==> Tagging images with released-on:${TIMESTAMP}"
+
+          # Parse the release body markdown table for image names and digests
+          # Table format: | `image-name` | `component-tag` | `sha256:...` |
+          echo "$RELEASE_BODY" | grep -E '^\|.*sha256:' | while IFS='|' read -r _ name _ digest _; do
+            # Strip backticks and whitespace
+            name=$(echo "$name" | tr -d '` ' )
+            digest=$(echo "$digest" | tr -d '` ' )
+
+            if [[ -z "$name" || -z "$digest" ]]; then
+              echo "  Skipping unparseable row" >&2
+              continue
+            fi
+
+            echo "  ${name}: adding released-on:${TIMESTAMP} to ${digest}"
+            crane tag "${REGISTRY}/${name}@${digest}" "released-on:${TIMESTAMP}" || {
+              echo "  WARNING: Failed to tag ${name}@${digest}" >&2
+            }
+          done
+
+          echo "==> Done tagging released images"
+
   build:
     runs-on: ubuntu-latest
     steps:

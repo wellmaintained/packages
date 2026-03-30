@@ -99,11 +99,11 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "path": "./nix-compliance-inator",
+        "path": "./common/lib/nix-compliance-inator",
         "type": "path"
       },
       "original": {
-        "path": "./nix-compliance-inator",
+        "path": "./common/lib/nix-compliance-inator",
         "type": "path"
       },
       "parent": []

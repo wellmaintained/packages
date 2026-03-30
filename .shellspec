@@ -1,6 +1,6 @@
 --require spec_helper
 --default-path common/lib/tests
---helper-dir common/lib/tests
+--helperdir common/lib/tests
 
 ## Default kcov (coverage) options
 # --kcov-options "--include-path=. --path-strip-level=1"

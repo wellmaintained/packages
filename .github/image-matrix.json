@@ -1,9 +1,9 @@
 [
-  { "name": "postgres",            "package": "postgres-image" },
-  { "name": "redis",               "package": "redis-image" },
-  { "name": "minio",               "package": "minio-image" },
-  { "name": "sbomify-app",         "package": "sbomify-app-image" },
-  { "name": "sbomify-keycloak",    "package": "sbomify-keycloak-image" },
-  { "name": "sbomify-caddy-dev",   "package": "sbomify-caddy-dev-image" },
-  { "name": "sbomify-minio-init",  "package": "sbomify-minio-init-image" }
+  { "name": "postgres",            "package": "postgres-image",            "sbomify_component_id": "M8rixM6mMEPe" },
+  { "name": "redis",               "package": "redis-image",               "sbomify_component_id": "ABBCcw2YiYrG" },
+  { "name": "minio",               "package": "minio-image",               "sbomify_component_id": "PLACEHOLDER_MINIO" },
+  { "name": "sbomify-app",         "package": "sbomify-app-image",         "sbomify_component_id": "VP42I4XQgpDE" },
+  { "name": "sbomify-keycloak",    "package": "sbomify-keycloak-image",    "sbomify_component_id": "N4agQD8pvej8" },
+  { "name": "sbomify-caddy-dev",   "package": "sbomify-caddy-dev-image",   "sbomify_component_id": "zYDq6NtrOBuo" },
+  { "name": "sbomify-minio-init",  "package": "sbomify-minio-init-image",  "sbomify_component_id": "PLACEHOLDER_SBOMIFY_MINIO_INIT" }
 ]

@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# common/lib/scripts/tag-collection — Add a collection version tag to an image found by component tag.
+#
+# Usage:
+#   common/lib/scripts/tag-collection \
+#     --image <name> \
+#     --component-tag <tag> \
+#     --collection-version <version>
+#
+# Requires: crane
+
+set -euo pipefail
+
+usage() {
+  echo "Usage: $0 --image NAME --component-tag TAG --collection-version VERSION [--registry REGISTRY]"
+  exit 1
+}
+
+IMAGE=""
+COMPONENT_TAG=""
+COLLECTION_VERSION=""
+REGISTRY="${REGISTRY:-ghcr.io/wellmaintained/packages}"
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --image) IMAGE="$2"; shift 2 ;;
+    --component-tag) COMPONENT_TAG="$2"; shift 2 ;;
+    --collection-version) COLLECTION_VERSION="$2"; shift 2 ;;
+    --registry) REGISTRY="$2"; shift 2 ;;
+    *) echo "Unknown option: $1"; usage ;;
+  esac
+done
+
+[[ -z "$IMAGE" || -z "$COMPONENT_TAG" || -z "$COLLECTION_VERSION" ]] && usage
+
+REPO="${REGISTRY}/${IMAGE}"
+
+echo "==> Resolving ${REPO}:${COMPONENT_TAG}"
+
+DIGEST=$(crane digest "${REPO}:${COMPONENT_TAG}" 2>&1) || {
+  echo "ERROR: crane digest failed with: ${DIGEST}"
+  echo "Component tag '${COMPONENT_TAG}' not found for ${REPO}."
+  exit 1
+}
+
+echo "    Digest: ${DIGEST}"
+echo "    Adding collection tag: ${COLLECTION_VERSION}"
+
+crane tag "${REPO}@${DIGEST}" "${COLLECTION_VERSION}"
+
+echo "==> Tagged ${IMAGE} with ${COLLECTION_VERSION}"

@@ -1,27 +1,34 @@
 #!/usr/bin/env bash
-# bin/cleanup-pr-images — Delete PR-tagged images from GHCR.
+# bin/cleanup-stale-images — Delete stale component-tagged images from GHCR.
+#
+# Sweeps image versions that have no released-on: tag and are older than N days.
+# Images with a released-on: prefixed tag (e.g. released-on:2026-03-30T10:15:00)
+# are kept forever — this tag is added when a pre-release is promoted to release.
+# Component tags (e.g. postgres-16.8-abc1234) from unmerged PRs or old builds
+# are cleaned up after the retention period.
 #
 # Subcommands:
-#   pr    — Delete images for a specific PR number
-#   sweep — Delete all pr-* tagged images older than N days
+#   sweep — Delete images older than N days that lack a released-on: tag
 #
 # Requires: gh (GitHub CLI) with packages:write permission
 
 set -euo pipefail
 
 ORG="${GHCR_ORG:-wellmaintained}"
+# Regex matching released-on tags: released-on:YYYY-MM-DDTHH:MM:SS
+RELEASED_TAG_RE="${RELEASED_TAG_RE:-^released-on:}"
 
 usage() {
   cat >&2 <<EOF
 Usage: $0 <subcommand> [options]
 
 Subcommands:
-  pr    --image NAME --pr-number NUMBER
   sweep --image NAME [--days N]  (default: 7 days)
 
 Environment:
-  GHCR_ORG   Organization name (default: wellmaintained)
-  GH_TOKEN   GitHub token with packages:write
+  GHCR_ORG            Organization name (default: wellmaintained)
+  RELEASED_TAG_RE     Regex for released-on tags (default: ^released-on:)
+  GH_TOKEN            GitHub token with packages:write
 EOF
   exit 1
 }
@@ -56,22 +63,6 @@ delete_versions() {
   echo "  Deleted ${count} version(s)." >&2
 }
 
-cmd_pr() {
-  local image="" pr_number=""
-  while [[ $# -gt 0 ]]; do
-    case "$1" in
-      --image) image="$2"; shift 2 ;;
-      --pr-number) pr_number="$2"; shift 2 ;;
-      *) echo "Unknown option: $1" >&2; usage ;;
-    esac
-  done
-  [[ -z "$image" || -z "$pr_number" ]] && { echo "ERROR: --image and --pr-number required" >&2; usage; }
-
-  echo "==> Cleaning up pr-${pr_number} images for ${image}" >&2
-  delete_versions "$image" \
-    ".[] | select(.metadata.container.tags[] | startswith(\"pr-${pr_number}-\")) | .id"
-}
-
 cmd_sweep() {
   local image="" days=7
   while [[ $# -gt 0 ]]; do
@@ -87,13 +78,14 @@ cmd_sweep() {
   cutoff=$(date -u -d "${days} days ago" '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null \
     || date -u -v-"${days}"d '+%Y-%m-%dT%H:%M:%SZ')
 
-  echo "==> Sweeping stale PR images for ${image} (older than ${cutoff})" >&2
+  local released_re="${RELEASED_TAG_RE}"
+
+  echo "==> Sweeping stale images for ${image} (older than ${cutoff}, no released-on tag)" >&2
   delete_versions "$image" \
-    ".[] | select((.metadata.container.tags | length > 0) and (.metadata.container.tags[] | startswith(\"pr-\")) and (.updated_at < \"${cutoff}\")) | .id"
+    ".[] | select((.metadata.container.tags | length > 0) and (.metadata.container.tags | all(test(\"${released_re}\") | not)) and (.updated_at < \"${cutoff}\")) | .id"
 }
 
 case "${1:-}" in
-  pr)    shift; cmd_pr "$@" ;;
   sweep) shift; cmd_sweep "$@" ;;
   *) usage ;;
 esac

@@ -1,7 +1,8 @@
-name: Cleanup PR images
+name: Cleanup stale images
 
-# Weekly sweep of stale PR-tagged images from GHCR (ADR-0003 section 6).
-# Logic lives in common/lib/scripts/cleanup-pr-images; this workflow is a thin wrapper.
+# Weekly sweep of stale component-tagged images from GHCR (ADR-0005).
+# Deletes image versions with no released-on: tag older than 7 days.
+# Logic lives in common/lib/scripts/cleanup-stale-images; this workflow is a thin wrapper.
 
 on:
   schedule:
@@ -31,10 +32,10 @@ jobs:
         image: ${{ fromJson(needs.load-matrix.outputs.matrix) }}
     steps:
       - uses: actions/checkout@v5
-      - name: Sweep stale PR images
+      - name: Sweep stale images
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          common/lib/scripts/cleanup-pr-images sweep \
+          common/lib/scripts/cleanup-stale-images sweep \
             --image "${{ matrix.image.name }}" \
             --days 7

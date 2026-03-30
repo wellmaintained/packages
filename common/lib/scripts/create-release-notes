@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+# common/lib/scripts/create-release-notes — Generate markdown release notes for a collection.
+#
+# Usage:
+#   common/lib/scripts/create-release-notes \
+#     --collection-version VERSION \
+#     --pr-number NUM \
+#     --app-version VERSION \
+#     --sha7 SHA7 \
+#     --matrix-json JSON \
+#     --output FILE
+#
+# Requires: crane, jq
+
+set -euo pipefail
+
+usage() {
+  echo "Usage: $0 --collection-version VERSION --pr-number NUM --app-version VERSION --sha7 SHA7 --matrix-json JSON --output FILE [--registry REGISTRY]"
+  exit 1
+}
+
+COLLECTION_VERSION=""
+PR_NUMBER=""
+APP_VERSION=""
+SHA7=""
+MATRIX_JSON=""
+OUTPUT=""
+REGISTRY="${REGISTRY:-ghcr.io/wellmaintained/packages}"
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --collection-version) COLLECTION_VERSION="$2"; shift 2 ;;
+    --pr-number) PR_NUMBER="$2"; shift 2 ;;
+    --app-version) APP_VERSION="$2"; shift 2 ;;
+    --sha7) SHA7="$2"; shift 2 ;;
+    --matrix-json) MATRIX_JSON="$2"; shift 2 ;;
+    --output) OUTPUT="$2"; shift 2 ;;
+    --registry) REGISTRY="$2"; shift 2 ;;
+    *) echo "Unknown option: $1"; usage ;;
+  esac
+done
+
+[[ -z "$COLLECTION_VERSION" || -z "$PR_NUMBER" || -z "$APP_VERSION" || -z "$SHA7" || -z "$MATRIX_JSON" || -z "$OUTPUT" ]] && usage
+
+{
+  echo "## Collection: ${COLLECTION_VERSION}"
+  echo ""
+  echo "**Source PR:** #${PR_NUMBER}"
+  echo "**App version:** ${APP_VERSION}"
+  echo ""
+  echo "### Images"
+  echo ""
+  echo "| Image | Component Tag | Digest |"
+  echo "|-------|--------------|--------|"
+} > "$OUTPUT"
+
+for ROW in $(echo "$MATRIX_JSON" | jq -c '.[]'); do
+  NAME=$(echo "$ROW" | jq -r .name)
+
+  COMPONENT_TAG=$(crane ls "${REGISTRY}/${NAME}" | grep -- "-${SHA7}$" | head -1 || true)
+  if [ -z "$COMPONENT_TAG" ]; then
+    echo "WARNING: No component tag for ${NAME} with SHA ${SHA7}" >&2
+    continue
+  fi
+
+  DIGEST=$(crane digest "${REGISTRY}/${NAME}:${COMPONENT_TAG}" 2>/dev/null || echo "unknown")
+  SHORT_DIGEST="${DIGEST::19}"
+
+  echo "| \`${NAME}\` | \`${COMPONENT_TAG}\` | \`${SHORT_DIGEST}\` |" >> "$OUTPUT"
+done
+
+cat "$OUTPUT"

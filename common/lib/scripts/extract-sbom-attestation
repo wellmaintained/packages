@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
-# bin/extract-sbom-attestation — Extract CycloneDX SBOM from OCI attestation.
+# common/lib/scripts/extract-sbom-attestation — Extract CycloneDX SBOM from OCI attestation.
 #
 # Usage:
-#   bin/extract-sbom-attestation \
+#   common/lib/scripts/extract-sbom-attestation \
 #     --image <name> \
-#     --pr <number> \
-#     --sha <sha7> \
+#     --tag <component-tag> \
 #     --output <path>
 #
 # Requires: crane, cosign, jq, base64
@@ -13,37 +12,34 @@
 set -euo pipefail
 
 usage() {
-  echo "Usage: $0 --image NAME --pr NUMBER --sha SHA7 --output PATH [--registry REGISTRY]"
+  echo "Usage: $0 --image NAME --tag COMPONENT_TAG --output PATH [--registry REGISTRY]"
   exit 1
 }
 
 IMAGE=""
-PR=""
-SHA=""
+TAG=""
 OUTPUT=""
 REGISTRY="${REGISTRY:-ghcr.io/wellmaintained/packages}"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --image) IMAGE="$2"; shift 2 ;;
-    --pr) PR="$2"; shift 2 ;;
-    --sha) SHA="$2"; shift 2 ;;
+    --tag) TAG="$2"; shift 2 ;;
     --output) OUTPUT="$2"; shift 2 ;;
     --registry) REGISTRY="$2"; shift 2 ;;
     *) echo "Unknown option: $1"; usage ;;
   esac
 done
 
-[[ -z "$IMAGE" || -z "$PR" || -z "$SHA" || -z "$OUTPUT" ]] && usage
+[[ -z "$IMAGE" || -z "$TAG" || -z "$OUTPUT" ]] && usage
 
 REPO="${REGISTRY}/${IMAGE}"
-PR_TAG="pr-${PR}-${SHA}"
 
-echo "==> Resolving digest for ${REPO}:${PR_TAG}" >&2
+echo "==> Resolving digest for ${REPO}:${TAG}" >&2
 
-DIGEST=$(crane digest "${REPO}:${PR_TAG}" 2>&1) || {
+DIGEST=$(crane digest "${REPO}:${TAG}" 2>&1) || {
   echo "ERROR: crane digest failed with: ${DIGEST}" >&2
-  echo "PR tag '${PR_TAG}' not found for ${REPO}." >&2
+  echo "Component tag '${TAG}' not found for ${REPO}." >&2
   exit 1
 }
 
