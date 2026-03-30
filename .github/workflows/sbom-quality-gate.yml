@@ -1,10 +1,10 @@
 name: SBOM quality gate
 
-# Scores the PR's SBOMs and compares against the baseline from main.
+# Scores the PR's SBOMs and compares against the baseline.
 # Blocks merging if any image's quality score regresses.
 #
 # Requires the "Build images and SBOMs" workflow to have run first on this PR
-# (it produces the enriched SBOM artifacts we score here).
+# (it pushes OCI images with SBOM attestations that we extract and score here).
 
 on:
   workflow_run:
@@ -14,6 +14,7 @@ on:
 permissions:
   actions: read
   contents: read
+  packages: read
   pull-requests: write
 
 # useblacksmith/stickydisk and DeterminateSystems/determinate-nix-action still
@@ -30,10 +31,15 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set.outputs.matrix }}
+      head_sha7: ${{ steps.sha.outputs.head_sha7 }}
     steps:
       - uses: actions/checkout@v5
       - id: set
         run: echo "matrix=$(jq -c . .github/image-matrix.json)" >> "$GITHUB_OUTPUT"
+      - id: sha
+        run: |
+          HEAD_SHA="${{ github.event.workflow_run.head_sha }}"
+          echo "head_sha7=${HEAD_SHA::7}" >> "$GITHUB_OUTPUT"
 
   score:
     needs: load-matrix
@@ -55,79 +61,94 @@ jobs:
         with:
           stickydisk-suffix: ${{ matrix.image.name }}
 
-      - name: Download PR SBOM
-        uses: actions/download-artifact@v4
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
         with:
-          name: ${{ matrix.image.name }}-sbom
-          path: current/
-          run-id: ${{ github.event.workflow_run.id }}
-          github-token: ${{ github.token }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Read image metadata
-        id: meta
-        run: echo "name=$(jq -r .name current/metadata.json)" >> "$GITHUB_OUTPUT"
+      - name: Resolve component tags
+        id: tags
+        run: |
+          REGISTRY="ghcr.io/wellmaintained/packages"
+          SHA7="${{ needs.load-matrix.outputs.head_sha7 }}"
+          NAME="${{ matrix.image.name }}"
+
+          ALL_TAGS=$(crane ls "${REGISTRY}/${NAME}")
+
+          COMPONENT_TAG=$(echo "$ALL_TAGS" | grep -- "-${SHA7}$" | head -1)
+          if [ -z "$COMPONENT_TAG" ]; then
+            echo "ERROR: No component tag found for ${NAME} with SHA ${SHA7}"
+            exit 1
+          fi
+          echo "component_tag=${COMPONENT_TAG}" >> "$GITHUB_OUTPUT"
+          echo "==> Component tag: ${COMPONENT_TAG}"
+
+          # Find the most recent component tag that isn't from this PR's SHA
+          BASELINE_TAG=$(echo "$ALL_TAGS" \
+            | grep -v -- "-${SHA7}$" \
+            | grep -E "^${NAME}-" \
+            | tail -1)
+
+          if [ -z "$BASELINE_TAG" ]; then
+            echo "No baseline tag found for ${NAME}"
+            echo "has_baseline=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "baseline_tag=${BASELINE_TAG}" >> "$GITHUB_OUTPUT"
+            echo "has_baseline=true" >> "$GITHUB_OUTPUT"
+            echo "==> Baseline tag: ${BASELINE_TAG}"
+          fi
+
+      - name: Extract current SBOM from OCI attestation
+        run: |
+          mkdir -p current
+          common/lib/scripts/extract-sbom-attestation \
+            --image "${{ matrix.image.name }}" \
+            --tag "${{ steps.tags.outputs.component_tag }}" \
+            --output "current/${{ matrix.image.name }}.enriched.cdx.json"
 
       - name: Score current SBOM
         run: |
           mkdir -p results
           SBOM=$(ls current/*.cdx.json | head -1)
-          common/lib/scripts/sbom-score --image "${{ steps.meta.outputs.name }}" "$SBOM" \
-            > results/score-${{ steps.meta.outputs.name }}.json
+          common/lib/scripts/sbom-score --image "${{ matrix.image.name }}" "$SBOM" \
+            > results/score-${{ matrix.image.name }}.json
 
-      - name: Fetch baseline SBOM
-        id: baseline
+      - name: Extract baseline SBOM from OCI attestation
+        if: steps.tags.outputs.has_baseline == 'true'
         continue-on-error: true
-        env:
-          GH_TOKEN: ${{ github.token }}
+        id: baseline-extract
         run: |
-          # Find the latest successful Build images and SBOMs run, excluding
-          # the current triggering run. The build workflow runs on PRs only;
-          # the most recent prior successful run serves as baseline.
-          CURRENT_RUN_ID="${{ github.event.workflow_run.id }}"
-          RUN_ID=$(gh run list \
-            --workflow="Build images and SBOMs" \
-            --status=success \
-            --limit=10 \
-            --json databaseId \
-            --jq "[.[] | select(.databaseId != ${CURRENT_RUN_ID})] | .[0].databaseId")
-
-          if [ -z "$RUN_ID" ] || [ "$RUN_ID" = "null" ]; then
-            echo "has_baseline=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          gh run download "$RUN_ID" \
-            --name "${{ matrix.image.name }}-sbom" \
-            --dir baseline/ || {
-              echo "has_baseline=false" >> "$GITHUB_OUTPUT"
-              exit 0
-            }
-
-          echo "has_baseline=true" >> "$GITHUB_OUTPUT"
+          mkdir -p baseline
+          common/lib/scripts/extract-sbom-attestation \
+            --image "${{ matrix.image.name }}" \
+            --tag "${{ steps.tags.outputs.baseline_tag }}" \
+            --output "baseline/${{ matrix.image.name }}.enriched.cdx.json"
 
       - name: Score baseline SBOM
-        if: steps.baseline.outputs.has_baseline == 'true'
+        if: steps.tags.outputs.has_baseline == 'true' && steps.baseline-extract.outcome == 'success'
         run: |
           SBOM=$(ls baseline/*.cdx.json | head -1)
-          common/lib/scripts/sbom-score --image "${{ steps.meta.outputs.name }}" "$SBOM" \
-            > results/baseline-${{ steps.meta.outputs.name }}.json
+          common/lib/scripts/sbom-score --image "${{ matrix.image.name }}" "$SBOM" \
+            > results/baseline-${{ matrix.image.name }}.json
 
       - name: Compare SBOMs
-        if: steps.baseline.outputs.has_baseline == 'true'
+        if: steps.tags.outputs.has_baseline == 'true' && steps.baseline-extract.outcome == 'success'
         run: |
           BASELINE=$(ls baseline/*.cdx.json | head -1)
           CURRENT=$(ls current/*.cdx.json | head -1)
           common/lib/scripts/sbom-compare \
             --baseline "$BASELINE" \
             --current "$CURRENT" \
-            --image "${{ steps.meta.outputs.name }}" \
+            --image "${{ matrix.image.name }}" \
             --policy .github/sbom-policy.json \
-            > results/compare-${{ steps.meta.outputs.name }}.json
+            > results/compare-${{ matrix.image.name }}.json
 
       - name: Upload results
         uses: actions/upload-artifact@v6
         with:
-          name: sbom-quality-gate-${{ steps.meta.outputs.name }}
+          name: sbom-quality-gate-${{ matrix.image.name }}
           path: results/
 
   report:
