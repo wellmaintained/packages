@@ -1,6 +1,7 @@
 ---
 title: "postgres"
 description: "PostgreSQL container image with compliance artifacts."
+weight: 1
 ---
 
 ## Overview

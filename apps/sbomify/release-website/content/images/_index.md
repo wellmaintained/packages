@@ -1,6 +1,9 @@
 ---
 title: "Container Images"
 description: "Catalog of compliance-ready container images."
+weight: 1
+sidebar:
+  open: true
 ---
 
 Browse the catalog of container images built by this pipeline. Each image
@@ -11,7 +14,7 @@ quality scores, and vulnerability data.
 
 | Image | Description | Status |
 |-------|-------------|--------|
-| [postgres](/images/postgres/) | PostgreSQL with upstream CVE patches | Available |
+| [postgres](postgres/) | PostgreSQL with upstream CVE patches | Available |
 | redis | Redis with compliance metadata | Coming soon |
 | minio | MinIO object storage | Coming soon |
 
