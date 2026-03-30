@@ -61,8 +61,11 @@ if [[ -z "$COSIGN_OUTPUT" ]]; then
   exit 1
 fi
 
+# cosign may return either the old DSSE envelope format (.payload at top level)
+# or the new sigstore bundle format (.dsseEnvelope.payload). Handle both.
 echo "$COSIGN_OUTPUT" \
-  | jq -s 'first | .payload' -r | base64 -d | jq '.predicate' \
+  | jq -s 'first | if has("dsseEnvelope") then .dsseEnvelope.payload else .payload end' -r \
+  | base64 -d | jq '.predicate' \
   > "$OUTPUT"
 
 echo "==> SBOM extracted to ${OUTPUT}" >&2
