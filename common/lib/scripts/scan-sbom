@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# common/lib/scripts/scan-sbom — Scan a CycloneDX SBOM for vulnerabilities using grype.
+#
+# Usage:
+#   common/lib/scripts/scan-sbom \
+#     --sbom <path> \
+#     --output <sarif-path>
+#
+# Exits 0 with no output file if the SBOM does not exist.
+# Exits non-zero if grype fails.
+# Requires: grype
+
+set -euo pipefail
+
+usage() {
+  echo "Usage: $0 --sbom PATH --output PATH"
+  exit 1
+}
+
+SBOM=""
+OUTPUT=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --sbom) SBOM="$2"; shift 2 ;;
+    --output) OUTPUT="$2"; shift 2 ;;
+    *) echo "Unknown option: $1"; usage ;;
+  esac
+done
+
+[[ -z "$SBOM" || -z "$OUTPUT" ]] && usage
+
+if [[ ! -f "$SBOM" ]]; then
+  echo "==> No SBOM found at ${SBOM}, skipping vulnerability scan" >&2
+  exit 0
+fi
+
+echo "==> Scanning ${SBOM} for vulnerabilities" >&2
+grype "sbom:${SBOM}" -o sarif --file "$OUTPUT"
+echo "==> SARIF written to ${OUTPUT}" >&2
