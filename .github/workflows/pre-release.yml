@@ -144,6 +144,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Setup Nix
+        uses: ./.github/actions/setup-nix
+        with:
+          stickydisk-suffix: tag-collection
+
       - name: Log in to GHCR
         uses: docker/login-action@v4
         with:
@@ -153,6 +158,7 @@ jobs:
 
       - name: Resolve component tag from GHCR
         id: component
+        shell: nix develop .#ci -c bash -e {0}
         run: |
           REGISTRY="ghcr.io/wellmaintained/packages"
           SHA7="${{ needs.resolve-pr.outputs.head_sha7 }}"
@@ -168,6 +174,7 @@ jobs:
           echo "==> Component tag: ${COMPONENT_TAG}"
 
       - name: Add collection tag
+        shell: nix develop .#ci -c bash -e {0}
         run: |
           common/lib/scripts/tag-collection \
             --image "${{ matrix.image.name }}" \
@@ -176,6 +183,7 @@ jobs:
 
       - name: Extract SBOM from OCI attestation
         continue-on-error: true
+        shell: nix develop .#ci -c bash -e {0}
         run: |
           common/lib/scripts/extract-sbom-attestation \
             --image "${{ matrix.image.name }}" \
@@ -204,6 +212,11 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
+      - name: Setup Nix
+        uses: ./.github/actions/setup-nix
+        with:
+          stickydisk-suffix: create-release
+
       - name: Log in to GHCR
         uses: docker/login-action@v4
         with:
@@ -212,6 +225,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build release notes
+        shell: nix develop .#ci -c bash -e {0}
         run: |
           common/lib/scripts/create-release-notes \
             --collection-version "${{ needs.resolve-version.outputs.collection_version }}" \
