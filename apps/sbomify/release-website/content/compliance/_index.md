@@ -1,5 +1,6 @@
 ---
 title: "Compliance & Audit"
+description: "Compliance evidence and audit resources for wellmaintained/packages."
 weight: 2
 sidebar:
   open: true

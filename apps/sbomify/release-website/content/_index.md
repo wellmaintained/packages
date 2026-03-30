@@ -1,5 +1,6 @@
 ---
 title: "wellmaintained/packages"
+description: "Compliance-ready container images with SBOMs, quality scores, and audit evidence."
 layout: hextra-home
 ---
 
@@ -21,8 +22,6 @@ layout: hextra-home
   {{< icon name="arrow-circle-right" attributes="height=14" >}}
 {{< /hextra/hero-badge >}}
 </div>
-
-<div class="hx-mt-6"></div>
 
 {{< hextra/feature-grid >}}
   {{< hextra/feature-card

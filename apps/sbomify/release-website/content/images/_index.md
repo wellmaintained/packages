@@ -1,5 +1,6 @@
 ---
 title: "Container Images"
+description: "Catalog of compliance-ready container images."
 weight: 1
 sidebar:
   open: true
