@@ -4,7 +4,13 @@ Date: 2026-03-24
 
 ## Status
 
-accepted
+accepted (promotion model superseded by [ADR 0005](0005-collection-release-pipeline.md))
+
+Note: Decisions 2 (PR tagging), 3 (promote on merge), and 6 (PR image
+cleanup) are superseded by ADR 0005, which introduces collection-based
+releases with a three-phase pipeline. The build workflow (decision 1),
+cosign signing (decision 4), and quality gate (decision 5) remain in
+effect.
 
 ## Context
 

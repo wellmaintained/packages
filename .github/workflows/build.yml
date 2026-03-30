@@ -77,13 +77,14 @@ jobs:
       - name: Build image
         run: common/lib/scripts/build-and-push build --package "${{ matrix.image.package }}"
 
-      - name: Compute PR tag
+      - name: Compute component tag
         id: tag
         run: |
-          PR_NUMBER="${{ github.event.pull_request.number }}"
           HEAD_SHA="${{ github.event.pull_request.head.sha }}"
           SHA7="${HEAD_SHA::7}"
-          echo "pr_tag=pr-${PR_NUMBER}-${SHA7}" >> "$GITHUB_OUTPUT"
+          IMAGE_NAME="${{ steps.meta.outputs.name }}"
+          VERSION="${{ steps.meta.outputs.version }}"
+          echo "component_tag=${IMAGE_NAME}-${VERSION}-${SHA7}" >> "$GITHUB_OUTPUT"
           echo "ghcr_repo=ghcr.io/wellmaintained/packages/${{ matrix.image.name }}" >> "$GITHUB_OUTPUT"
 
       - name: Push image to GHCR
@@ -91,7 +92,7 @@ jobs:
         run: |
           DIGEST=$(common/lib/scripts/build-and-push push \
             --registry "${{ steps.tag.outputs.ghcr_repo }}" \
-            --tag "${{ steps.tag.outputs.pr_tag }}")
+            --tag "${{ steps.tag.outputs.component_tag }}")
           echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
 
       - name: Sign image
