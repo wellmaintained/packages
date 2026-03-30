@@ -1,6 +1,8 @@
 ---
 title: "Deployment Guides"
-description: "Getting started and deployment documentation."
+weight: 3
+sidebar:
+  open: true
 ---
 
 ## Getting started

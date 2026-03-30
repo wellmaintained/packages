@@ -1,6 +1,6 @@
 ---
 title: "Audit Evidence Pack"
-description: "Downloadable compliance evidence packs for GRC tools."
+weight: 1
 ---
 
 ## What's in the audit pack?

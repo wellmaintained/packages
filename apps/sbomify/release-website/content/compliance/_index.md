@@ -1,6 +1,8 @@
 ---
 title: "Compliance & Audit"
-description: "Compliance evidence and audit resources for wellmaintained/packages."
+weight: 2
+sidebar:
+  open: true
 ---
 
 This section provides auditor-facing compliance evidence for container images
@@ -18,5 +20,5 @@ pipeline generates compliance artifacts alongside every image:
 
 ## Resources
 
-- [Audit Evidence Pack](/compliance/audit-pack/) — downloadable evidence bundles for GRC tools
+- [Audit Evidence Pack](audit-pack/) — downloadable evidence bundles for GRC tools
 - [sbomify Trust Centre](https://trust.sbomify.com) — machine-readable compliance data via TEA API

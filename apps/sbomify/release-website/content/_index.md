@@ -1,36 +1,43 @@
 ---
 title: "wellmaintained/packages"
-description: "Compliance-ready container images with SBOMs, quality scores, and audit evidence."
+layout: hextra-home
 ---
 
-## What is this site?
+<div class="hx-mt-6 hx-mb-6">
+{{< hextra/hero-headline >}}
+  wellmaintained/packages
+{{< /hextra/hero-headline >}}
+</div>
 
-This is the release website for [wellmaintained/packages](https://github.com/wellmaintained/packages) — a repository that builds compliance-ready OCI container images using Nix.
+<div class="hx-mb-12">
+{{< hextra/hero-subtitle >}}
+  Compliance-ready container images with SBOMs, quality scores, and audit evidence.
+{{< /hextra/hero-subtitle >}}
+</div>
 
-Every image built by this pipeline comes with:
+<div class="hx-mb-6">
+{{< hextra/hero-badge link="https://github.com/wellmaintained/packages" >}}
+  <span>GitHub</span>
+  {{< icon name="arrow-circle-right" attributes="height=14" >}}
+{{< /hextra/hero-badge >}}
+</div>
 
-- **CycloneDX SBOMs** — machine-readable software bills of materials
-- **Quality scores** — sbomqs ratings for SBOM completeness
-- **Vulnerability summaries** — known CVEs and patch status
-- **License breakdowns** — full dependency license analysis
+<div class="hx-mt-6"></div>
 
-## Site sections
-
-### [Container Images](/images/)
-Browse the catalog of available container images. Each image page shows its
-dependencies, applied CVE patches, license breakdown, and quality scores.
-
-### [Compliance & Audit](/compliance/)
-Auditor-facing compliance evidence. Download audit evidence packs formatted
-for GRC tools like Vanta and Drata.
-
-### [Deployment Guides](/guides/)
-Getting started guides and deployment documentation.
-
-## How it works
-
-Images are built with Nix using the `buildCompliantImage` API from
-[nix-compliance-inator](https://github.com/wellmaintained/packages). This
-ensures every image is reproducible and ships with complete compliance
-artifacts. CI publishes images to GHCR and compliance data to both this
-site and the [sbomify Trust Centre](https://trust.sbomify.com).
+{{< hextra/feature-grid >}}
+  {{< hextra/feature-card
+    title="Container Images"
+    subtitle="Browse the catalog of compliance-ready images with SBOMs, quality scores, and vulnerability data."
+    link="images"
+  >}}
+  {{< hextra/feature-card
+    title="Compliance & Audit"
+    subtitle="Auditor-facing evidence packs formatted for GRC tools like Vanta and Drata."
+    link="compliance"
+  >}}
+  {{< hextra/feature-card
+    title="Deployment Guides"
+    subtitle="Getting started guides and deployment documentation."
+    link="guides"
+  >}}
+{{< /hextra/feature-grid >}}
