@@ -90,6 +90,11 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
+      - name: Setup Nix
+        uses: ./.github/actions/setup-nix
+        with:
+          stickydisk-suffix: resolve-version
+
       - name: Log in to GHCR
         uses: docker/login-action@v4
         with:
@@ -99,6 +104,7 @@ jobs:
 
       - name: Compute collection version
         id: version
+        shell: nix develop .#ci -c bash -e {0}
         run: |
           REGISTRY="ghcr.io/wellmaintained/packages"
           SHA7="${{ needs.resolve-pr.outputs.head_sha7 }}"
