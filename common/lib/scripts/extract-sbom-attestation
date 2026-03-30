@@ -49,10 +49,20 @@ echo "==> Extracting SBOM attestation from ${IMAGE_REF}" >&2
 OUTPUT_DIR=$(dirname "$OUTPUT")
 mkdir -p "$OUTPUT_DIR"
 
-cosign download attestation \
+COSIGN_OUTPUT=$(cosign download attestation \
   --predicate-type https://cyclonedx.org/bom \
-  "${IMAGE_REF}" \
-  | jq -r '.payload' | base64 -d | jq '.predicate' \
+  "${IMAGE_REF}") || {
+  echo "ERROR: cosign download attestation failed for ${IMAGE_REF}" >&2
+  exit 1
+}
+
+if [[ -z "$COSIGN_OUTPUT" ]]; then
+  echo "ERROR: No CycloneDX attestation found for ${IMAGE_REF}" >&2
+  exit 1
+fi
+
+echo "$COSIGN_OUTPUT" \
+  | jq -s 'first | .payload' -r | base64 -d | jq '.predicate' \
   > "$OUTPUT"
 
 echo "==> SBOM extracted to ${OUTPUT}" >&2
