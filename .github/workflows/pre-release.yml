@@ -1,0 +1,266 @@
+name: Pre-release collection
+
+# On merge to main, create a collection pre-release (ADR-0005).
+# Adds collection version tag to all images, creates GitHub pre-release.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - common/**
+      - apps/**
+      - flake.nix
+      - flake.lock
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to release (required for manual trigger)'
+        required: false
+      head_sha7:
+        description: 'First 7 chars of PR head SHA (required for manual trigger)'
+        required: false
+
+permissions:
+  actions: read
+  contents: write
+  packages: write
+
+# useblacksmith/stickydisk and DeterminateSystems/determinate-nix-action still
+# ship node20 with no node24 releases available. Opt in early ahead of the
+# June 2026 forced migration.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  load-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v5
+      - id: set
+        run: echo "matrix=$(jq -c . .github/image-matrix.json)" >> "$GITHUB_OUTPUT"
+
+  resolve-pr:
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    outputs:
+      pr_number: ${{ steps.pr.outputs.pr_number }}
+      head_sha7: ${{ steps.pr.outputs.head_sha7 }}
+      skip: ${{ steps.pr.outputs.skip }}
+    steps:
+      - name: Resolve PR from merge commit
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Use workflow_dispatch inputs if provided
+          if [ -n "${{ inputs.pr_number }}" ] && [ -n "${{ inputs.head_sha7 }}" ]; then
+            echo "Using manual inputs: PR=${{ inputs.pr_number }}, SHA=${{ inputs.head_sha7 }}"
+            echo "pr_number=${{ inputs.pr_number }}" >> "$GITHUB_OUTPUT"
+            echo "head_sha7=${{ inputs.head_sha7 }}" >> "$GITHUB_OUTPUT"
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Find the PR that was merged to produce this push
+          PR_NUMBER=$(gh api \
+            "repos/${{ github.repository }}/commits/${{ github.sha }}/pulls" \
+            --jq '.[0].number' 2>/dev/null || true)
+
+          if [ -z "$PR_NUMBER" ] || [ "$PR_NUMBER" = "null" ]; then
+            echo "WARNING: Could not resolve PR for commit ${{ github.sha }}"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          HEAD_SHA=$(gh pr view "$PR_NUMBER" \
+            --repo "${{ github.repository }}" \
+            --json headRefOid --jq '.headRefOid')
+          SHA7="${HEAD_SHA::7}"
+
+          echo "pr_number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
+          echo "head_sha7=${SHA7}" >> "$GITHUB_OUTPUT"
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+
+  resolve-version:
+    needs: [resolve-pr]
+    if: needs.resolve-pr.outputs.skip != 'true'
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    defaults:
+      run:
+        shell: nix develop .#ci -c bash -e {0}
+    outputs:
+      collection_version: ${{ steps.version.outputs.collection_version }}
+      app_version: ${{ steps.version.outputs.app_version }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Setup Nix
+        uses: ./.github/actions/setup-nix
+
+      - name: Compute collection version
+        id: version
+        run: |
+          # Get app version from sbomify-app image metadata
+          META=$(common/lib/scripts/build-and-push metadata --package sbomify-app-image)
+          APP_VERSION=$(echo "$META" | jq -r .version)
+          echo "app_version=${APP_VERSION}" >> "$GITHUB_OUTPUT"
+
+          # Compute build number: count existing tags for today + 1
+          TODAY=$(date -u '+%Y%m%d')
+          PREFIX="sbomify-v${APP_VERSION}-${TODAY}."
+          EXISTING=$(git tag -l "${PREFIX}*" | wc -l)
+          BUILD_NUMBER=$((EXISTING + 1))
+
+          COLLECTION_VERSION="sbomify-v${APP_VERSION}-${TODAY}.${BUILD_NUMBER}"
+          echo "collection_version=${COLLECTION_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "==> Collection version: ${COLLECTION_VERSION}"
+
+  tag-collection:
+    needs: [load-matrix, resolve-pr, resolve-version]
+    if: needs.resolve-pr.outputs.skip != 'true'
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    defaults:
+      run:
+        shell: nix develop .#ci -c bash -e {0}
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ${{ fromJson(needs.load-matrix.outputs.matrix) }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Nix
+        uses: ./.github/actions/setup-nix
+        with:
+          stickydisk-suffix: ${{ matrix.image.name }}
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get upstream version
+        id: meta
+        run: |
+          META=$(common/lib/scripts/build-and-push metadata --package "${{ matrix.image.package }}")
+          echo "version=$(echo "$META" | jq -r .version)" >> "$GITHUB_OUTPUT"
+          echo "sbomify_component_id=$(echo "$META" | jq -r .sbomifyComponentId)" >> "$GITHUB_OUTPUT"
+          echo "name=$(echo "$META" | jq -r .name)" >> "$GITHUB_OUTPUT"
+
+      - name: Compute component tag
+        id: component
+        run: |
+          SHA7="${{ needs.resolve-pr.outputs.head_sha7 }}"
+          NAME="${{ steps.meta.outputs.name }}"
+          VERSION="${{ steps.meta.outputs.version }}"
+          echo "tag=${NAME}-${VERSION}-${SHA7}" >> "$GITHUB_OUTPUT"
+
+      - name: Add collection tag
+        run: |
+          common/lib/scripts/tag-collection \
+            --image "${{ matrix.image.name }}" \
+            --component-tag "${{ steps.component.outputs.tag }}" \
+            --collection-version "${{ needs.resolve-version.outputs.collection_version }}"
+
+      - name: Extract SBOM from OCI attestation
+        continue-on-error: true
+        run: |
+          common/lib/scripts/extract-sbom-attestation \
+            --image "${{ matrix.image.name }}" \
+            --tag "${{ steps.component.outputs.tag }}" \
+            --output "sbom/${{ steps.meta.outputs.name }}.enriched.cdx.json"
+
+      - name: Upload SBOM to sbomify.com
+        if: ${{ !startsWith(steps.meta.outputs.sbomify_component_id, 'PLACEHOLDER') }}
+        uses: sbomify/sbomify-action@d96675bf9fcbeba415e618895af758a6216395d0 # v26.1.0
+        continue-on-error: true
+        env:
+          TOKEN: ${{ secrets.SBOMIFY_TOKEN }}
+          COMPONENT_ID: ${{ steps.meta.outputs.sbomify_component_id }}
+          SBOM_FILE: sbom/${{ steps.meta.outputs.name }}.enriched.cdx.json
+          SBOM_FORMAT: cyclonedx
+          UPLOAD: true
+
+  create-release:
+    needs: [resolve-pr, resolve-version, tag-collection, load-matrix]
+    if: needs.resolve-pr.outputs.skip != 'true'
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    defaults:
+      run:
+        shell: nix develop .#ci -c bash -e {0}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Setup Nix
+        uses: ./.github/actions/setup-nix
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build release notes
+        id: notes
+        run: |
+          COLLECTION_VERSION="${{ needs.resolve-version.outputs.collection_version }}"
+          REGISTRY="ghcr.io/wellmaintained/packages"
+          SHA7="${{ needs.resolve-pr.outputs.head_sha7 }}"
+
+          {
+            echo "## Collection: ${COLLECTION_VERSION}"
+            echo ""
+            echo "**Source PR:** #${{ needs.resolve-pr.outputs.pr_number }}"
+            echo "**App version:** ${{ needs.resolve-version.outputs.app_version }}"
+            echo ""
+            echo "### Images"
+            echo ""
+            echo "| Image | Component Tag | Digest |"
+            echo "|-------|--------------|--------|"
+          } > release-notes.md
+
+          # Read matrix and resolve each image
+          MATRIX='${{ needs.load-matrix.outputs.matrix }}'
+          for ROW in $(echo "$MATRIX" | jq -c '.[]'); do
+            NAME=$(echo "$ROW" | jq -r .name)
+            PKG=$(echo "$ROW" | jq -r .package)
+
+            META=$(common/lib/scripts/build-and-push metadata --package "$PKG")
+            IMG_NAME=$(echo "$META" | jq -r .name)
+            VERSION=$(echo "$META" | jq -r .version)
+            COMPONENT_TAG="${IMG_NAME}-${VERSION}-${SHA7}"
+
+            DIGEST=$(crane digest "${REGISTRY}/${NAME}:${COMPONENT_TAG}" 2>/dev/null || echo "unknown")
+            SHORT_DIGEST="${DIGEST::19}"
+
+            echo "| \`${NAME}\` | \`${COMPONENT_TAG}\` | \`${SHORT_DIGEST}\` |" >> release-notes.md
+          done
+
+          cat release-notes.md
+
+      - name: Create git tag and GitHub pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          COLLECTION_VERSION="${{ needs.resolve-version.outputs.collection_version }}"
+
+          git tag "${COLLECTION_VERSION}"
+          git push origin "${COLLECTION_VERSION}"
+
+          gh release create "${COLLECTION_VERSION}" \
+            --title "${COLLECTION_VERSION}" \
+            --notes-file release-notes.md \
+            --prerelease
