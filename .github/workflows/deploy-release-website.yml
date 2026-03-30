@@ -26,14 +26,13 @@ jobs:
   tag-released:
     if: github.event_name == 'release'
     runs-on: blacksmith-2vcpu-ubuntu-2404
-    defaults:
-      run:
-        shell: nix develop .#ci -c bash -e {0}
     steps:
       - uses: actions/checkout@v5
 
       - name: Setup Nix
         uses: ./.github/actions/setup-nix
+        with:
+          stickydisk-suffix: tag-released
 
       - name: Log in to GHCR
         uses: docker/login-action@v4
