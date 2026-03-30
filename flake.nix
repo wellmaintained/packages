@@ -288,6 +288,7 @@
             packages = with pkgs; [
               cosign
               crane
+              grype
               sbomqs
               sbomlyze
             ];
