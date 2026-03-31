@@ -1,10 +1,8 @@
-name: SBOM quality gate
+name: "SBOM quality gate v2 \U0001F9EA"
 
-# Scores the PR's SBOMs and compares against the baseline.
-# Blocks merging if any image's quality score regresses.
-#
-# Requires the "Build images and SBOMs" workflow to have run first on this PR
-# (it pushes OCI images with SBOM attestations that we extract and score here).
+# Experimental variant of the SBOM quality gate that runs current and baseline
+# SBOM extraction in parallel. Runs alongside the original for A/B timing
+# comparison. Remove this file once the speedup is validated.
 
 on:
   workflow_run:
@@ -17,9 +15,6 @@ permissions:
   packages: read
   pull-requests: write
 
-# useblacksmith/stickydisk and DeterminateSystems/determinate-nix-action still
-# ship node20 with no node24 releases available. Opt in early ahead of the
-# June 2026 forced migration.
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   GHCR_REGISTRY: ghcr.io/wellmaintained/packages
@@ -60,7 +55,7 @@ jobs:
       - name: Setup Nix
         uses: ./.github/actions/setup-nix
         with:
-          stickydisk-suffix: ${{ matrix.image.name }}
+          stickydisk-suffix: v2-${{ matrix.image.name }}
 
       - name: Log in to GHCR
         uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4
@@ -96,13 +91,42 @@ jobs:
             echo "==> Baseline tag: ${BASELINE_TAG}"
           fi
 
-      - name: Extract current SBOM from OCI attestation
+      - name: Extract SBOMs from OCI attestations (parallel)
+        id: extract
         run: |
-          mkdir -p current
+          mkdir -p current baseline
+
+          # Extract current SBOM in background
           common/lib/scripts/extract-sbom-attestation \
             --image "${{ matrix.image.name }}" \
             --tag "${{ steps.tags.outputs.component_tag }}" \
-            --output "current/${{ matrix.image.name }}.enriched.cdx.json"
+            --output "current/${{ matrix.image.name }}.enriched.cdx.json" &
+          CURRENT_PID=$!
+
+          # Extract baseline SBOM in background (if available)
+          BASELINE_PID=""
+          if [ "${{ steps.tags.outputs.has_baseline }}" = "true" ]; then
+            common/lib/scripts/extract-sbom-attestation \
+              --image "${{ matrix.image.name }}" \
+              --tag "${{ steps.tags.outputs.baseline_tag }}" \
+              --output "baseline/${{ matrix.image.name }}.enriched.cdx.json" &
+            BASELINE_PID=$!
+          fi
+
+          # Wait for current extraction (must succeed)
+          wait "$CURRENT_PID"
+
+          # Wait for baseline extraction (allow failure)
+          if [ -n "$BASELINE_PID" ]; then
+            if wait "$BASELINE_PID"; then
+              echo "baseline_ok=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "::warning::Baseline SBOM extraction failed — skipping comparison"
+              echo "baseline_ok=false" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo "baseline_ok=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Score current SBOM
         run: |
@@ -111,26 +135,15 @@ jobs:
           common/lib/scripts/sbom-score --image "${{ matrix.image.name }}" "$SBOM" \
             > results/score-${{ matrix.image.name }}.json
 
-      - name: Extract baseline SBOM from OCI attestation
-        if: steps.tags.outputs.has_baseline == 'true'
-        continue-on-error: true
-        id: baseline-extract
-        run: |
-          mkdir -p baseline
-          common/lib/scripts/extract-sbom-attestation \
-            --image "${{ matrix.image.name }}" \
-            --tag "${{ steps.tags.outputs.baseline_tag }}" \
-            --output "baseline/${{ matrix.image.name }}.enriched.cdx.json"
-
       - name: Score baseline SBOM
-        if: steps.tags.outputs.has_baseline == 'true' && steps.baseline-extract.outcome == 'success'
+        if: steps.extract.outputs.baseline_ok == 'true'
         run: |
           SBOM=$(ls baseline/*.cdx.json | head -1)
           common/lib/scripts/sbom-score --image "${{ matrix.image.name }}" "$SBOM" \
             > results/baseline-${{ matrix.image.name }}.json
 
       - name: Compare SBOMs
-        if: steps.tags.outputs.has_baseline == 'true' && steps.baseline-extract.outcome == 'success'
+        if: steps.extract.outputs.baseline_ok == 'true'
         run: |
           BASELINE=$(ls baseline/*.cdx.json | head -1)
           CURRENT=$(ls current/*.cdx.json | head -1)
@@ -144,13 +157,11 @@ jobs:
       - name: Upload results
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
-          name: sbom-quality-gate-${{ matrix.image.name }}
+          name: sbom-quality-gate-v2-${{ matrix.image.name }}
           path: results/
 
   report:
     needs: [load-matrix, score]
-    # Run even if some score jobs failed, but not if the entire score job
-    # was skipped (which happens on direct pushes to main where there's no PR).
     if: always() && needs.score.result != 'skipped'
     runs-on: blacksmith-2vcpu-ubuntu-2404
     permissions:
@@ -164,7 +175,7 @@ jobs:
       - name: Download all results
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
-          pattern: sbom-quality-gate-*
+          pattern: sbom-quality-gate-v2-*
           merge-multiple: true
           path: results/
 
@@ -181,8 +192,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # The workflow_run event doesn't directly give us the PR number.
-          # Look it up from the head branch.
           HEAD_BRANCH="${{ github.event.workflow_run.head_branch }}"
           PR_NUMBER=$(gh pr list --head "$HEAD_BRANCH" --json number --jq '.[0].number')
           echo "number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
@@ -191,7 +200,7 @@ jobs:
         if: steps.pr.outputs.number
         uses: marocchino/sticky-pull-request-comment@70d2764d1a7d5d9560b100cbea0077fc8f633987 # v3
         with:
-          header: sbom-quality-gate
+          header: sbom-quality-gate-v2
           number: ${{ steps.pr.outputs.number }}
           path: pr-comment.md
 
