@@ -57,8 +57,8 @@ jobs:
           # Table format: | `image-name` | `component-tag` | `sha256:...` |
           echo "$RELEASE_BODY" | grep -E '^\|.*sha256:' | while IFS='|' read -r _ name _ digest _; do
             # Strip backticks and whitespace
-            name=$(echo "$name" | tr -d '` ' )
-            digest=$(echo "$digest" | tr -d '` ' )
+            name=$(echo "$name" | tr -d '\x60 ' )
+            digest=$(echo "$digest" | tr -d '\x60 ' )
 
             if [[ -z "$name" || -z "$digest" ]]; then
               echo "  Skipping unparseable row" >&2
