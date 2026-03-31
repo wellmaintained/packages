@@ -25,8 +25,16 @@ if [ -f "${GITHUB_WORKSPACE:-.}/flake.nix" ]; then
 
 fi
 
-echo "Running nix garbage collection before stickydisk commit..."
-nix-collect-garbage --delete-older-than 7d || echo "Warning: nix-collect-garbage failed (non-fatal)"
+GC_MARKER="/nix/var/nix/gcroots/stickydisk-keep/.last-gc"
+GC_INTERVAL=$((7 * 24 * 3600))  # 7 days in seconds
+
+if [ -f "$GC_MARKER" ] && [ $(( $(date +%s) - $(cat "$GC_MARKER") )) -lt "$GC_INTERVAL" ]; then
+  echo "Skipping nix garbage collection (last run: $(date -d @"$(cat "$GC_MARKER")" -u '+%Y-%m-%d %H:%M UTC'))"
+else
+  echo "Running nix garbage collection before stickydisk commit..."
+  nix-collect-garbage --delete-older-than 7d || echo "Warning: nix-collect-garbage failed (non-fatal)"
+  date +%s > "$GC_MARKER"
+fi
 
 echo "Stopping Nix daemon to release /nix/store for stickydisk unmount..."
 
