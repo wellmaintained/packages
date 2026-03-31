@@ -1,0 +1,211 @@
+name: "SBOM quality gate v2 \U0001F9EA"
+
+# Experimental variant of the SBOM quality gate that runs current and baseline
+# SBOM extraction in parallel. Runs alongside the original for A/B timing
+# comparison. Remove this file once the speedup is validated.
+
+on:
+  workflow_run:
+    workflows: ["Build images and SBOMs"]
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: read
+  packages: read
+  pull-requests: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  GHCR_REGISTRY: ghcr.io/wellmaintained/packages
+
+jobs:
+  load-matrix:
+    if: >-
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set.outputs.matrix }}
+      head_sha7: ${{ steps.sha.outputs.head_sha7 }}
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - id: set
+        run: echo "matrix=$(jq -c . .github/image-matrix.json)" >> "$GITHUB_OUTPUT"
+      - id: sha
+        run: |
+          HEAD_SHA="${{ github.event.workflow_run.head_sha }}"
+          echo "head_sha7=${HEAD_SHA::7}" >> "$GITHUB_OUTPUT"
+
+  score:
+    needs: load-matrix
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    defaults:
+      run:
+        shell: nix develop .#ci -c bash -e {0}
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ${{ fromJson(needs.load-matrix.outputs.matrix) }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Setup Nix
+        uses: ./.github/actions/setup-nix
+        with:
+          stickydisk-suffix: v2-${{ matrix.image.name }}
+
+      - name: Log in to GHCR
+        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve component tags
+        id: tags
+        run: |
+          REGISTRY="${GHCR_REGISTRY}"
+          SHA7="${{ needs.load-matrix.outputs.head_sha7 }}"
+          NAME="${{ matrix.image.name }}"
+
+          COMPONENT_TAG=$(common/lib/scripts/resolve-component-tag \
+            --image "$NAME" --sha7 "$SHA7" --registry "$REGISTRY")
+          echo "component_tag=${COMPONENT_TAG}" >> "$GITHUB_OUTPUT"
+
+          # Find the most recent component tag that isn't from this PR's SHA
+          ALL_TAGS=$(crane ls "${REGISTRY}/${NAME}")
+          BASELINE_TAG=$(echo "$ALL_TAGS" \
+            | grep -v -- "-${SHA7}$" \
+            | grep -E "^${NAME}-" \
+            | tail -1)
+
+          if [ -z "$BASELINE_TAG" ]; then
+            echo "No baseline tag found for ${NAME}"
+            echo "has_baseline=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "baseline_tag=${BASELINE_TAG}" >> "$GITHUB_OUTPUT"
+            echo "has_baseline=true" >> "$GITHUB_OUTPUT"
+            echo "==> Baseline tag: ${BASELINE_TAG}"
+          fi
+
+      - name: Extract SBOMs from OCI attestations (parallel)
+        id: extract
+        run: |
+          mkdir -p current baseline
+
+          # Extract current SBOM in background
+          common/lib/scripts/extract-sbom-attestation \
+            --image "${{ matrix.image.name }}" \
+            --tag "${{ steps.tags.outputs.component_tag }}" \
+            --output "current/${{ matrix.image.name }}.enriched.cdx.json" &
+          CURRENT_PID=$!
+
+          # Extract baseline SBOM in background (if available)
+          BASELINE_PID=""
+          if [ "${{ steps.tags.outputs.has_baseline }}" = "true" ]; then
+            common/lib/scripts/extract-sbom-attestation \
+              --image "${{ matrix.image.name }}" \
+              --tag "${{ steps.tags.outputs.baseline_tag }}" \
+              --output "baseline/${{ matrix.image.name }}.enriched.cdx.json" &
+            BASELINE_PID=$!
+          fi
+
+          # Wait for current extraction (must succeed)
+          wait "$CURRENT_PID"
+
+          # Wait for baseline extraction (allow failure)
+          if [ -n "$BASELINE_PID" ]; then
+            if wait "$BASELINE_PID"; then
+              echo "baseline_ok=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "::warning::Baseline SBOM extraction failed — skipping comparison"
+              echo "baseline_ok=false" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo "baseline_ok=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Score current SBOM
+        run: |
+          mkdir -p results
+          SBOM=$(ls current/*.cdx.json | head -1)
+          common/lib/scripts/sbom-score --image "${{ matrix.image.name }}" "$SBOM" \
+            > results/score-${{ matrix.image.name }}.json
+
+      - name: Score baseline SBOM
+        if: steps.extract.outputs.baseline_ok == 'true'
+        run: |
+          SBOM=$(ls baseline/*.cdx.json | head -1)
+          common/lib/scripts/sbom-score --image "${{ matrix.image.name }}" "$SBOM" \
+            > results/baseline-${{ matrix.image.name }}.json
+
+      - name: Compare SBOMs
+        if: steps.extract.outputs.baseline_ok == 'true'
+        run: |
+          BASELINE=$(ls baseline/*.cdx.json | head -1)
+          CURRENT=$(ls current/*.cdx.json | head -1)
+          common/lib/scripts/sbom-compare \
+            --baseline "$BASELINE" \
+            --current "$CURRENT" \
+            --image "${{ matrix.image.name }}" \
+            --policy .github/sbom-policy.json \
+            > results/compare-${{ matrix.image.name }}.json
+
+      - name: Upload results
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: sbom-quality-gate-v2-${{ matrix.image.name }}
+          path: results/
+
+  report:
+    needs: [load-matrix, score]
+    if: always() && needs.score.result != 'skipped'
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    permissions:
+      pull-requests: write
+      actions: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Download all results
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: sbom-quality-gate-v2-*
+          merge-multiple: true
+          path: results/
+
+      - name: Generate report
+        id: report
+        run: |
+          common/lib/scripts/sbom-report --scores-dir results/ > pr-comment.md 2>report-stderr.txt || {
+            cat report-stderr.txt >&2
+            echo "failed=true" >> "$GITHUB_OUTPUT"
+          }
+
+      - name: Resolve PR number
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          HEAD_BRANCH="${{ github.event.workflow_run.head_branch }}"
+          PR_NUMBER=$(gh pr list --head "$HEAD_BRANCH" --json number --jq '.[0].number')
+          echo "number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
+
+      - name: Post PR comment
+        if: steps.pr.outputs.number
+        uses: marocchino/sticky-pull-request-comment@70d2764d1a7d5d9560b100cbea0077fc8f633987 # v3
+        with:
+          header: sbom-quality-gate-v2
+          number: ${{ steps.pr.outputs.number }}
+          path: pr-comment.md
+
+      - name: Fail on regression
+        if: steps.report.outputs.failed == 'true'
+        run: |
+          echo "SBOM quality regression detected. See PR comment for details."
+          exit 1
