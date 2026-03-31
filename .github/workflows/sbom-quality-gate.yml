@@ -96,13 +96,42 @@ jobs:
             echo "==> Baseline tag: ${BASELINE_TAG}"
           fi
 
-      - name: Extract current SBOM from OCI attestation
+      - name: Extract SBOMs from OCI attestations
+        id: extract
         run: |
-          mkdir -p current
+          mkdir -p current baseline
+
+          # Extract current SBOM in background
           common/lib/scripts/extract-sbom-attestation \
             --image "${{ matrix.image.name }}" \
             --tag "${{ steps.tags.outputs.component_tag }}" \
-            --output "current/${{ matrix.image.name }}.enriched.cdx.json"
+            --output "current/${{ matrix.image.name }}.enriched.cdx.json" &
+          CURRENT_PID=$!
+
+          # Extract baseline SBOM in background (if available)
+          BASELINE_PID=""
+          if [ "${{ steps.tags.outputs.has_baseline }}" = "true" ]; then
+            common/lib/scripts/extract-sbom-attestation \
+              --image "${{ matrix.image.name }}" \
+              --tag "${{ steps.tags.outputs.baseline_tag }}" \
+              --output "baseline/${{ matrix.image.name }}.enriched.cdx.json" &
+            BASELINE_PID=$!
+          fi
+
+          # Wait for current extraction (must succeed)
+          wait "$CURRENT_PID"
+
+          # Wait for baseline extraction (allow failure)
+          if [ -n "$BASELINE_PID" ]; then
+            if wait "$BASELINE_PID"; then
+              echo "baseline_ok=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "::warning::Baseline SBOM extraction failed — skipping comparison"
+              echo "baseline_ok=false" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo "baseline_ok=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Score current SBOM
         run: |
@@ -111,26 +140,15 @@ jobs:
           common/lib/scripts/sbom-score --image "${{ matrix.image.name }}" "$SBOM" \
             > results/score-${{ matrix.image.name }}.json
 
-      - name: Extract baseline SBOM from OCI attestation
-        if: steps.tags.outputs.has_baseline == 'true'
-        continue-on-error: true
-        id: baseline-extract
-        run: |
-          mkdir -p baseline
-          common/lib/scripts/extract-sbom-attestation \
-            --image "${{ matrix.image.name }}" \
-            --tag "${{ steps.tags.outputs.baseline_tag }}" \
-            --output "baseline/${{ matrix.image.name }}.enriched.cdx.json"
-
       - name: Score baseline SBOM
-        if: steps.tags.outputs.has_baseline == 'true' && steps.baseline-extract.outcome == 'success'
+        if: steps.extract.outputs.baseline_ok == 'true'
         run: |
           SBOM=$(ls baseline/*.cdx.json | head -1)
           common/lib/scripts/sbom-score --image "${{ matrix.image.name }}" "$SBOM" \
             > results/baseline-${{ matrix.image.name }}.json
 
       - name: Compare SBOMs
-        if: steps.tags.outputs.has_baseline == 'true' && steps.baseline-extract.outcome == 'success'
+        if: steps.extract.outputs.baseline_ok == 'true'
         run: |
           BASELINE=$(ls baseline/*.cdx.json | head -1)
           CURRENT=$(ls current/*.cdx.json | head -1)
