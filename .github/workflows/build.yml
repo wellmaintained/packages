@@ -39,51 +39,20 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          FULL_MATRIX=$(cat .github/image-matrix.json)
-
           # On workflow_dispatch, build everything
           if [ "${{ github.event_name }}" != "pull_request" ]; then
-            echo "matrix=$(echo "$FULL_MATRIX" | jq -c '[.[] | del(.paths)]')" >> "$GITHUB_OUTPUT"
+            echo "matrix=$(jq -c '[.[] | del(.paths)]' .github/image-matrix.json)" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
           # Get changed files from the PR
-          CHANGED=$(gh api "repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files" \
-            --paginate --jq '.[].filename')
+          CHANGED_FILE="$(mktemp)"
+          gh api "repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files" \
+            --paginate --jq '.[].filename' > "$CHANGED_FILE"
 
-          # Check for paths that should trigger a full rebuild
-          REBUILD_ALL=false
-          while IFS= read -r file; do
-            case "$file" in
-              flake.nix|flake.lock) REBUILD_ALL=true ;;
-              common/lib/*|common/pkgs/*|common/images/*) REBUILD_ALL=true ;;
-              .github/workflows/build.yml|.github/image-matrix.json) REBUILD_ALL=true ;;
-            esac
-          done <<< "$CHANGED"
-
-          if [ "$REBUILD_ALL" = true ]; then
-            echo "Rebuild-all path changed; building all images"
-            echo "matrix=$(echo "$FULL_MATRIX" | jq -c '[.[] | del(.paths)]')" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          # Filter to only images whose paths were touched
-          CHANGED_JSON=$(echo "$CHANGED" | jq -R -s 'split("\n") | map(select(. != ""))')
-          FILTERED=$(echo "$FULL_MATRIX" | jq -c --argjson changed "$CHANGED_JSON" '
-            [.[] | select(
-              .paths as $paths |
-              any($changed[]; . as $file |
-                any($paths[]; . as $prefix | $file | startswith($prefix))
-              )
-            ) | del(.paths)]
-          ')
-
-          if [ "$FILTERED" = "[]" ]; then
-            echo "No image paths changed; nothing to build"
-          else
-            echo "Building filtered images: $(echo "$FILTERED" | jq -r '[.[].name] | join(", ")')"
-          fi
-          echo "matrix=$FILTERED" >> "$GITHUB_OUTPUT"
+          MATRIX=$(common/lib/scripts/filter-build-matrix .github/image-matrix.json "$CHANGED_FILE")
+          rm -f "$CHANGED_FILE"
+          echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
 
       - name: Write filtered matrix file
         run: echo '${{ steps.set.outputs.matrix }}' > filtered-matrix.json
