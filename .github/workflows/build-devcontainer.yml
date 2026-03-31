@@ -21,12 +21,13 @@ permissions:
 # forced migration.
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  GHCR_REGISTRY: ghcr.io/wellmaintained/packages
 
 jobs:
   build-and-push:
     runs-on: blacksmith-4vcpu-ubuntu-2404
     env:
-      IMAGE_NAME: ghcr.io/wellmaintained/packages/devcontainer-sbomify
+      IMAGE_NAME: ${{ env.GHCR_REGISTRY }}/devcontainer-sbomify
     steps:
       - name: Checkout
         uses: actions/checkout@v5

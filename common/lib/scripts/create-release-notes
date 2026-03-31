@@ -57,7 +57,8 @@ done
 for ROW in $(echo "$MATRIX_JSON" | jq -c '.[]'); do
   NAME=$(echo "$ROW" | jq -r .name)
 
-  COMPONENT_TAG=$(crane ls "${REGISTRY}/${NAME}" | grep -- "-${SHA7}$" | head -1 || true)
+  COMPONENT_TAG=$(common/lib/scripts/resolve-component-tag \
+    --image "$NAME" --sha7 "$SHA7" --registry "$REGISTRY" 2>/dev/null || true)
   if [ -z "$COMPONENT_TAG" ]; then
     echo "WARNING: No component tag for ${NAME} with SHA ${SHA7}" >&2
     continue
