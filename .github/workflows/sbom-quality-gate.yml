@@ -76,8 +76,13 @@ jobs:
           SHA7="${{ needs.load-matrix.outputs.head_sha7 }}"
           NAME="${{ matrix.image.name }}"
 
+          # If the image wasn't rebuilt for this SHA, skip scoring entirely
           COMPONENT_TAG=$(common/lib/scripts/resolve-component-tag \
-            --image "$NAME" --sha7 "$SHA7" --registry "$REGISTRY")
+            --image "$NAME" --sha7 "$SHA7" --registry "$REGISTRY" 2>/dev/null) || {
+            echo "==> No build found for ${NAME} at SHA ${SHA7} — skipping"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          }
           echo "component_tag=${COMPONENT_TAG}" >> "$GITHUB_OUTPUT"
 
           # Find the most recent component tag that isn't from this PR's SHA
@@ -97,6 +102,7 @@ jobs:
           fi
 
       - name: Extract current SBOM from OCI attestation
+        if: steps.tags.outputs.skip != 'true'
         run: |
           mkdir -p current
           common/lib/scripts/extract-sbom-attestation \
@@ -105,6 +111,7 @@ jobs:
             --output "current/${{ matrix.image.name }}.enriched.cdx.json"
 
       - name: Score current SBOM
+        if: steps.tags.outputs.skip != 'true'
         run: |
           mkdir -p results
           SBOM=$(ls current/*.cdx.json | head -1)
@@ -112,7 +119,7 @@ jobs:
             > results/score-${{ matrix.image.name }}.json
 
       - name: Extract baseline SBOM from OCI attestation
-        if: steps.tags.outputs.has_baseline == 'true'
+        if: steps.tags.outputs.skip != 'true' && steps.tags.outputs.has_baseline == 'true'
         continue-on-error: true
         id: baseline-extract
         run: |
@@ -123,14 +130,14 @@ jobs:
             --output "baseline/${{ matrix.image.name }}.enriched.cdx.json"
 
       - name: Score baseline SBOM
-        if: steps.tags.outputs.has_baseline == 'true' && steps.baseline-extract.outcome == 'success'
+        if: steps.tags.outputs.skip != 'true' && steps.tags.outputs.has_baseline == 'true' && steps.baseline-extract.outcome == 'success'
         run: |
           SBOM=$(ls baseline/*.cdx.json | head -1)
           common/lib/scripts/sbom-score --image "${{ matrix.image.name }}" "$SBOM" \
             > results/baseline-${{ matrix.image.name }}.json
 
       - name: Compare SBOMs
-        if: steps.tags.outputs.has_baseline == 'true' && steps.baseline-extract.outcome == 'success'
+        if: steps.tags.outputs.skip != 'true' && steps.tags.outputs.has_baseline == 'true' && steps.baseline-extract.outcome == 'success'
         run: |
           BASELINE=$(ls baseline/*.cdx.json | head -1)
           CURRENT=$(ls current/*.cdx.json | head -1)
@@ -142,6 +149,7 @@ jobs:
             > results/compare-${{ matrix.image.name }}.json
 
       - name: Upload results
+        if: steps.tags.outputs.skip != 'true'
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: sbom-quality-gate-${{ matrix.image.name }}
