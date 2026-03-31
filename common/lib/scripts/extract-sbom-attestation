@@ -7,10 +7,10 @@
 #     --tag <component-tag> \
 #     --output <path>
 #
-# Requires: crane, jq, base64
+# Requires: crane, cosign, jq, base64
 #
-# Uses crane to fetch attestation layers directly from the OCI registry,
-# bypassing cosign's Rekor transparency-log lookups (which add ~2 min/image).
+# Fast path: uses crane to fetch attestation layers directly via .att tags.
+# Slow path: falls back to cosign for OCI referrers-based storage (cosign v2).
 
 set -euo pipefail
 
@@ -52,33 +52,50 @@ echo "==> Extracting SBOM attestation from ${IMAGE_REF}" >&2
 OUTPUT_DIR=$(dirname "$OUTPUT")
 mkdir -p "$OUTPUT_DIR"
 
-# Fetch the attestation directly via crane instead of cosign.
-# cosign stores attestations as OCI images tagged sha256-<hash>.att;
-# each layer carries a DSSE envelope with a predicateType annotation.
+# Fast path: cosign's legacy tag-based storage uses sha256-<hash>.att tags.
+# Each layer carries a DSSE envelope with a predicateType annotation.
 ATT_TAG="sha256-${DIGEST#sha256:}.att"
 ATT_REF="${REPO}:${ATT_TAG}"
 
-ATT_MANIFEST=$(crane manifest "${ATT_REF}" 2>&1) || {
-  echo "ERROR: No attestation image found at ${ATT_REF}" >&2
-  exit 1
-}
+if ATT_MANIFEST=$(crane manifest "${ATT_REF}" 2>/dev/null); then
+  echo "==> Found attestation via .att tag" >&2
 
-# Find the layer whose predicateType annotation matches CycloneDX.
-LAYER_DIGEST=$(echo "$ATT_MANIFEST" \
-  | jq -r '.layers[]
-           | select(.annotations["predicateType"] == "https://cyclonedx.org/bom")
-           | .digest' \
-  | head -1)
+  LAYER_DIGEST=$(echo "$ATT_MANIFEST" \
+    | jq -r '.layers[]
+             | select(.annotations["predicateType"] == "https://cyclonedx.org/bom")
+             | .digest' \
+    | head -1)
 
-if [[ -z "$LAYER_DIGEST" ]]; then
-  echo "ERROR: No CycloneDX attestation found for ${IMAGE_REF}" >&2
-  exit 1
+  if [[ -z "$LAYER_DIGEST" ]]; then
+    echo "ERROR: No CycloneDX attestation found in ${ATT_REF}" >&2
+    exit 1
+  fi
+
+  crane blob "${REPO}@${LAYER_DIGEST}" \
+    | jq -r 'if has("dsseEnvelope") then .dsseEnvelope.payload else .payload end' \
+    | base64 -d | jq '.predicate' \
+    > "$OUTPUT"
+else
+  # Slow path: cosign v2 stores attestations via OCI referrers API.
+  # Fall back to cosign which handles referrer discovery.
+  echo "==> .att tag not found, falling back to cosign" >&2
+
+  COSIGN_OUTPUT=$(cosign download attestation \
+    --predicate-type https://cyclonedx.org/bom \
+    "${IMAGE_REF}") || {
+    echo "ERROR: cosign download attestation failed for ${IMAGE_REF}" >&2
+    exit 1
+  }
+
+  if [[ -z "$COSIGN_OUTPUT" ]]; then
+    echo "ERROR: No CycloneDX attestation found for ${IMAGE_REF}" >&2
+    exit 1
+  fi
+
+  echo "$COSIGN_OUTPUT" \
+    | jq -s 'first | if has("dsseEnvelope") then .dsseEnvelope.payload else .payload end' -r \
+    | base64 -d | jq '.predicate' \
+    > "$OUTPUT"
 fi
-
-# Pull the DSSE envelope blob and extract the SBOM predicate.
-crane blob "${REPO}@${LAYER_DIGEST}" \
-  | jq -r 'if has("dsseEnvelope") then .dsseEnvelope.payload else .payload end' \
-  | base64 -d | jq '.predicate' \
-  > "$OUTPUT"
 
 echo "==> SBOM extracted to ${OUTPUT}" >&2
