@@ -43,26 +43,25 @@ Describe "common/lib/scripts/extract-sbom-attestation"
       INTOTO_STATEMENT=$(printf '{"predicateType":"https://cyclonedx.org/bom","predicate":%s}' "$SAMPLE_SBOM")
       ENCODED_PAYLOAD=$(printf '%s' "$INTOTO_STATEMENT" | base64 -w0)
       DSSE_ENVELOPE=$(printf '{"payloadType":"application/vnd.in-toto+json","payload":"%s","signatures":[]}' "$ENCODED_PAYLOAD")
+      ATT_MANIFEST=$(printf '{"layers":[{"digest":"sha256:layerabc","annotations":{"predicateType":"https://cyclonedx.org/bom"}}]}')
 
-      cat > "${MOCK_BIN}/crane" <<'SCRIPT'
+      cat > "${MOCK_BIN}/crane" <<SCRIPT
 #!/bin/sh
-if [ "$1" = "digest" ]; then
+if [ "\$1" = "digest" ]; then
   echo "sha256:abcdef1234567890"
   exit 0
 fi
-exit 1
-SCRIPT
-      chmod +x "${MOCK_BIN}/crane"
-
-      cat > "${MOCK_BIN}/cosign" <<SCRIPT
-#!/bin/sh
-if [ "\$1" = "download" ] && [ "\$2" = "attestation" ]; then
+if [ "\$1" = "manifest" ]; then
+  echo '${ATT_MANIFEST}'
+  exit 0
+fi
+if [ "\$1" = "blob" ]; then
   echo '${DSSE_ENVELOPE}'
   exit 0
 fi
 exit 1
 SCRIPT
-      chmod +x "${MOCK_BIN}/cosign"
+      chmod +x "${MOCK_BIN}/crane"
     }
 
     cleanup() {
@@ -113,7 +112,7 @@ SCRIPT
     End
   End
 
-  Describe "multiple attestation handling"
+  Describe "multiple layer handling"
     SAMPLE_SBOM='{"bomFormat":"CycloneDX","specVersion":"1.5","components":[]}'
 
     setup_multi() {
@@ -123,28 +122,26 @@ SCRIPT
       INTOTO_STATEMENT=$(printf '{"predicateType":"https://cyclonedx.org/bom","predicate":%s}' "$SAMPLE_SBOM")
       ENCODED_PAYLOAD=$(printf '%s' "$INTOTO_STATEMENT" | base64 -w0)
       DSSE_ENVELOPE=$(printf '{"payloadType":"application/vnd.in-toto+json","payload":"%s","signatures":[]}' "$ENCODED_PAYLOAD")
+      # Manifest with a provenance layer and a CycloneDX layer
+      ATT_MANIFEST=$(printf '{"layers":[{"digest":"sha256:provlayer","annotations":{"predicateType":"https://slsa.dev/provenance/v1"}},{"digest":"sha256:cdxlayer","annotations":{"predicateType":"https://cyclonedx.org/bom"}}]}')
 
-      cat > "${MOCK_BIN}/crane" <<'SCRIPT'
+      cat > "${MOCK_BIN}/crane" <<SCRIPT
 #!/bin/sh
-if [ "$1" = "digest" ]; then
+if [ "\$1" = "digest" ]; then
   echo "sha256:abcdef1234567890"
+  exit 0
+fi
+if [ "\$1" = "manifest" ]; then
+  echo '${ATT_MANIFEST}'
+  exit 0
+fi
+if [ "\$1" = "blob" ]; then
+  echo '${DSSE_ENVELOPE}'
   exit 0
 fi
 exit 1
 SCRIPT
       chmod +x "${MOCK_BIN}/crane"
-
-      # cosign outputs multiple attestation JSON objects (one per line)
-      cat > "${MOCK_BIN}/cosign" <<SCRIPT
-#!/bin/sh
-if [ "\$1" = "download" ] && [ "\$2" = "attestation" ]; then
-  echo '${DSSE_ENVELOPE}'
-  echo '${DSSE_ENVELOPE}'
-  exit 0
-fi
-exit 1
-SCRIPT
-      chmod +x "${MOCK_BIN}/cosign"
     }
 
     cleanup_multi() {
@@ -153,7 +150,7 @@ SCRIPT
     Before "setup_multi"
     After "cleanup_multi"
 
-    It "handles multiple attestation objects from cosign"
+    It "selects the CycloneDX layer from multiple attestation layers"
       extract_multi() {
         PATH="${MOCK_BIN}:$PATH" common/lib/scripts/extract-sbom-attestation \
           --image postgres --tag postgres-16.8-abc1234 \
@@ -175,12 +172,6 @@ echo "NOT_FOUND" >&2
 exit 1
 SCRIPT
       chmod +x "${MOCK_BIN}/crane"
-
-      cat > "${MOCK_BIN}/cosign" <<'SCRIPT'
-#!/bin/sh
-exit 1
-SCRIPT
-      chmod +x "${MOCK_BIN}/cosign"
     }
 
     cleanup_failing_crane() {
@@ -197,68 +188,60 @@ SCRIPT
     End
   End
 
-  Describe "empty cosign output handling"
-    setup_empty_cosign() {
+  Describe "no CycloneDX layer in attestation"
+    setup_no_cdx() {
       MOCK_BIN="$(mktemp -d)"
       OUTPUT_DIR="$(mktemp -d)"
 
-      cat > "${MOCK_BIN}/crane" <<'SCRIPT'
+      # Attestation manifest with only a provenance layer, no CycloneDX
+      ATT_MANIFEST='{"layers":[{"digest":"sha256:provlayer","annotations":{"predicateType":"https://slsa.dev/provenance/v1"}}]}'
+
+      cat > "${MOCK_BIN}/crane" <<SCRIPT
 #!/bin/sh
-if [ "$1" = "digest" ]; then echo "sha256:abc"; exit 0; fi
+if [ "\$1" = "digest" ]; then echo "sha256:abc"; exit 0; fi
+if [ "\$1" = "manifest" ]; then echo '${ATT_MANIFEST}'; exit 0; fi
 exit 1
 SCRIPT
       chmod +x "${MOCK_BIN}/crane"
-
-      cat > "${MOCK_BIN}/cosign" <<'SCRIPT'
-#!/bin/sh
-exit 0
-SCRIPT
-      chmod +x "${MOCK_BIN}/cosign"
     }
 
-    cleanup_empty_cosign() {
+    cleanup_no_cdx() {
       rm -rf "$MOCK_BIN" "$OUTPUT_DIR"
     }
-    Before "setup_empty_cosign"
-    After "cleanup_empty_cosign"
+    Before "setup_no_cdx"
+    After "cleanup_no_cdx"
 
-    It "fails when cosign returns no attestations"
+    It "fails when no CycloneDX layer exists in the attestation"
       When run sh -c 'PATH="$1:$PATH" common/lib/scripts/extract-sbom-attestation --image postgres --tag postgres-16.8-abc1234 --output "$2/sbom.json"' _ "$MOCK_BIN" "$OUTPUT_DIR"
       The status should be failure
       The stderr should include "No CycloneDX attestation found"
     End
   End
 
-  Describe "cosign failure handling"
-    setup_failing_cosign() {
+  Describe "attestation manifest fetch failure"
+    setup_no_att() {
       MOCK_BIN="$(mktemp -d)"
       OUTPUT_DIR="$(mktemp -d)"
 
       cat > "${MOCK_BIN}/crane" <<'SCRIPT'
 #!/bin/sh
 if [ "$1" = "digest" ]; then echo "sha256:abc"; exit 0; fi
+if [ "$1" = "manifest" ]; then echo "MANIFEST_UNKNOWN" >&2; exit 1; fi
 exit 1
 SCRIPT
       chmod +x "${MOCK_BIN}/crane"
-
-      cat > "${MOCK_BIN}/cosign" <<'SCRIPT'
-#!/bin/sh
-echo "no attestation found" >&2
-exit 1
-SCRIPT
-      chmod +x "${MOCK_BIN}/cosign"
     }
 
-    cleanup_failing_cosign() {
+    cleanup_no_att() {
       rm -rf "$MOCK_BIN" "$OUTPUT_DIR"
     }
-    Before "setup_failing_cosign"
-    After "cleanup_failing_cosign"
+    Before "setup_no_att"
+    After "cleanup_no_att"
 
-    It "fails when cosign cannot download attestation"
+    It "fails when crane cannot fetch the attestation manifest"
       When run sh -c 'PATH="$1:$PATH" common/lib/scripts/extract-sbom-attestation --image postgres --tag postgres-16.8-abc1234 --output "$2/sbom.json"' _ "$MOCK_BIN" "$OUTPUT_DIR"
       The status should be failure
-      The stderr should include "Extracting SBOM attestation"
+      The stderr should include "No attestation image found"
     End
   End
 End
