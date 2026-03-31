@@ -28,6 +28,7 @@ permissions:
 # June 2026 forced migration.
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  GHCR_REGISTRY: ghcr.io/wellmaintained/packages
 
 jobs:
   load-matrix:
@@ -107,15 +108,12 @@ jobs:
         id: version
         shell: nix develop .#ci -c bash -e {0}
         run: |
-          REGISTRY="ghcr.io/wellmaintained/packages"
+          REGISTRY="${GHCR_REGISTRY}"
           SHA7="${{ needs.resolve-pr.outputs.head_sha7 }}"
 
           # Extract app version from sbomify-app's component tag ({name}-{version}-{sha7})
-          COMPONENT_TAG=$(crane ls "${REGISTRY}/sbomify-app" | grep -- "-${SHA7}$" | head -1)
-          if [ -z "$COMPONENT_TAG" ]; then
-            echo "ERROR: No component tag found for sbomify-app with SHA ${SHA7}"
-            exit 1
-          fi
+          COMPONENT_TAG=$(common/lib/scripts/resolve-component-tag \
+            --image sbomify-app --sha7 "$SHA7" --registry "$REGISTRY")
           # Strip -{sha7} suffix, then strip {name}- prefix
           WITHOUT_SHA="${COMPONENT_TAG%-"${SHA7}"}"
           APP_VERSION="${WITHOUT_SHA#sbomify-app-}"
@@ -161,25 +159,17 @@ jobs:
         id: component
         shell: nix develop .#ci -c bash -e {0}
         run: |
-          REGISTRY="ghcr.io/wellmaintained/packages"
-          SHA7="${{ needs.resolve-pr.outputs.head_sha7 }}"
-          NAME="${{ matrix.image.name }}"
-
-          # Find the component tag ({name}-{version}-{sha7}) for this image
-          COMPONENT_TAG=$(crane ls "${REGISTRY}/${NAME}" | grep -- "-${SHA7}$" | head -1)
-          if [ -z "$COMPONENT_TAG" ]; then
-            echo "ERROR: No component tag found for ${NAME} with SHA ${SHA7}"
-            exit 1
-          fi
-          echo "tag=${COMPONENT_TAG}" >> "$GITHUB_OUTPUT"
-          echo "==> Component tag: ${COMPONENT_TAG}"
+          COMPONENT_TAG=$(common/lib/scripts/resolve-component-tag \
+            --image "${{ matrix.image.name }}" \
+            --sha7 "${{ needs.resolve-pr.outputs.head_sha7 }}")
+          echo "component_tag=${COMPONENT_TAG}" >> "$GITHUB_OUTPUT"
 
       - name: Add collection tag
         shell: nix develop .#ci -c bash -e {0}
         run: |
           common/lib/scripts/tag-collection \
             --image "${{ matrix.image.name }}" \
-            --component-tag "${{ steps.component.outputs.tag }}" \
+            --component-tag "${{ steps.component.outputs.component_tag }}" \
             --collection-version "${{ needs.resolve-version.outputs.collection_version }}"
 
       - name: Extract SBOM from OCI attestation
@@ -189,7 +179,7 @@ jobs:
         run: |
           common/lib/scripts/extract-sbom-attestation \
             --image "${{ matrix.image.name }}" \
-            --tag "${{ steps.component.outputs.tag }}" \
+            --tag "${{ steps.component.outputs.component_tag }}" \
             --output "sbom/${{ matrix.image.name }}.enriched.cdx.json"
 
       - name: Persist Grype vulnerability database

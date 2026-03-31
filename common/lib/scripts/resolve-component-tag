@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# common/lib/scripts/resolve-component-tag — Find a component tag by SHA suffix in GHCR.
+#
+# Usage:
+#   common/lib/scripts/resolve-component-tag \
+#     --image <name> \
+#     --sha7 <sha7>
+#
+# Prints the resolved component tag to stdout.
+#
+# Requires: crane
+
+set -euo pipefail
+
+usage() {
+  echo "Usage: $0 --image NAME --sha7 SHA7 [--registry REGISTRY]"
+  exit 1
+}
+
+IMAGE=""
+SHA7=""
+REGISTRY="${REGISTRY:-ghcr.io/wellmaintained/packages}"
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --image) IMAGE="$2"; shift 2 ;;
+    --sha7) SHA7="$2"; shift 2 ;;
+    --registry) REGISTRY="$2"; shift 2 ;;
+    *) echo "Unknown option: $1"; usage ;;
+  esac
+done
+
+[[ -z "$IMAGE" || -z "$SHA7" ]] && usage
+
+COMPONENT_TAG=$(crane ls "${REGISTRY}/${IMAGE}" | grep -- "-${SHA7}$" | head -1 || true)
+if [ -z "$COMPONENT_TAG" ]; then
+  echo "ERROR: No component tag found for ${IMAGE} with SHA ${SHA7}" >&2
+  exit 1
+fi
+
+echo "==> Component tag: ${COMPONENT_TAG}" >&2
+echo "$COMPONENT_TAG"

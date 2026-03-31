@@ -22,6 +22,7 @@ permissions:
 # June 2026 forced migration.
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  GHCR_REGISTRY: ghcr.io/wellmaintained/packages
 
 jobs:
   load-matrix:
@@ -71,21 +72,16 @@ jobs:
       - name: Resolve component tags
         id: tags
         run: |
-          REGISTRY="ghcr.io/wellmaintained/packages"
+          REGISTRY="${GHCR_REGISTRY}"
           SHA7="${{ needs.load-matrix.outputs.head_sha7 }}"
           NAME="${{ matrix.image.name }}"
 
-          ALL_TAGS=$(crane ls "${REGISTRY}/${NAME}")
-
-          COMPONENT_TAG=$(echo "$ALL_TAGS" | grep -- "-${SHA7}$" | head -1)
-          if [ -z "$COMPONENT_TAG" ]; then
-            echo "ERROR: No component tag found for ${NAME} with SHA ${SHA7}"
-            exit 1
-          fi
+          COMPONENT_TAG=$(common/lib/scripts/resolve-component-tag \
+            --image "$NAME" --sha7 "$SHA7" --registry "$REGISTRY")
           echo "component_tag=${COMPONENT_TAG}" >> "$GITHUB_OUTPUT"
-          echo "==> Component tag: ${COMPONENT_TAG}"
 
           # Find the most recent component tag that isn't from this PR's SHA
+          ALL_TAGS=$(crane ls "${REGISTRY}/${NAME}")
           BASELINE_TAG=$(echo "$ALL_TAGS" \
             | grep -v -- "-${SHA7}$" \
             | grep -E "^${NAME}-" \
