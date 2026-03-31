@@ -46,8 +46,8 @@ jobs:
         shell: nix develop .#ci -c bash -e {0}
         env:
           GH_TOKEN: ${{ github.token }}
+          RELEASE_BODY: ${{ github.event.release.body }}
         run: |
-          RELEASE_BODY="${{ github.event.release.body }}"
           REGISTRY="${GHCR_REGISTRY}"
           TIMESTAMP=$(date -u '+%Y-%m-%dT%H:%M:%S')
 
