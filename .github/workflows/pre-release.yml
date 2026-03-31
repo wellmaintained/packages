@@ -35,7 +35,7 @@ jobs:
     outputs:
       matrix: ${{ steps.set.outputs.matrix }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
       - id: set
         run: echo "matrix=$(jq -c . .github/image-matrix.json)" >> "$GITHUB_OUTPUT"
 
@@ -86,7 +86,7 @@ jobs:
       collection_version: ${{ steps.version.outputs.collection_version }}
       app_version: ${{ steps.version.outputs.app_version }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           fetch-depth: 0
           fetch-tags: true
@@ -97,7 +97,7 @@ jobs:
           stickydisk-suffix: resolve-version
 
       - name: Log in to GHCR
-        uses: docker/login-action@v4
+        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -143,7 +143,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
 
       - name: Setup Nix
         uses: ./.github/actions/setup-nix
@@ -151,7 +151,7 @@ jobs:
           stickydisk-suffix: tag-and-scan
 
       - name: Log in to GHCR
-        uses: docker/login-action@v4
+        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -194,7 +194,7 @@ jobs:
 
       - name: Persist Grype vulnerability database
         if: steps.extract-sbom.outcome == 'success'
-        uses: useblacksmith/stickydisk@v1
+        uses: useblacksmith/stickydisk@41873b1513bb679f9c115504cbd13d3660432504 # v1
         with:
           key: ${{ github.repository }}-${{ matrix.image.name }}-grype-db-${{ runner.os }}
           path: ~/.cache/grype/db
@@ -210,7 +210,7 @@ jobs:
 
       - name: Upload SARIF to GitHub Security
         if: steps.grype.outcome == 'success'
-        uses: github/codeql-action/upload-sarif@v4
+        uses: github/codeql-action/upload-sarif@c10b8064de6f491fea524254123dbe5e09572f13 # v4
         with:
           sarif_file: sbom/${{ matrix.image.name }}.sarif
           category: vulnerability-scan/${{ matrix.image.name }}
@@ -232,7 +232,7 @@ jobs:
     runs-on: blacksmith-2vcpu-ubuntu-2404
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
           fetch-depth: 0
           fetch-tags: true
@@ -243,7 +243,7 @@ jobs:
           stickydisk-suffix: create-release
 
       - name: Log in to GHCR
-        uses: docker/login-action@v4
+        uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
