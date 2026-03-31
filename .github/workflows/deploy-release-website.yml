@@ -54,17 +54,7 @@ jobs:
           echo "==> Tagging images with released-on:${TIMESTAMP}"
 
           # Parse the release body markdown table for image names and digests
-          # Table format: | `image-name` | `component-tag` | `sha256:...` |
-          echo "$RELEASE_BODY" | grep -E '^\|.*sha256:' | while IFS='|' read -r _ name _ digest _; do
-            # Strip backticks and whitespace
-            name=$(echo "$name" | tr -d $'\x60 ' )
-            digest=$(echo "$digest" | tr -d $'\x60 ' )
-
-            if [[ -z "$name" || -z "$digest" ]]; then
-              echo "  Skipping unparseable row" >&2
-              continue
-            fi
-
+          echo "$RELEASE_BODY" | common/lib/scripts/parse-release-images | while read -r name digest; do
             echo "  ${name}: adding released-on:${TIMESTAMP} to ${digest}"
             crane tag "${REGISTRY}/${name}@${digest}" "released-on:${TIMESTAMP}" || {
               echo "  WARNING: Failed to tag ${name}@${digest}" >&2

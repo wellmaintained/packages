@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# common/lib/scripts/parse-release-images — Parse image names and digests from release body markdown.
+#
+# Reads a release body (markdown) from stdin and outputs lines of:
+#   IMAGE_NAME DIGEST
+#
+# The release body contains a markdown table like:
+#   | `image-name` | `component-tag` | `sha256:abcdef123456` |
+#
+# This script strips backticks and whitespace, extracts the image name (column 1)
+# and digest (column 3), and skips unparseable rows.
+#
+# Usage:
+#   echo "$RELEASE_BODY" | common/lib/scripts/parse-release-images
+
+set -euo pipefail
+
+{ grep -E '^\|.*sha256:' || true; } | while IFS='|' read -r _ name _ digest _; do
+  # Strip backticks and whitespace using bash ANSI-C quoting
+  # $'\x60' resolves to a literal backtick — avoids shell quoting pitfalls
+  name=$(echo "$name" | tr -d $'\x60 ')
+  digest=$(echo "$digest" | tr -d $'\x60 ')
+
+  if [[ -z "$name" || -z "$digest" ]]; then
+    echo "  Skipping unparseable row" >&2
+    continue
+  fi
+
+  echo "${name} ${digest}"
+done
