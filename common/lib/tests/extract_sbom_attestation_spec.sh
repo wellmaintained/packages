@@ -218,30 +218,93 @@ SCRIPT
     End
   End
 
-  Describe "attestation manifest fetch failure"
-    setup_no_att() {
+  Describe "cosign fallback (no .att tag)"
+    SAMPLE_SBOM='{"bomFormat":"CycloneDX","specVersion":"1.5","components":[]}'
+
+    setup_cosign_fallback() {
       MOCK_BIN="$(mktemp -d)"
       OUTPUT_DIR="$(mktemp -d)"
 
+      INTOTO_STATEMENT=$(printf '{"predicateType":"https://cyclonedx.org/bom","predicate":%s}' "$SAMPLE_SBOM")
+      ENCODED_PAYLOAD=$(printf '%s' "$INTOTO_STATEMENT" | base64 -w0)
+      DSSE_ENVELOPE=$(printf '{"payloadType":"application/vnd.in-toto+json","payload":"%s","signatures":[]}' "$ENCODED_PAYLOAD")
+
+      # crane digest succeeds but crane manifest fails (no .att tag)
       cat > "${MOCK_BIN}/crane" <<'SCRIPT'
 #!/bin/sh
-if [ "$1" = "digest" ]; then echo "sha256:abc"; exit 0; fi
-if [ "$1" = "manifest" ]; then echo "MANIFEST_UNKNOWN" >&2; exit 1; fi
+if [ "$1" = "digest" ]; then echo "sha256:abc123"; exit 0; fi
+if [ "$1" = "manifest" ]; then exit 1; fi
 exit 1
 SCRIPT
       chmod +x "${MOCK_BIN}/crane"
+
+      cat > "${MOCK_BIN}/cosign" <<SCRIPT
+#!/bin/sh
+if [ "\$1" = "download" ] && [ "\$2" = "attestation" ]; then
+  echo '${DSSE_ENVELOPE}'
+  exit 0
+fi
+exit 1
+SCRIPT
+      chmod +x "${MOCK_BIN}/cosign"
     }
 
-    cleanup_no_att() {
+    cleanup_cosign_fallback() {
       rm -rf "$MOCK_BIN" "$OUTPUT_DIR"
     }
-    Before "setup_no_att"
-    After "cleanup_no_att"
+    Before "setup_cosign_fallback"
+    After "cleanup_cosign_fallback"
 
-    It "fails when crane cannot fetch the attestation manifest"
+    It "falls back to cosign when .att tag is not found"
+      When run sh -c 'PATH="$1:$PATH" common/lib/scripts/extract-sbom-attestation --image postgres --tag postgres-16.8-abc1234 --output "$2/sbom.json"' _ "$MOCK_BIN" "$OUTPUT_DIR"
+      The status should be success
+      The stderr should include "falling back to cosign"
+      The stderr should include "SBOM extracted"
+    End
+
+    It "writes valid CycloneDX JSON via cosign fallback"
+      extract_cosign() {
+        PATH="${MOCK_BIN}:$PATH" common/lib/scripts/extract-sbom-attestation \
+          --image postgres --tag postgres-16.8-abc1234 \
+          --output "${OUTPUT_DIR}/sbom.json" 2>/dev/null
+        jq -r '.bomFormat' "${OUTPUT_DIR}/sbom.json"
+      }
+      When call extract_cosign
+      The output should equal "CycloneDX"
+    End
+  End
+
+  Describe "cosign fallback failure"
+    setup_both_fail() {
+      MOCK_BIN="$(mktemp -d)"
+      OUTPUT_DIR="$(mktemp -d)"
+
+      # crane manifest fails (no .att tag), cosign also fails
+      cat > "${MOCK_BIN}/crane" <<'SCRIPT'
+#!/bin/sh
+if [ "$1" = "digest" ]; then echo "sha256:abc"; exit 0; fi
+exit 1
+SCRIPT
+      chmod +x "${MOCK_BIN}/crane"
+
+      cat > "${MOCK_BIN}/cosign" <<'SCRIPT'
+#!/bin/sh
+echo "no attestation found" >&2
+exit 1
+SCRIPT
+      chmod +x "${MOCK_BIN}/cosign"
+    }
+
+    cleanup_both_fail() {
+      rm -rf "$MOCK_BIN" "$OUTPUT_DIR"
+    }
+    Before "setup_both_fail"
+    After "cleanup_both_fail"
+
+    It "fails when both crane and cosign cannot find attestation"
       When run sh -c 'PATH="$1:$PATH" common/lib/scripts/extract-sbom-attestation --image postgres --tag postgres-16.8-abc1234 --output "$2/sbom.json"' _ "$MOCK_BIN" "$OUTPUT_DIR"
       The status should be failure
-      The stderr should include "No attestation image found"
+      The stderr should include "cosign download attestation failed"
     End
   End
 End
