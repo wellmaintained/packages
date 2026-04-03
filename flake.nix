@@ -207,6 +207,11 @@
           sbomifySrc = sbomify-src;
         };
 
+        sbomifyKeycloakTheme = import ./apps/sbomify/pkgs/sbomify-keycloak-theme {
+          inherit pkgs;
+          sbomifySrc = sbomify-src;
+        };
+
         sbomifyPythonStack = import ./apps/sbomify/pkgs/sbomify-python-stack {
           inherit pkgs sbomifyVenv sbomifyFrontendStack;
           sbomifySrc = sbomify-src;
@@ -220,7 +225,7 @@
         };
 
         sbomifyKeycloakSpec = import ./apps/sbomify/images/sbomify-keycloak.nix {
-          inherit pkgs;
+          inherit pkgs sbomifyKeycloakTheme;
           sbomifySrc = sbomify-src;
         };
 
