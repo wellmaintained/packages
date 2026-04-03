@@ -221,7 +221,7 @@
         sbomifyVersion = (builtins.fromTOML (builtins.readFile (sbomify-src + "/pyproject.toml"))).project.version;
 
         sbomifyAppSpec = import ./apps/sbomify/images/sbomify-app.nix {
-          inherit pkgs sbomifyPythonStack sbomifyVersion;
+          inherit pkgs sbomifyPythonStack sbomifyFrontendStack sbomifyVersion;
         };
 
         sbomifyKeycloakSpec = import ./apps/sbomify/images/sbomify-keycloak.nix {
