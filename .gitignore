@@ -28,8 +28,8 @@ go.work.sum
 .env
 
 # Editor/IDE
-# .idea/
-# .vscode/
+.idea/
+.vscode/
 
 # direnv
 .direnv/
@@ -41,6 +41,17 @@ go.work.sum
 # Nix build outputs
 result
 result-*
+
+# Yak-box sandbox home file leaks
+.bash_profile
+.bashrc
+.gitconfig
+.gitmodules
+.mcp.json
+.profile
+.ripgreprc
+.zprofile
+.zshrc
 
 # Build artifacts
 http_cache.sqlite
