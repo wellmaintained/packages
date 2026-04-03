@@ -1,10 +1,10 @@
-{ pkgs, sbomifySrc }:
+{ pkgs, sbomifySrc, sbomifyKeycloakTheme }:
 
 let
   # Bundle sbomify's Keycloak theme and bootstrap script into a single derivation
   sbomifyKeycloakAssets = pkgs.runCommand "sbomify-keycloak-assets" { } ''
     mkdir -p $out/opt/keycloak/themes
-    cp -r ${sbomifySrc}/keycloak/themes/sbomify $out/opt/keycloak/themes/sbomify
+    cp -r ${sbomifyKeycloakTheme}/sbomify $out/opt/keycloak/themes/sbomify
 
     mkdir -p $out/opt/bin
     cp ${sbomifySrc}/bin/keycloak-bootstrap.sh $out/opt/bin/keycloak-bootstrap.sh
