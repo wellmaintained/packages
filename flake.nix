@@ -32,12 +32,16 @@
       url = "github:sbomify/sbomify/v0.27.0";
       flake = false;
     };
+    sbomify-action-src = {
+      url = "github:sbomify/sbomify-action/v26.1.0";
+      flake = false;
+    };
     nix-compliance-inator = {
       url = "path:./common/lib/nix-compliance-inator";
     };
   };
 
-  outputs = { self, nixpkgs, flake-utils, pyproject-nix, uv2nix, pyproject-build-systems, uv2nix-hammer-overrides, bun2nix, sbomify-src, nix-compliance-inator }:
+  outputs = { self, nixpkgs, flake-utils, pyproject-nix, uv2nix, pyproject-build-systems, uv2nix-hammer-overrides, bun2nix, sbomify-src, sbomify-action-src, nix-compliance-inator }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs {
@@ -239,9 +243,12 @@
           sbomifySrc = sbomify-src;
         };
 
-        # SBOM quality tools
+        # SBOM tools
         sbomqs = import ./common/pkgs/sbomqs { inherit pkgs; };
         sbomlyze = import ./common/pkgs/sbomlyze { inherit pkgs; };
+        sbomifyAction = import ./common/pkgs/sbomify-action {
+          inherit pkgs pyproject-nix uv2nix pyproject-build-systems uv2nix-hammer-overrides sbomify-action-src;
+        };
 
       in
       {
@@ -263,8 +270,9 @@
           sbomify-caddy-dev-image = sbomifyCaddyDevSpec.image;
           sbomify-minio-init-image = sbomifyMinioInitSpec.image;
 
-          # SBOM quality tools
+          # SBOM tools
           inherit sbomqs sbomlyze;
+          sbomify-action = sbomifyAction;
 
           # sbomify app packages
           sbomify-venv = sbomifyVenv;
@@ -278,13 +286,14 @@
           # Default: minimal shell for working on this repo
           default = pkgs.mkShell {
             name = "packages-dev";
-            packages = with pkgs; [
-              git
-              direnv
-              nix-direnv
-              cyclonedx-cli
-              cosign
-              crane
+            packages = [
+              pkgs.git
+              pkgs.direnv
+              pkgs.nix-direnv
+              pkgs.cyclonedx-cli
+              pkgs.cosign
+              pkgs.crane
+              sbomifyAction
             ];
           };
 
@@ -296,6 +305,7 @@
               grype
               sbomqs
               sbomlyze
+              sbomifyAction
             ];
           };
 

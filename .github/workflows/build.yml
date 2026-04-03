@@ -115,26 +115,15 @@ jobs:
           echo "path=${SBOM_PATH}" >> "$GITHUB_OUTPUT"
 
       - name: Enrich SBOM
-        uses: sbomify/sbomify-action@d96675bf9fcbeba415e618895af758a6216395d0 # v26.1.0
-        continue-on-error: true
         env:
-          TOKEN: ${{ secrets.SBOMIFY_TOKEN }}
-          COMPONENT_ID: ${{ steps.meta.outputs.sbomify_component_id }}
-          COMPONENT_NAME: ${{ steps.meta.outputs.name }}
-          COMPONENT_VERSION: ${{ steps.meta.outputs.version }}
-          SBOM_FILE: ${{ steps.sbom.outputs.path }}
-          SBOM_FORMAT: cyclonedx
-          AUGMENT: true
-          ENRICH: true
-          UPLOAD: false
-          OUTPUT_FILE: ${{ matrix.image.name }}.enriched.cdx.json
-
-      - name: Fall back to raw SBOM if enrichment skipped
-        shell: bash
+          SBOMIFY_TOKEN: ${{ secrets.SBOMIFY_TOKEN }}
         run: |
-          if [ ! -f "${{ matrix.image.name }}.enriched.cdx.json" ]; then
-            cp "${{ steps.sbom.outputs.path }}" "${{ matrix.image.name }}.enriched.cdx.json"
-          fi
+          common/lib/scripts/enrich-sbom \
+            --sbom-file "${{ steps.sbom.outputs.path }}" \
+            --sbomify-component-id "${{ steps.meta.outputs.sbomify_component_id }}" \
+            --name "${{ steps.meta.outputs.name }}" \
+            --version "${{ steps.meta.outputs.version }}" \
+            --output "${{ matrix.image.name }}.enriched.cdx.json"
 
       - name: Attest SBOM and provenance
         run: |
