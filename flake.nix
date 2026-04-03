@@ -202,13 +202,13 @@
 
         sbomifyVenv = pythonSet.mkVirtualEnv "sbomify-venv" sbomifyWorkspace.deps.default;
 
-        sbomifyFrontend = import ./apps/sbomify/deployments/build-support/sbomify-frontend {
+        sbomifyFrontendStack = import ./apps/sbomify/pkgs/sbomify-frontend-stack {
           inherit pkgs;
           sbomifySrc = sbomify-src;
         };
 
-        sbomifyApp = import ./apps/sbomify/deployments/build-support/sbomify-app {
-          inherit pkgs sbomifyVenv sbomifyFrontend;
+        sbomifyPythonStack = import ./apps/sbomify/pkgs/sbomify-python-stack {
+          inherit pkgs sbomifyVenv sbomifyFrontendStack;
           sbomifySrc = sbomify-src;
         };
 
@@ -216,7 +216,7 @@
         sbomifyVersion = (builtins.fromTOML (builtins.readFile (sbomify-src + "/pyproject.toml"))).project.version;
 
         sbomifyAppSpec = import ./apps/sbomify/images/sbomify-app.nix {
-          inherit pkgs sbomifyApp sbomifyVersion;
+          inherit pkgs sbomifyPythonStack sbomifyVersion;
         };
 
         sbomifyKeycloakSpec = import ./apps/sbomify/images/sbomify-keycloak.nix {
@@ -263,8 +263,8 @@
 
           # sbomify app packages
           sbomify-venv = sbomifyVenv;
-          sbomify-frontend = sbomifyFrontend;
-          sbomify-app = sbomifyApp;
+          sbomify-frontend-stack = sbomifyFrontendStack;
+          sbomify-python-stack = sbomifyPythonStack;
         };
 
         # DevShells - ready-to-use development environments

@@ -1,4 +1,4 @@
-{ pkgs, sbomifyApp, sbomifyVersion }:
+{ pkgs, sbomifyPythonStack, sbomifyVersion }:
 
 pkgs.buildCompliantImage {
   name = "sbomify-app";
@@ -16,7 +16,7 @@ pkgs.buildCompliantImage {
   };
 
   packages = [
-    sbomifyApp
+    sbomifyPythonStack
     pkgs.bashInteractive
     pkgs.coreutils
     pkgs.cacert
@@ -25,7 +25,7 @@ pkgs.buildCompliantImage {
   ];
 
   imageConfig = {
-    Entrypoint = [ "${sbomifyApp}/bin/sbomify-web" ];
+    Entrypoint = [ "${sbomifyPythonStack}/bin/sbomify-web" ];
     ExposedPorts = {
       "8000/tcp" = {};
     };
@@ -33,7 +33,7 @@ pkgs.buildCompliantImage {
       "SSL_CERT_FILE=${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
       "PYTHONDONTWRITEBYTECODE=1"
     ];
-    WorkingDir = "${sbomifyApp}/app";
+    WorkingDir = "${sbomifyPythonStack}/app";
   };
 
   extraMetadata = {
