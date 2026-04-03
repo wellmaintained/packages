@@ -1,4 +1,4 @@
-{ pkgs, sbomifyPythonStack, sbomifyVersion }:
+{ pkgs, sbomifyPythonStack, sbomifyFrontendStack, sbomifyVersion }:
 
 pkgs.buildCompliantImage {
   name = "sbomify-app";
@@ -17,6 +17,7 @@ pkgs.buildCompliantImage {
 
   packages = [
     sbomifyPythonStack
+    sbomifyFrontendStack
     pkgs.bashInteractive
     pkgs.coreutils
     pkgs.cacert

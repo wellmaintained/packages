@@ -40,5 +40,5 @@ pkgs.stdenv.mkDerivation {
     ln -s ${sbomifyVenv} $out/venv
   '';
 
-  passthru = { inherit sbomifyVenv sbomifyFrontendStack; };
+  passthru = { inherit sbomifyVenv; };
 }
