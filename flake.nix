@@ -224,8 +224,15 @@
         # Version derived from the pinned sbomify-src input's pyproject.toml
         sbomifyVersion = (builtins.fromTOML (builtins.readFile (sbomify-src + "/pyproject.toml"))).project.version;
 
+        # Individual Python package derivations from the pythonSet.
+        # Passed as sbomExtraDeps so the SBOM buildtime walker can reach
+        # their metadata (mkVirtualEnv coerces deps to strings).
+        sbomifyPythonDeps = builtins.attrValues (
+          builtins.mapAttrs (name: _: pythonSet.${name}) sbomifyWorkspace.deps.default
+        );
+
         sbomifyAppSpec = import ./apps/sbomify/images/sbomify-app.nix {
-          inherit pkgs sbomifyPythonStack sbomifyFrontendStack sbomifyVersion;
+          inherit pkgs sbomifyPythonStack sbomifyFrontendStack sbomifyVersion sbomifyPythonDeps;
         };
 
         sbomifyKeycloakSpec = import ./apps/sbomify/images/sbomify-keycloak.nix {

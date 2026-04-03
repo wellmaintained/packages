@@ -1,10 +1,15 @@
-{ pkgs, sbomifyPythonStack, sbomifyFrontendStack, sbomifyVersion }:
+{ pkgs, sbomifyPythonStack, sbomifyFrontendStack, sbomifyVersion, sbomifyPythonDeps ? [] }:
 
 pkgs.buildCompliantImage {
   name = "sbomify-app";
   version = sbomifyVersion;
   license = "Apache-2.0";
   description = "sbomify web application — Nix-built OCI image";
+
+  # Individual Python package derivations from pythonSet — passed as
+  # sbomExtraDeps so the SBOM buildtime walker can reach their metadata
+  # (the venv bundles them as string store paths, hiding their attributes).
+  sbomExtraDeps = sbomifyPythonDeps;
 
   creator = {
     name = "sbomify";

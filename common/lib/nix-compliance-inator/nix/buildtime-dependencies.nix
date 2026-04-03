@@ -80,7 +80,7 @@ let
       // lib.optionalAttrs (src ? outputHash) { hash = src.outputHash; }
     );
 
-  # Extract the meta block (license, homepage, description) from a derivation.
+  # Extract the meta block (license, homepage, description, etc.) from a derivation.
   extractMeta = meta:
     lib.optionalAttrs (meta != null) (
       let licenses = extractLicenses meta; in
@@ -89,6 +89,19 @@ let
       // lib.optionalAttrs (meta ? homepage) { homepage = meta.homepage; }
       // lib.optionalAttrs (meta ? description) { description = meta.description; }
       // lib.optionalAttrs (meta ? identifiers) { identifiers = meta.identifiers; }
+      // lib.optionalAttrs (meta ? changelog) { changelog = meta.changelog; }
+      // lib.optionalAttrs (meta ? mainProgram) { mainProgram = meta.mainProgram; }
+      // lib.optionalAttrs (meta ? maintainers) {
+        maintainers = map (m: {
+          name = m.name or null;
+          email = m.email or null;
+          github = m.github or null;
+          githubId = m.githubId or null;
+        }) meta.maintainers;
+      }
+      // lib.optionalAttrs (meta ? knownVulnerabilities && meta.knownVulnerabilities != []) {
+        knownVulnerabilities = meta.knownVulnerabilities;
+      }
     );
 
   # Serialize patches to store paths or string paths.
@@ -97,6 +110,16 @@ let
       if lib.isDerivation p then p.outPath
       else toString p
     ) (lib.flatten (drv.patches or []));
+
+  # Detect the upstream package ecosystem from Nix builder signals.
+  # Returns an ecosystem string ("pypi", "golang", etc.) or null.
+  detectEcosystem = drv:
+    if (drv ? meta && drv.meta ? isBuildPythonPackage) then "pypi"
+    else if (drv ? goModules) then "golang"
+    else if (drv ? cargoDeps) then "cargo"
+    else if (drv.drvAttrs ? npmDeps) then "npm"
+    else if (drv.drvAttrs ? bunDeps) then "npm"
+    else null;
 
   # Collect the outPaths of a derivation's immediate dependencies.
   # These are the edges in the dependency DAG.
@@ -121,7 +144,8 @@ let
     }
     // lib.optionalAttrs (extractedMeta != {}) { meta = extractedMeta; }
     // lib.optionalAttrs (extractedSrc != {}) { src = extractedSrc; }
-    // { patches = extractPatches drv; };
+    // { patches = extractPatches drv; }
+    // { ecosystem = detectEcosystem drv; };
 
 in
 

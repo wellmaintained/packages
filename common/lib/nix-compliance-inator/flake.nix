@@ -51,6 +51,9 @@
         runtimeRefGraph = pkgs.callPackage ./nix/runtime-reference-graph.nix {};
 
         # Core SBOM build function: derivation → CycloneDX 1.6 JSON
+        # extraPaths: additional derivations whose dependency trees should be
+        # walked for buildtime metadata (needed when packages are wrapped in
+        # symlinkJoin or virtual environments that coerce deps to strings).
         buildSbom = drv: extraPaths:
           let
             buildtimeJson = buildtimeDeps drv extraPaths;
@@ -129,15 +132,20 @@
           extraContents ? [],
           imageConfig ? {},
           extraMetadata ? {},
-          fakeRootCommands ? ""
+          fakeRootCommands ? "",
+          sbomExtraDeps ? []
         }:
           let
-            # Build the SBOM from a closure of all packages
+            # Build the SBOM from a closure of all packages.
+            # Pass individual packages + sbomExtraDeps as extraPaths so the
+            # buildtime walker can reach their derivation attributes.
+            # (symlinkJoin and mkVirtualEnv coerce deps to strings,
+            # making them invisible to the walker.)
             closure = pkgs.symlinkJoin {
               name = "${name}-closure";
               paths = packages;
             };
-            sbom = buildSbom closure [];
+            sbom = buildSbom closure (packages ++ sbomExtraDeps);
 
             # Pre-patched SBOM with OCI image root component metadata
             patchedSbom = patchSbomRoot { inherit sbom name version license; };
