@@ -1,7 +1,7 @@
-{ pkgs, sbomifySrc, sbomifyVenv, sbomifyFrontend }:
+{ pkgs, sbomifySrc, sbomifyVenv, sbomifyFrontendStack }:
 
 pkgs.stdenv.mkDerivation {
-  pname = "sbomify-app";
+  pname = "sbomify-python-stack";
   version = "0.27.0";
   src = sbomifySrc;
 
@@ -9,9 +9,9 @@ pkgs.stdenv.mkDerivation {
 
   buildPhase = ''
     # Overlay frontend build artifacts onto source tree
-    cp -r ${sbomifyFrontend}/sbomify/static/dist sbomify/static/dist
-    cp -r ${sbomifyFrontend}/sbomify/static/css/* sbomify/static/css/
-    cp -r ${sbomifyFrontend}/sbomify/static/webfonts/* sbomify/static/webfonts/
+    cp -r ${sbomifyFrontendStack}/sbomify/static/dist sbomify/static/dist
+    cp -r ${sbomifyFrontendStack}/sbomify/static/css/* sbomify/static/css/
+    cp -r ${sbomifyFrontendStack}/sbomify/static/webfonts/* sbomify/static/webfonts/
 
     # Run Django collectstatic with minimal settings
     cp ${./collectstatic_settings.py} collectstatic_settings.py
@@ -40,5 +40,5 @@ pkgs.stdenv.mkDerivation {
     ln -s ${sbomifyVenv} $out/venv
   '';
 
-  passthru = { inherit sbomifyVenv sbomifyFrontend; };
+  passthru = { inherit sbomifyVenv sbomifyFrontendStack; };
 }

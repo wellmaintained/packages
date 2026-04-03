@@ -1,7 +1,7 @@
 { pkgs, sbomifySrc }:
 
 pkgs.stdenv.mkDerivation {
-  pname = "sbomify-frontend";
+  pname = "sbomify-frontend-stack";
   version = "0.27.0";
   src = sbomifySrc;
 
