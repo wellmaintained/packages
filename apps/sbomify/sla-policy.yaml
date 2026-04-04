@@ -1,0 +1,24 @@
+# Vulnerability remediation SLA policy for wellmaintained/packages.
+# Read by the rescan-vulnerabilities workflow and rendered on the release website.
+
+scan_schedule: "weekly — Monday 06:00 UTC"
+
+vex_files:
+  # Per-image VEX documents live next to their image definitions:
+  #   common/images/{name}.vex.yaml       — infrastructure images
+  #   apps/sbomify/images/{name}.vex.yaml  — application images
+  # VEX documents serve dual purpose: grype suppression + compliance evidence.
+
+remediation_slas:
+  critical:
+    max_days: 7
+    description: "Actively exploited or CVSS >= 9.0"
+  high:
+    max_days: 30
+    description: "CVSS >= 7.0"
+  medium:
+    max_days: 90
+    description: "CVSS >= 4.0"
+  low:
+    max_days: 90
+    description: "CVSS < 4.0"

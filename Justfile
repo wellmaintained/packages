@@ -153,8 +153,21 @@ scan-sbom name:
   json_out=".local/build/sboms/{{name}}.scan.json"
   table_out=".local/build/sboms/{{name}}.scan.table"
 
+  # Resolve per-image VEX file (same logic as CI workflows)
+  vex_flag=""
+  for candidate in "common/images/{{name}}.vex.yaml" "apps/sbomify/images/{{name}}.vex.yaml"; do
+    if [[ -f "$candidate" ]]; then
+      vex_json=$(mktemp --suffix=.vex.json)
+      trap "rm -f '$vex_json'" EXIT
+      yq -o json "$candidate" > "$vex_json"
+      vex_flag="--vex ${vex_json}"
+      echo "==> Using VEX suppression from ${candidate}" >&2
+      break
+    fi
+  done
+
   # Single grype pass: save JSON for CI, table for display
-  grype "sbom:${sbom}" -o "json=${json_out}" -o "table=${table_out}" --by-cve --sort-by severity
+  grype "sbom:${sbom}" -o "json=${json_out}" -o "table=${table_out}" --by-cve --sort-by severity $vex_flag
 
   echo ""
   echo "=== Vulnerability Scan: {{name}} ==="

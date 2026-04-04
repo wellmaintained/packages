@@ -1,0 +1,19 @@
+{{ $data := .Site.Data.sla_policy }}
+{{ $order := slice "critical" "high" "medium" "low" }}
+<table>
+<thead>
+<tr><th>Severity</th><th>Max Remediation Time</th><th>Criteria</th></tr>
+</thead>
+<tbody>
+{{ range $order }}
+{{ $sla := index $data.remediation_slas . }}
+{{ if $sla }}
+<tr>
+<td><strong>{{ . | title }}</strong></td>
+<td>{{ $sla.max_days }} days</td>
+<td>{{ $sla.description }}</td>
+</tr>
+{{ end }}
+{{ end }}
+</tbody>
+</table>

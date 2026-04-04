@@ -189,21 +189,40 @@ jobs:
           key: ${{ github.repository }}-${{ matrix.image.name }}-grype-db-${{ runner.os }}
           path: ~/.cache/grype/db
 
+      - name: Resolve per-image VEX file
+        id: vex
+        if: steps.extract-sbom.outcome == 'success'
+        run: |
+          IMAGE="${{ matrix.image.name }}"
+          for candidate in "common/images/${IMAGE}.vex.yaml" "apps/sbomify/images/${IMAGE}.vex.yaml"; do
+            if [ -f "$candidate" ]; then
+              echo "path=${candidate}" >> "$GITHUB_OUTPUT"
+              echo "==> Found VEX file: ${candidate}"
+              exit 0
+            fi
+          done
+          echo "==> No VEX file found for ${IMAGE}, scanning without suppression"
+
       - name: Scan SBOM for vulnerabilities
         id: grype
         if: steps.extract-sbom.outcome == 'success'
         shell: nix develop .#ci -c bash -e {0}
         run: |
+          VEX_FLAG=""
+          if [ -n "${{ steps.vex.outputs.path }}" ]; then
+            VEX_FLAG="--vex ${{ steps.vex.outputs.path }}"
+          fi
           common/lib/scripts/scan-sbom \
             --sbom "sbom/${{ matrix.image.name }}.enriched.cdx.json" \
-            --output "sbom/${{ matrix.image.name }}.sarif"
+            --output "sbom/${{ matrix.image.name }}.sarif" \
+            $VEX_FLAG
 
       - name: Upload SARIF to GitHub Security
         if: steps.grype.outcome == 'success'
         uses: github/codeql-action/upload-sarif@c10b8064de6f491fea524254123dbe5e09572f13 # v4
         with:
           sarif_file: sbom/${{ matrix.image.name }}.sarif
-          category: vulnerability-scan/${{ matrix.image.name }}
+          category: vulnerability-scan/sbomify/${{ matrix.image.name }}
 
       - name: Upload SBOM to sbomify.com
         if: ${{ !startsWith(matrix.image.sbomify_component_id, 'PLACEHOLDER') }}
