@@ -40,3 +40,29 @@ statements:
       - https://sourceware.org/bugzilla/show_bug.cgi?id=22850 (upstream: not a security bug)
       - https://security-tracker.debian.org/tracker/CVE-2019-1010022 (Debian: unimportant)
       - https://ubuntu.com/security/CVE-2019-1010022 (Ubuntu: negligible)
+
+  - vulnerability:
+      "@id": CVE-2026-2673
+      name: CVE-2026-2673
+      description: >-
+        OpenSSL TLS 1.3 server may fail to negotiate the preferred post-quantum
+        key exchange group when using the DEFAULT keyword in group configuration.
+    products:
+      - "@id": pkg:nix/openssl@3.6.1
+    status: affected
+    action_statement: >-
+      Fix available in OpenSSL 3.6.2 (released 2026-03-13). Waiting on
+      upstream nixpkgs to bump openssl from 3.6.1 to 3.6.2 — no PR or
+      update request exists yet as of 2026-04-04.
+
+      Reduced severity in our deployment: PostgreSQL sits behind a reverse
+      proxy and is not directly internet-facing. The vulnerability only
+      affects TLS 1.3 server group negotiation when using the DEFAULT
+      keyword — the connection still uses a secure classical key exchange
+      (e.g. X25519). No data exposure, authentication bypass, or denial
+      of service is possible.
+
+      References:
+      - https://openssl-library.org/news/secadv/20260313.txt (advisory)
+      - https://github.com/openssl/openssl/commit/85977e013f32ceb96aa034c0e741adddc1a05e34 (fix)
+      - https://github.com/NixOS/nixpkgs/pull/484463 (nixpkgs 3.6.0→3.6.1 for reference)
