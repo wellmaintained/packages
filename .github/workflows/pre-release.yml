@@ -226,14 +226,17 @@ jobs:
 
       - name: Upload SBOM to sbomify.com
         if: ${{ !startsWith(matrix.image.sbomify_component_id, 'PLACEHOLDER') }}
-        uses: sbomify/sbomify-action@d96675bf9fcbeba415e618895af758a6216395d0 # v26.1.0
         continue-on-error: true
+        shell: nix develop .#ci -c bash -e {0}
         env:
           TOKEN: ${{ secrets.SBOMIFY_TOKEN }}
-          COMPONENT_ID: ${{ matrix.image.sbomify_component_id }}
-          SBOM_FILE: sbom/${{ matrix.image.name }}.enriched.cdx.json
-          SBOM_FORMAT: cyclonedx
-          UPLOAD: true
+        run: |
+          sbomify-action \
+            --token "$TOKEN" \
+            --component-id "${{ matrix.image.sbomify_component_id }}" \
+            --sbom-file "sbom/${{ matrix.image.name }}.enriched.cdx.json" \
+            --sbom-format cyclonedx \
+            --upload
 
   create-release:
     needs: [resolve-pr, resolve-version, tag-and-scan, load-matrix]
