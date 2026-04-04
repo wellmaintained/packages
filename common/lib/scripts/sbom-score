@@ -37,35 +37,35 @@ if [ ! -f "$sbom_file" ]; then
   exit 1
 fi
 
-# Helper: produce structured JSON from sbomqs --json output
-_to_json() {
-  "$sbomqs_cmd" score "$sbom_file" --json 2>/dev/null | jq --arg image "$image" '
-    .files[0] as $f |
-    {
-      image: $image,
-      score: $f.sbom_quality_score,
-      grade: $f.grade,
-      num_components: $f.num_components,
-      categories: [
-        $f.comprehenssive // [] | group_by(.category)[] |
-        {category: .[0].category, score: ((map(.score) | add) / length)}
-      ]
-    }
-  '
-}
+# Transform sbomqs --json output into our structured format.
+# sbomqs v2.0.4 uses .sbom_quality_score (not .avg_score) and
+# .comprehenssive[] (note double 's') with per-feature entries instead of
+# per-category .scores[].  We aggregate features by category.
+_structured_json_filter='
+  .files[0] as $f |
+  {
+    image: $image,
+    score: $f.sbom_quality_score,
+    grade: $f.grade,
+    num_components: $f.num_components,
+    categories: [
+      $f.comprehenssive // [] | group_by(.category)[] |
+      {category: .[0].category, score: ((map(.score) | add) / length)}
+    ]
+  }
+'
 
 case "$format" in
   json)
-    # Transform sbomqs output into our structured format
-    # sbomqs v2.0.4 uses .sbom_quality_score (not .avg_score) and
-    # .comprehenssive[] (note double 's') with per-feature entries instead of
-    # per-category .scores[].  We aggregate features by category.
-    _to_json || { echo "sbomqs failed to score $sbom_file" >&2; exit 1; }
+    "$sbomqs_cmd" score "$sbom_file" --json 2>/dev/null \
+      | jq --arg image "$image" "$_structured_json_filter" \
+      || { echo "sbomqs failed to score $sbom_file" >&2; exit 1; }
     ;;
   text)
-    # Write JSON sidecar if requested
     if [ -n "$json_output" ]; then
-      _to_json > "$json_output" || { echo "sbomqs failed to score $sbom_file" >&2; exit 1; }
+      "$sbomqs_cmd" score "$sbom_file" --json 2>/dev/null \
+        | jq --arg image "$image" "$_structured_json_filter" > "$json_output" \
+        || { echo "sbomqs failed to score $sbom_file" >&2; exit 1; }
     fi
     "$sbomqs_cmd" score "$sbom_file" 2>/dev/null || {
       echo "sbomqs failed to score $sbom_file" >&2

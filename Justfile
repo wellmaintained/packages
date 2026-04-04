@@ -151,7 +151,10 @@ scan-sbom name:
   fi
 
   json_out=".local/build/sboms/{{name}}.scan.json"
-  common/lib/scripts/scan-sbom --sbom "$sbom" --output "$json_out" --format json
+  table_out=".local/build/sboms/{{name}}.scan.table"
+
+  # Single grype pass: save JSON for CI, table for display
+  grype "sbom:${sbom}" -o "json=${json_out}" -o "table=${table_out}" --by-cve --sort-by severity
 
   echo ""
   echo "=== Vulnerability Scan: {{name}} ==="
@@ -163,7 +166,6 @@ scan-sbom name:
     exit 0
   fi
 
-  # Summary by severity
   echo "Summary:"
   jq -r '
     [.matches[].vulnerability.severity] |
@@ -181,45 +183,9 @@ scan-sbom name:
     "  \(.severity): \(.count)"
   ' "$json_out"
   echo "  Total: ${match_count}"
-
-  fixed=$(jq '[.matches[] | select(.vulnerability.fix.state == "fixed")] | length' "$json_out")
-  unfixed=$((match_count - fixed))
-  echo "  Fixed available: ${fixed} | No fix: ${unfixed}"
-
-  # Detailed CVE list
   echo ""
-  today_epoch=$(date +%s)
-  printf "  %-8s │ %-30s │ %-22s │ %-18s │ %s\n" "Severity" "CVE" "Package" "Fix" "Days unfixed"
-  printf "  %-8s─┼─%-30s─┼─%-22s─┼─%-18s─┼─%s\n" "────────" "──────────────────────────────" "──────────────────────" "──────────────────" "────────────"
-  jq -r --argjson today "$today_epoch" '
-    def sev_order:
-      if   . == "Critical"   then 0
-      elif . == "High"       then 1
-      elif . == "Medium"     then 2
-      elif . == "Low"        then 3
-      elif . == "Negligible" then 4
-      else                        5
-      end;
-    [.matches[] | {
-      severity: .vulnerability.severity,
-      id: .vulnerability.id,
-      pkg: .artifact.name,
-      version: .artifact.version,
-      fix_state: .vulnerability.fix.state,
-      fix_versions: (.vulnerability.fix.versions // [] | join(", ")),
-      fix_date: (.vulnerability.fix.available // [] | .[0].date // null)
-    }] |
-    sort_by(.severity | sev_order) | .[] |
-    "  \(.severity + "        " | .[0:8]) │ \(.id + "                              " | .[0:30]) │ \(.pkg + "@" + .version + "                      " | .[0:22]) │ \(
-      if .fix_versions == "" then "no fix              " else .fix_versions + "                  " end | .[0:18]
-    ) │ \(
-      if .fix_date then
-        ((.fix_date + "T00:00:00Z" | strptime("%Y-%m-%dT%H:%M:%SZ") | mktime) as $fd |
-        (($today - $fd) / 86400 | floor | tostring) + "d ago")
-      else "-" end
-    )"
-  ' "$json_out" 2>/dev/null || echo "  (could not parse details)"
-
+  cat "$table_out"
+  rm -f "$table_out"
   echo ""
   echo "Scan results: ${json_out}"
 
