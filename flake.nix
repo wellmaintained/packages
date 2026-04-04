@@ -300,6 +300,9 @@
               pkgs.cyclonedx-cli
               pkgs.cosign
               pkgs.crane
+              pkgs.grype
+              sbomqs
+              sbomlyze
               sbomifyAction
             ];
           };

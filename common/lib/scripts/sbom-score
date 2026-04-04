@@ -1,26 +1,32 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Score an SBOM using sbomqs and output structured JSON.
+# Score an SBOM using sbomqs.
 #
-# Usage: sbom-score [--sbomqs-cmd CMD] --image NAME <sbom.cdx.json>
+# Usage: sbom-score [--sbomqs-cmd CMD] [--format json|text] --image NAME <sbom.cdx.json>
 #
-# Output (stdout): JSON with score, image name, component count, and category breakdown.
+# Formats:
+#   json — (default) structured JSON with score, component count, category averages
+#   text — human-readable sbomqs output with full feature breakdown
 
 sbomqs_cmd="sbomqs"
 image=""
+format="json"
+json_output=""
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    --sbomqs-cmd) sbomqs_cmd="$2"; shift 2 ;;
-    --image)      image="$2";      shift 2 ;;
-    -*)           echo "Unknown option: $1" >&2; exit 1 ;;
-    *)            break ;;
+    --sbomqs-cmd)  sbomqs_cmd="$2";  shift 2 ;;
+    --image)       image="$2";       shift 2 ;;
+    --format)      format="$2";      shift 2 ;;
+    --json-output) json_output="$2"; shift 2 ;;
+    -*)            echo "Unknown option: $1" >&2; exit 1 ;;
+    *)             break ;;
   esac
 done
 
 if [ $# -eq 0 ]; then
-  echo "Usage: sbom-score [--sbomqs-cmd CMD] --image NAME <sbom.cdx.json>" >&2
+  echo "Usage: sbom-score [--sbomqs-cmd CMD] [--format json|text] [--json-output PATH] --image NAME <sbom.cdx.json>" >&2
   exit 1
 fi
 
@@ -31,21 +37,16 @@ if [ ! -f "$sbom_file" ]; then
   exit 1
 fi
 
-# Run sbomqs and capture output
-raw_output=$("$sbomqs_cmd" score "$sbom_file" --json 2>/dev/null) || {
-  echo "sbomqs failed to score $sbom_file" >&2
-  exit 1
-}
-
-# Transform sbomqs output into our structured format
+# Transform sbomqs --json output into our structured format.
 # sbomqs v2.0.4 uses .sbom_quality_score (not .avg_score) and
 # .comprehenssive[] (note double 's') with per-feature entries instead of
 # per-category .scores[].  We aggregate features by category.
-echo "$raw_output" | jq --arg image "$image" '
+_structured_json_filter='
   .files[0] as $f |
   {
     image: $image,
     score: $f.sbom_quality_score,
+    grade: $f.grade,
     num_components: $f.num_components,
     categories: [
       $f.comprehenssive // [] | group_by(.category)[] |
@@ -53,3 +54,26 @@ echo "$raw_output" | jq --arg image "$image" '
     ]
   }
 '
+
+case "$format" in
+  json)
+    "$sbomqs_cmd" score "$sbom_file" --json 2>/dev/null \
+      | jq --arg image "$image" "$_structured_json_filter" \
+      || { echo "sbomqs failed to score $sbom_file" >&2; exit 1; }
+    ;;
+  text)
+    if [ -n "$json_output" ]; then
+      "$sbomqs_cmd" score "$sbom_file" --json 2>/dev/null \
+        | jq --arg image "$image" "$_structured_json_filter" > "$json_output" \
+        || { echo "sbomqs failed to score $sbom_file" >&2; exit 1; }
+    fi
+    "$sbomqs_cmd" score "$sbom_file" 2>/dev/null || {
+      echo "sbomqs failed to score $sbom_file" >&2
+      exit 1
+    }
+    ;;
+  *)
+    echo "ERROR: unknown format '${format}' (expected json or text)" >&2
+    exit 1
+    ;;
+esac
