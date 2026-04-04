@@ -227,13 +227,26 @@ def extract_external_references(
         if src_hash:
             hash_content = src_hash
             hash_alg = HashAlgorithm.SHA_256
-            # Strip SRI prefix if present (e.g. sha256-..., sha512-...)
+            # Expected hex lengths per algorithm
+            expected_hex_lengths = {
+                HashAlgorithm.SHA_256: 64,
+                HashAlgorithm.SHA_512: 128,
+                HashAlgorithm.SHA_384: 96,
+                HashAlgorithm.SHA_1: 40,
+                HashAlgorithm.MD5: 32,
+            }
+            # Strip SRI prefix if present (sha256-... or sha256:...)
             sri_prefixes = {
                 "sha256-": HashAlgorithm.SHA_256,
+                "sha256:": HashAlgorithm.SHA_256,
                 "sha512-": HashAlgorithm.SHA_512,
+                "sha512:": HashAlgorithm.SHA_512,
                 "sha384-": HashAlgorithm.SHA_384,
+                "sha384:": HashAlgorithm.SHA_384,
                 "sha1-": HashAlgorithm.SHA_1,
+                "sha1:": HashAlgorithm.SHA_1,
                 "md5-": HashAlgorithm.MD5,
+                "md5:": HashAlgorithm.MD5,
             }
             for prefix, alg in sri_prefixes.items():
                 if hash_content.startswith(prefix):
@@ -241,17 +254,25 @@ def extract_external_references(
                     hash_alg = alg
                     break
             # Convert base64 to hex (SRI hashes are base64-encoded)
+            expected_len = expected_hex_lengths.get(hash_alg, 64)
             try:
                 decoded = base64.b64decode(hash_content)
-                hash_content = decoded.hex()
+                hex_str = decoded.hex()
+                # Only accept if decoded length matches expected hash size
+                if len(hex_str) == expected_len:
+                    hash_content = hex_str
             except Exception:
                 pass  # already hex or unknown format
-            try:
-                ext.hashes.add(
-                    HashType(alg=hash_alg, content=hash_content)
-                )
-            except Exception:
-                pass
+            # Skip hashes that don't match expected length (e.g. nix32 format)
+            if len(hash_content) != expected_len:
+                pass  # can't convert to valid CycloneDX hash — omit it
+            else:
+                try:
+                    ext.hashes.add(
+                        HashType(alg=hash_alg, content=hash_content)
+                    )
+                except Exception:
+                    pass
         refs.append(ext)
 
     # Homepage

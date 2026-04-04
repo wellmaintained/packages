@@ -5,28 +5,31 @@
 #   common/lib/scripts/scan-sbom \
 #     --sbom <path> \
 #     --output <output-path> \
-#     [--format sarif|json]
+#     [--format sarif|json] \
+#     [--vex <vex-yaml-path>]
 #
 # Exits 0 with no output file if the SBOM does not exist.
 # Exits non-zero if grype fails.
-# Requires: grype
+# Requires: grype, yq (for --vex YAML→JSON conversion)
 
 set -euo pipefail
 
 usage() {
-  echo "Usage: $0 --sbom PATH --output PATH [--format sarif|json]"
+  echo "Usage: $0 --sbom PATH --output PATH [--format sarif|json] [--vex PATH]"
   exit 1
 }
 
 SBOM=""
 OUTPUT=""
 FORMAT="sarif"
+VEX=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --sbom)   SBOM="$2";   shift 2 ;;
     --output) OUTPUT="$2"; shift 2 ;;
     --format) FORMAT="$2"; shift 2 ;;
+    --vex)    VEX="$2";    shift 2 ;;
     *) echo "Unknown option: $1"; usage ;;
   esac
 done
@@ -43,6 +46,20 @@ case "$FORMAT" in
   *) echo "ERROR: unknown format '${FORMAT}' (expected sarif or json)" >&2; exit 1 ;;
 esac
 
+VEX_ARGS=()
+VEX_TMPFILE=""
+if [[ -n "$VEX" ]]; then
+  if [[ ! -f "$VEX" ]]; then
+    echo "==> VEX file not found at ${VEX}, scanning without VEX suppression" >&2
+  else
+    VEX_TMPFILE=$(mktemp --suffix=.vex.json)
+    trap 'rm -f "$VEX_TMPFILE"' EXIT
+    yq -o json "$VEX" > "$VEX_TMPFILE"
+    VEX_ARGS=(--vex "$VEX_TMPFILE")
+    echo "==> Using VEX suppression from ${VEX}" >&2
+  fi
+fi
+
 echo "==> Scanning ${SBOM} for vulnerabilities" >&2
-grype "sbom:${SBOM}" -o "$FORMAT" --file "$OUTPUT"
+grype "sbom:${SBOM}" -o "$FORMAT" --file "$OUTPUT" "${VEX_ARGS[@]}"
 echo "==> ${FORMAT} written to ${OUTPUT}" >&2

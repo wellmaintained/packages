@@ -22,4 +22,7 @@ pipeline generates compliance artifacts alongside every image:
 ## Resources
 
 - [Audit Evidence Pack](audit-pack/) — downloadable evidence bundles for GRC tools
+- [Vulnerability Remediation SLA](sla-policy/) — remediation timelines by severity
+- [Vulnerability Status](vulnerability-status/) — latest scan results per image
+- [VEX Statements](vex-statements/) — triage decisions for reported CVEs
 - [sbomify Trust Centre](https://trust.sbomify.com) — machine-readable compliance data via TEA API

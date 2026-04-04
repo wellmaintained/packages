@@ -311,6 +311,7 @@
               pkgs.cosign
               pkgs.crane
               pkgs.grype
+              pkgs.yq-go
               sbomqs
               sbomlyze
               sbomifyAction
@@ -326,6 +327,7 @@
               sbomqs
               sbomlyze
               sbomifyAction
+              yq-go
             ];
           };
 

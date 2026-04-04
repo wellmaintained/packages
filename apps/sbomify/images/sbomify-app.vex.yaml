@@ -1,0 +1,24 @@
+# VEX (Vulnerability Exploitability eXchange) statements for the sbomify-app image.
+# Grype consumes these to suppress findings that don't apply.
+# The release website renders them as compliance evidence.
+#
+# Add a statement when a CVE is triaged as not_affected or mitigated.
+# See https://openvex.dev for the full specification.
+#
+# Example:
+#   statements:
+#     - vulnerability:
+#         "@id": CVE-2024-XXXXX
+#         name: CVE-2024-XXXXX
+#       products:
+#         - "@id": "pkg:nix/packagename@version"
+#       status: not_affected
+#       justification: vulnerable_code_not_in_execute_path
+#       impact_statement: >-
+#         The affected function is never called in our deployment.
+
+"@context": https://openvex.dev/ns/v0.2.0
+"@id": https://github.com/wellmaintained/packages/vex/sbomify-app
+author: wellmaintained/packages maintainers
+timestamp: "2026-04-04T00:00:00Z"
+statements: []

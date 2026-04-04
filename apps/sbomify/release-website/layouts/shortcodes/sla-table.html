@@ -1,0 +1,15 @@
+{{ $data := .Site.Data.sla_policy }}
+<table>
+<thead>
+<tr><th>Severity</th><th>Max Remediation Time</th><th>Criteria</th></tr>
+</thead>
+<tbody>
+{{ range $name, $sla := $data.remediation_slas }}
+<tr>
+<td><strong>{{ $name | title }}</strong></td>
+<td>{{ $sla.max_days }} days</td>
+<td>{{ $sla.description }}</td>
+</tr>
+{{ end }}
+</tbody>
+</table>
