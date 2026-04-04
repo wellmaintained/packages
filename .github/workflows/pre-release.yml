@@ -275,10 +275,12 @@ jobs:
         run: |
           COLLECTION_VERSION="${{ needs.resolve-version.outputs.collection_version }}"
 
-          git tag "${COLLECTION_VERSION}"
-          git push origin "${COLLECTION_VERSION}"
-
+          # Create tag via the GitHub API (gh release create) instead of git push.
+          # git push rejects tags on commits containing workflow file changes
+          # because GITHUB_TOKEN lacks the 'workflows' permission (a GitHub
+          # security feature). The Releases API does not enforce this restriction.
           gh release create "${COLLECTION_VERSION}" \
+            --target "${{ github.sha }}" \
             --title "${COLLECTION_VERSION}" \
             --notes-file release-notes.md \
             --prerelease
