@@ -66,3 +66,23 @@ statements:
       - https://openssl-library.org/news/secadv/20260313.txt (advisory)
       - https://github.com/openssl/openssl/commit/85977e013f32ceb96aa034c0e741adddc1a05e34 (fix)
       - https://github.com/NixOS/nixpkgs/pull/484463 (nixpkgs 3.6.0→3.6.1 for reference)
+
+  - vulnerability:
+      "@id": CVE-2023-4039
+      name: CVE-2023-4039
+      description: >-
+        GCC -fstack-protector fails to detect buffer overflows in
+        dynamically-sized local variables on AArch64.
+    products:
+      - "@id": pkg:nix/gcc@15.2.0
+    status: not_affected
+    justification: vulnerable_code_not_present
+    impact_statement: >-
+      AArch64-only vulnerability — our images are built for x86_64 where
+      the stack protector works correctly. Additionally disputed by the GCC
+      project as a missed hardening bug, not a vulnerability. Requires a
+      pre-existing buffer overflow to exploit.
+
+      References:
+      - https://developer.arm.com/Arm%20Security%20Center/GCC%20Stack%20Protector%20Vulnerability%20AArch64 (Arm advisory: AArch64 only)
+      - https://github.com/metaredteam/external-disclosures/security/advisories/GHSA-x7ch-h5rf-w2mf (disclosure)
