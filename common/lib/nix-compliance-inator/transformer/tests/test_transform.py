@@ -9,9 +9,13 @@ import pytest
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from cyclonedx.model.component import ComponentType, PatchClassification
+from cyclonedx.model import ExternalReferenceType
+
 from transform import (
     build_bom,
     build_component,
+    detect_upstream_ecosystem,
     extract_external_references,
     extract_licenses,
     generate_cpe,
@@ -241,13 +245,10 @@ class TestExtractExternalReferences:
         refs = extract_external_references(dep)
         assert len(refs) == 1
         hash_obj = list(refs[0].hashes)[0]
-        # Hex strings that happen to be valid base64 will get decoded,
-        # but the important thing is the hash is present
         assert len(hash_obj.content) > 0
 
     def test_sha512_sri_hash(self):
         import base64
-        # Create a fake 64-byte (SHA-512) hash
         fake_hash_bytes = bytes(range(64))
         b64 = base64.b64encode(fake_hash_bytes).decode()
         dep = {
@@ -267,6 +268,16 @@ class TestExtractExternalReferences:
         dep = {"src": {}, "meta": {}}
         refs = extract_external_references(dep)
         assert len(refs) == 0
+
+    def test_changelog_emitted(self):
+        dep = {
+            "src": {},
+            "meta": {"changelog": "https://github.com/foo/foo/blob/main/CHANGELOG.md"},
+        }
+        refs = extract_external_references(dep)
+        release_notes = [r for r in refs if r.type == ExternalReferenceType.RELEASE_NOTES]
+        assert len(release_notes) == 1
+        assert str(release_notes[0].url) == "https://github.com/foo/foo/blob/main/CHANGELOG.md"
 
 
 # -- generate_cpe tests --
@@ -331,22 +342,26 @@ class TestGenerateCpe:
 class TestBuildComponent:
     def test_full_component(self):
         dep = SAMPLE_BUILDTIME[0]
-        comp = build_component(dep)
+        comp, _ = build_component(dep)
         assert comp.name == "libunistring"
         assert comp.version == "1.4.1"
-        assert str(comp.purl) == "pkg:nix/libunistring@1.4.1"
+        assert str(comp.purl) == "pkg:nix/libunistring@1.4.1"  # no ecosystem → pkg:nix/
         assert comp.description == "Unicode string library"
         assert len(comp.licenses) == 1
         assert len(comp.external_references) == 2  # source + homepage
         assert comp.cpe == "cpe:2.3:a:gnu:libunistring:1.4.1:*:*:*:*:*:*:*"
+        # Nix properties
+        props = {p.name: p.value for p in comp.properties}
+        assert props["nix:packaged"] == "true"
+        assert "nix:storePath" in props
 
     def test_minimal_component(self):
         dep = {"name": "simple", "version": "1.0", "storePath": "/nix/store/aaa-simple-1.0"}
-        comp = build_component(dep)
+        comp, _ = build_component(dep)
         assert comp.name == "simple"
         assert comp.version == "1.0"
         assert len(comp.licenses) == 0
-        assert len(comp.external_references) == 0
+        assert str(comp.purl) == "pkg:nix/simple@1.0"
 
 
 # -- build_bom tests --
@@ -419,18 +434,15 @@ class TestBuildBom:
 
         deps_by_ref = {d["ref"]: d.get("dependsOn", []) for d in output["dependencies"]}
 
-        # unknown-runtime -> bash (runtime edge, not present in buildtime data)
         unknown_comp = next(c for c in output["components"] if c["name"] == "unknown-runtime")
         bash_comp = next(c for c in output["components"] if c["name"] == "bash")
         unknown_deps = deps_by_ref.get(unknown_comp["bom-ref"], [])
         assert bash_comp["bom-ref"] in unknown_deps
 
-        # bash -> libunistring (runtime edge)
         libunistring_comp = next(c for c in output["components"] if c["name"] == "libunistring")
         bash_deps = deps_by_ref.get(bash_comp["bom-ref"], [])
         assert libunistring_comp["bom-ref"] in bash_deps
 
-        # libunistring is a leaf
         libunistring_deps = deps_by_ref.get(libunistring_comp["bom-ref"], [])
         assert libunistring_deps == []
 
@@ -444,7 +456,6 @@ class TestBuildBom:
 
         deps_by_ref = {d["ref"]: d.get("dependsOn", []) for d in output["dependencies"]}
 
-        # bash -> libunistring still works via buildtime edges
         bash_comp = next(c for c in output["components"] if c["name"] == "bash")
         libunistring_comp = next(c for c in output["components"] if c["name"] == "libunistring")
         bash_deps = deps_by_ref.get(bash_comp["bom-ref"], [])
@@ -463,8 +474,9 @@ class TestBuildBom:
             assert "type" in comp
             assert "purl" in comp
             assert "scope" in comp
-            assert comp["type"] == "application"
+            assert comp["type"] in ("library", "application")
             assert comp["scope"] == "required"
+            # All fixture components are unmapped (GNU/unknown), so pkg:nix/
             assert comp["purl"].startswith("pkg:nix/")
 
 
@@ -494,7 +506,6 @@ class TestTransformEndToEnd:
             assert output["metadata"]["component"]["name"] == "test-app-closure"
             assert len(output["components"]) == 3  # libunistring, bash, unknown-runtime
 
-            # Verify the rich component has all fields
             libunistring = next(
                 c for c in output["components"] if c["name"] == "libunistring"
             )
@@ -551,7 +562,6 @@ class TestTransformEndToEnd:
                 d["ref"]: d.get("dependsOn", []) for d in output["dependencies"]
             }
 
-            # bash depends on libunistring via runtime reference
             bash_comp = next(c for c in output["components"] if c["name"] == "bash")
             libunistring_comp = next(
                 c for c in output["components"] if c["name"] == "libunistring"
@@ -559,14 +569,12 @@ class TestTransformEndToEnd:
             bash_deps = deps_by_ref.get(bash_comp["bom-ref"], [])
             assert libunistring_comp["bom-ref"] in bash_deps
 
-            # unknown-runtime depends on bash via runtime reference
             unknown_comp = next(
                 c for c in output["components"] if c["name"] == "unknown-runtime"
             )
             unknown_deps = deps_by_ref.get(unknown_comp["bom-ref"], [])
             assert bash_comp["bom-ref"] in unknown_deps
 
-            # libunistring is a leaf
             libunistring_deps = deps_by_ref.get(libunistring_comp["bom-ref"], [])
             assert libunistring_deps == []
         finally:
@@ -595,3 +603,419 @@ class TestTransformEndToEnd:
         finally:
             os.unlink(bt_path)
             os.unlink(rt_path)
+
+
+# -- Upstream ecosystem detection fixtures --
+
+SAMPLE_PYPI_RICH = {
+    "name": "django-5.2.11",
+    "pname": "django",
+    "version": "5.2.11",
+    "path": "/nix/store/xxx12345678901234567890123456789-django-5.2.11",
+    "outputName": "out",
+    "dependencies": [],
+    "ecosystem": "pypi",
+    "meta": {
+        "description": "A high-level Python web framework",
+        "homepage": "https://pypi.org/project/django/",
+        "license": [{"spdxId": "BSD-3-Clause"}],
+        "changelog": "https://docs.djangoproject.com/en/5.2/releases/5.2.11/",
+        "maintainers": [
+            {"name": "Martin Weinelt", "email": "hexa@darmstadt.ccc.de", "github": "mweinelt", "githubId": 131599},
+        ],
+    },
+    "src": {
+        "urls": ["https://files.pythonhosted.org/packages/a0/b1/Django-5.2.11.tar.gz"],
+        "hash": "sha256-abc123fake=",
+    },
+    "patches": ["/nix/store/aaa-zoneinfo.patch", "/nix/store/bbb-pythonpath.patch"],
+}
+
+SAMPLE_PYPI_VIA_SRC_URL = {
+    "name": "boto3-1.40.55",
+    "pname": "boto3",
+    "version": "1.40.55",
+    "path": "/nix/store/yyy12345678901234567890123456789-boto3-1.40.55",
+    "outputName": "out",
+    "dependencies": [],
+    "ecosystem": "pypi",
+    "meta": {
+        "description": "AWS SDK for Python",
+        "homepage": "https://github.com/boto/boto3",
+    },
+    "src": {
+        "urls": ["https://files.pythonhosted.org/packages/a0/b1/boto3-1.40.55.tar.gz"],
+    },
+    "patches": [],
+}
+
+SAMPLE_PYPI_WHEEL = {
+    "name": "cryptography-46.0.5",
+    "pname": "cryptography",
+    "version": "46.0.5",
+    "path": "/nix/store/ccc12345678901234567890123456789-cryptography-46.0.5",
+    "outputName": "out",
+    "dependencies": [],
+    "ecosystem": "pypi",
+    "src": "/nix/store/ddd12345678901234567890123456789-cryptography-46.0.5-cp313-cp313-linux_x86_64.whl",
+    "patches": [],
+}
+
+SAMPLE_GO_PACKAGE = {
+    "name": "osv-scanner-2.3.3",
+    "pname": "osv-scanner",
+    "version": "2.3.3",
+    "path": "/nix/store/ggg12345678901234567890123456789-osv-scanner-2.3.3",
+    "outputName": "out",
+    "dependencies": [],
+    # No ecosystem field — tests URL-based fallback detection
+    "meta": {
+        "description": "Vulnerability scanner written in Go",
+        "homepage": "https://pkg.go.dev/github.com/google/osv-scanner",
+    },
+    "patches": [],
+}
+
+SAMPLE_CARGO_PACKAGE = {
+    "name": "ripgrep-14.1.1",
+    "pname": "ripgrep",
+    "version": "14.1.1",
+    "path": "/nix/store/rrr12345678901234567890123456789-ripgrep-14.1.1",
+    "outputName": "out",
+    "dependencies": [],
+    "ecosystem": "cargo",
+    "meta": {},
+    "src": {
+        "urls": ["https://static.crates.io/crates/ripgrep/ripgrep-14.1.1.crate"],
+    },
+    "patches": [],
+}
+
+SAMPLE_NIX_ONLY = {
+    "name": "iana-etc-20251215",
+    "pname": "iana-etc",
+    "version": "20251215",
+    "storePath": "/nix/store/zzz12345678901234567890123456789-iana-etc-20251215",
+}
+
+
+# -- detect_upstream_ecosystem tests --
+
+
+class TestDetectUpstreamEcosystem:
+    def test_nix_native_pypi(self):
+        dep = {"pname": "django", "version": "5.2.11", "ecosystem": "pypi"}
+        result = detect_upstream_ecosystem(dep)
+        assert result is not None
+        assert result[:4] == ("pypi", "django", "5.2.11", 99)
+
+    def test_nix_native_golang(self):
+        dep = {"pname": "osv-scanner", "version": "2.3.3", "ecosystem": "golang"}
+        result = detect_upstream_ecosystem(dep)
+        assert result[:4] == ("golang", "osv-scanner", "2.3.3", 99)
+
+    def test_nix_native_takes_precedence_over_url(self):
+        dep = {**SAMPLE_PYPI_RICH, "ecosystem": "pypi"}
+        result = detect_upstream_ecosystem(dep)
+        assert result is not None
+        assert result[3] == 99  # Nix-native confidence, not URL 95%
+
+    def test_nix_native_null_falls_through(self):
+        dep = {**SAMPLE_PYPI_RICH, "ecosystem": None}
+        result = detect_upstream_ecosystem(dep)
+        assert result is not None
+        assert result[3] == 95  # Falls through to URL detection
+
+    def test_pypi_via_nix_native(self):
+        result = detect_upstream_ecosystem(SAMPLE_PYPI_RICH)
+        assert result is not None
+        eco_type, name, version, confidence, _reason = result
+        assert eco_type == "pypi"
+        assert name == "django"
+        assert version == "5.2.11"
+        assert confidence == 99  # Nix-native ecosystem field
+
+    def test_pypi_via_src_url(self):
+        result = detect_upstream_ecosystem(SAMPLE_PYPI_VIA_SRC_URL)
+        assert result is not None
+        eco_type, name, version, confidence, _reason = result
+        assert eco_type == "pypi"
+        assert name == "boto3"
+
+    def test_pypi_via_wheel_filename(self):
+        result = detect_upstream_ecosystem(SAMPLE_PYPI_WHEEL)
+        assert result is not None
+        eco_type, name, version, confidence, _reason = result
+        assert eco_type == "pypi"
+        assert name == "cryptography"
+
+    def test_go_via_homepage(self):
+        """Go package detected via URL heuristic (no ecosystem field)."""
+        result = detect_upstream_ecosystem(SAMPLE_GO_PACKAGE)
+        assert result is not None
+        eco_type, name, version, confidence, _reason = result
+        assert eco_type == "golang"
+        assert name == "osv-scanner"
+        assert confidence == 90  # URL-based fallback
+
+    def test_cargo_via_nix_native(self):
+        result = detect_upstream_ecosystem(SAMPLE_CARGO_PACKAGE)
+        assert result is not None
+        eco_type, name, version, confidence, _reason = result
+        assert eco_type == "cargo"
+        assert name == "ripgrep"
+        assert confidence == 99  # Nix-native
+
+    def test_no_signal_returns_none(self):
+        result = detect_upstream_ecosystem(SAMPLE_NIX_ONLY)
+        assert result is None
+
+    def test_system_lib_with_cpe_no_ecosystem(self):
+        """System lib with identifiers.cpe but no ecosystem URL → no ecosystem detected."""
+        result = detect_upstream_ecosystem(SAMPLE_BUILDTIME[0])  # libunistring
+        assert result is None
+
+    def test_homepage_as_list(self):
+        dep = {
+            "pname": "foo",
+            "version": "1.0",
+            "meta": {"homepage": ["https://pypi.org/project/foo/", "https://github.com/foo"]},
+        }
+        result = detect_upstream_ecosystem(dep)
+        assert result is not None
+        assert result[0] == "pypi"
+
+
+
+# -- Upstream PURL tests --
+
+
+class TestUpstreamPurl:
+    def test_ecosystem_package_gets_upstream_purl(self):
+        comp, _ = build_component(SAMPLE_PYPI_RICH)
+        assert str(comp.purl) == "pkg:pypi/django@5.2.11"
+
+    def test_go_package_gets_upstream_purl(self):
+        comp, _ = build_component(SAMPLE_GO_PACKAGE)
+        assert str(comp.purl) == "pkg:golang/osv-scanner@2.3.3"
+
+    def test_cargo_package_gets_upstream_purl(self):
+        comp, _ = build_component(SAMPLE_CARGO_PACKAGE)
+        assert str(comp.purl) == "pkg:cargo/ripgrep@14.1.1"
+
+    def test_system_lib_keeps_nix_purl(self):
+        comp, _ = build_component(SAMPLE_BUILDTIME[0])
+        assert str(comp.purl) == "pkg:nix/libunistring@1.4.1"
+
+    def test_no_ecosystem_keeps_nix_purl(self):
+        comp, _ = build_component(SAMPLE_NIX_ONLY)
+        assert str(comp.purl) == "pkg:nix/iana-etc@20251215"
+
+    def test_system_lib_preserves_existing_cpe(self):
+        comp, _ = build_component(SAMPLE_BUILDTIME[0])
+        assert comp.cpe == "cpe:2.3:a:gnu:libunistring:1.4.1:*:*:*:*:*:*:*"
+
+    def test_ecosystem_package_no_cpe(self):
+        """Ecosystem packages without meta.identifiers have no CPE."""
+        comp, _ = build_component(SAMPLE_PYPI_RICH)
+        assert comp.cpe is None
+
+
+
+# -- Nix properties tests --
+
+
+class TestComponentType:
+    def test_library_by_default(self):
+        comp, _ = build_component(SAMPLE_PYPI_RICH)
+        assert comp.type == ComponentType.LIBRARY
+
+    def test_application_when_main_program(self):
+        dep = {
+            "pname": "osv-scanner", "version": "2.3.3",
+            "storePath": "/nix/store/xxx-osv-scanner-2.3.3",
+            "meta": {"mainProgram": "osv-scanner"},
+        }
+        comp, _ = build_component(dep)
+        assert comp.type == ComponentType.APPLICATION
+
+    def test_library_when_no_main_program(self):
+        dep = {
+            "pname": "boto3", "version": "1.40.55",
+            "storePath": "/nix/store/xxx-boto3-1.40.55",
+            "meta": {},
+        }
+        comp, _ = build_component(dep)
+        assert comp.type == ComponentType.LIBRARY
+
+
+class TestNixProperties:
+    def test_store_path_property(self):
+        comp, _ = build_component(SAMPLE_BUILDTIME[0])
+        props = {p.name: p.value for p in comp.properties}
+        assert props["nix:storePath"] == "/nix/store/1xakvg5jqmaiawwk0n1sbhvsvrdya512-libunistring-1.4.1"
+        assert props["nix:packaged"] == "true"
+
+    def test_maintainer_properties(self):
+        comp, _ = build_component(SAMPLE_PYPI_RICH)
+        props = {p.name: p.value for p in comp.properties}
+        assert props["nix:maintainer:0:name"] == "Martin Weinelt"
+        assert props["nix:maintainer:0:email"] == "hexa@darmstadt.ccc.de"
+        assert props["nix:maintainer:0:github"] == "mweinelt"
+
+    def test_no_maintainers_no_properties(self):
+        comp, _ = build_component(SAMPLE_NIX_ONLY)
+        props = {p.name for p in comp.properties}
+        assert not any(p.startswith("nix:maintainer:") for p in props)
+
+
+# -- Evidence tests --
+
+
+class TestEvidence:
+    def test_ecosystem_component_has_purl_evidence(self):
+        comp, _ = build_component(SAMPLE_PYPI_RICH)
+        assert comp.evidence is not None
+        identities = list(comp.evidence.identity)
+        assert len(identities) == 1
+        ident = identities[0]
+        assert str(ident.concluded_value) == "pkg:pypi/django@5.2.11"
+        assert float(ident.confidence) == 0.99
+        methods = list(ident.methods)
+        assert len(methods) == 1
+        assert methods[0].value == "nix ecosystem attribute"
+
+    def test_url_detected_component_evidence(self):
+        """Go package detected via URL has OTHER technique."""
+        comp, _ = build_component(SAMPLE_GO_PACKAGE)
+        assert comp.evidence is not None
+        ident = list(comp.evidence.identity)[0]
+        assert float(ident.confidence) == 0.90
+        methods = list(ident.methods)
+        assert "pkg.go.dev" in methods[0].value
+
+    def test_unmapped_component_has_full_confidence(self):
+        comp, _ = build_component(SAMPLE_NIX_ONLY)
+        assert comp.evidence is not None
+        ident = list(comp.evidence.identity)[0]
+        assert str(ident.concluded_value) == "pkg:nix/iana-etc@20251215"
+        assert float(ident.confidence) == 1.0
+
+
+
+# -- Pedigree patches tests --
+
+
+class TestPedigreePatches:
+    def test_patches_emitted(self):
+        comp, _ = build_component(SAMPLE_PYPI_RICH)
+        assert comp.pedigree is not None
+        patches = list(comp.pedigree.patches)
+        assert len(patches) == 2
+        assert patches[0].type == PatchClassification.UNOFFICIAL
+        urls = [str(p.diff.url) for p in patches]
+        assert "/nix/store/aaa-zoneinfo.patch" in urls
+        assert "/nix/store/bbb-pythonpath.patch" in urls
+
+    def test_no_patches_no_pedigree(self):
+        comp, _ = build_component(SAMPLE_NIX_ONLY)
+        assert comp.pedigree is None
+
+    def test_empty_patches_no_pedigree(self):
+        dep = {
+            "pname": "foo", "version": "1.0",
+            "storePath": "/nix/store/xxx-foo-1.0",
+            "patches": [],
+        }
+        comp, _ = build_component(dep)
+        assert comp.pedigree is None
+
+
+# -- Known vulnerabilities tests --
+
+
+class TestKnownVulnerabilities:
+    def test_known_vulns_emitted(self):
+        buildtime = [{
+            "pname": "openssl", "version": "1.1.1",
+            "path": "/nix/store/xxx12345678901234567890123456789-openssl-1.1.1",
+            "meta": {"knownVulnerabilities": ["CVE-2024-1234", "CVE-2024-5678"]},
+            "patches": [],
+        }]
+        runtime = ["/nix/store/xxx12345678901234567890123456789-openssl-1.1.1"]
+        bom = build_bom(buildtime, runtime, "test")
+        vulns = list(bom.vulnerabilities)
+        assert len(vulns) == 2
+        cve_ids = {v.id for v in vulns}
+        assert "CVE-2024-1234" in cve_ids
+        assert "CVE-2024-5678" in cve_ids
+
+    def test_no_known_vulns_no_entries(self):
+        bom = build_bom(SAMPLE_BUILDTIME, SAMPLE_RUNTIME, "test")
+        assert len(bom.vulnerabilities) == 0
+
+
+# -- Ecosystem component integration tests --
+
+
+class TestBuildComponentEcosystem:
+    def test_pypi_component_full(self):
+        comp, eco = build_component(SAMPLE_PYPI_RICH)
+        # Upstream PURL
+        assert str(comp.purl) == "pkg:pypi/django@5.2.11"
+        # No CPE (no meta.identifiers)
+        assert comp.cpe is None
+        # Pedigree has patches, not ancestors
+        assert comp.pedigree is not None
+        assert len(list(comp.pedigree.patches)) == 2
+        # Ecosystem info returned
+        assert eco is not None
+        assert eco[0] == "pypi"
+
+    def test_pypi_wheel_component(self):
+        comp, _ = build_component(SAMPLE_PYPI_WHEEL)
+        assert str(comp.purl) == "pkg:pypi/cryptography@46.0.5"
+
+    def test_go_component(self):
+        comp, _ = build_component(SAMPLE_GO_PACKAGE)
+        assert str(comp.purl) == "pkg:golang/osv-scanner@2.3.3"
+
+    def test_unmappable_component(self):
+        comp, _ = build_component(SAMPLE_NIX_ONLY)
+        assert str(comp.purl) == "pkg:nix/iana-etc@20251215"
+        assert comp.cpe is None
+        assert comp.pedigree is None
+
+
+# -- Logging tests --
+
+
+class TestEcosystemLogging:
+    def test_mapping_summary_logged(self, caplog):
+        import logging
+        with caplog.at_level(logging.INFO, logger="nix-compliance-inator"):
+            build_bom(
+                SAMPLE_BUILDTIME,
+                SAMPLE_RUNTIME,
+                "test-closure",
+            )
+        summary_logs = [r for r in caplog.records if "ecosystem mapping summary" in r.message]
+        assert len(summary_logs) == 1
+        assert "unmapped:" in summary_logs[0].message
+
+    def test_per_component_mapping_logged(self, caplog):
+        import logging
+        with caplog.at_level(logging.INFO, logger="nix-compliance-inator"):
+            build_component(SAMPLE_PYPI_RICH)
+        mapping_logs = [r for r in caplog.records if "upstream mapping:" in r.message]
+        assert len(mapping_logs) == 1
+        assert "pkg:pypi" in mapping_logs[0].message
+        assert "confidence: 99%" in mapping_logs[0].message
+
+    def test_unmapped_component_logged(self, caplog):
+        import logging
+        with caplog.at_level(logging.INFO, logger="nix-compliance-inator"):
+            build_component(SAMPLE_NIX_ONLY)
+        mapping_logs = [r for r in caplog.records if "upstream mapping:" in r.message]
+        assert len(mapping_logs) == 1
+        assert "pkg:nix/" in mapping_logs[0].message

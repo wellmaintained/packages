@@ -14,25 +14,47 @@ Usage:
 import argparse
 import base64
 import json
+import logging
 import re
 import sys
+from decimal import Decimal
 
 from cyclonedx.model import (
     ExternalReference,
     ExternalReferenceType,
     HashAlgorithm,
     HashType,
+    Property,
     XsUri,
 )
 from cyclonedx.model.bom import Bom
-from cyclonedx.model.component import Component, ComponentScope, ComponentType
+from cyclonedx.model.component import (
+    Component,
+    ComponentEvidence,
+    ComponentScope,
+    ComponentType,
+    Diff,
+    Patch,
+    PatchClassification,
+    Pedigree,
+)
+from cyclonedx.model.component_evidence import (
+    AnalysisTechnique,
+    Identity,
+    IdentityField,
+    Method,
+)
 from cyclonedx.model.dependency import Dependency
 from cyclonedx.model.license import DisjunctiveLicense
+from cyclonedx.model.vulnerability import BomTarget, Vulnerability, VulnerabilitySource
 from cyclonedx.output.json import JsonV1Dot6
 from packageurl import PackageURL
 
+logging.basicConfig(level=logging.INFO, format="%(name)s: %(message)s", stream=sys.stderr)
+logger = logging.getLogger("nix-compliance-inator")
+
 TOOL_NAME = "nix-compliance-inator"
-TOOL_VERSION = "0.1.0"
+TOOL_VERSION = "0.2.0"
 
 # Regex to parse name and version from a Nix store path like:
 # /nix/store/abc123-package-name-1.2.3
@@ -98,11 +120,11 @@ def join_dependencies(
         if not version or not name:
             continue
 
-        # Deduplicate by PURL
-        purl_key = f"pkg:nix/{name}@{version}"
-        if purl_key in seen_purls:
+        # Deduplicate by Nix identity (name@version)
+        dedup_key = f"{name}@{version}"
+        if dedup_key in seen_purls:
             continue
-        seen_purls.add(purl_key)
+        seen_purls.add(dedup_key)
 
         joined.append(entry)
 
@@ -146,14 +168,19 @@ def extract_licenses(meta: dict) -> list[DisjunctiveLicense]:
 def extract_external_references(
     dep: dict,
 ) -> list[ExternalReference]:
-    """Build ExternalReference list from src URLs and homepage."""
+    """Build ExternalReference list from src URLs, homepage, and changelog."""
     refs = []
     meta = dep.get("meta", {})
 
     # Source URLs with hashes
     src = dep.get("src", {})
-    src_urls = src.get("urls", [])
-    src_hash = src.get("hash", "") or src.get("outputHash", "")
+    if isinstance(src, str):
+        # pyproject.nix packages: src is a store path string, not a dict
+        src_urls = []
+        src_hash = ""
+    else:
+        src_urls = src.get("urls", [])
+        src_hash = src.get("hash", "") or src.get("outputHash", "")
 
     for url in src_urls:
         if not url:
@@ -205,6 +232,16 @@ def extract_external_references(
                 )
             )
 
+    # Changelog / release notes
+    changelog = meta.get("changelog")
+    if changelog:
+        refs.append(
+            ExternalReference(
+                type=ExternalReferenceType.RELEASE_NOTES,
+                url=XsUri(str(changelog)),
+            )
+        )
+
     return refs
 
 
@@ -238,27 +275,217 @@ def generate_cpe(dep: dict) -> str | None:
     return None
 
 
-def build_component(dep: dict) -> Component:
-    """Build a CycloneDX Component from a joined dependency entry."""
+# -- Upstream ecosystem detection --
+
+# Regex to match Python wheel filenames:
+# e.g., "django-5.2.11-py3-none-any.whl", "cryptography-46.0.5-cp313-cp313-linux_x86_64.whl"
+WHEEL_RE = re.compile(r"[\w.-]+-[\w.]+-(?:py2|py3|cp\d+)[\w.-]*\.whl$")
+
+
+def detect_upstream_ecosystem(
+    dep: dict,
+) -> tuple[str, str, str, int, str] | None:
+    """Detect the upstream package ecosystem from Nix dependency metadata.
+
+    Returns (ecosystem_type, name, version, confidence_percent, evidence_reason)
+    or None. The evidence_reason describes how the ecosystem was determined.
+
+    Detection tiers:
+      - Tier 0: Nix-native ecosystem marker (from buildtime-dependencies.nix)
+      - Tier A: URL-based signals (pypi.org, crates.io, etc.)
+    """
+    name = dep.get("pname") or dep.get("name", "")
+    version = dep.get("version", "")
+    meta = dep.get("meta", {})
+    src = dep.get("src", {})
+
+    # Tier 0: Nix-native ecosystem marker (highest confidence)
+    nix_ecosystem = dep.get("ecosystem")
+    if nix_ecosystem:
+        return (nix_ecosystem, name, version, 99, "nix ecosystem attribute")
+
+    # Collect URLs to check
+    homepage = meta.get("homepage", "")
+    if isinstance(homepage, list):
+        homepage = homepage[0] if homepage else ""
+    homepage = str(homepage)
+
+    src_urls = []
+    if isinstance(src, dict):
+        src_urls = src.get("urls", [])
+    elif isinstance(src, str):
+        src_urls = [src]
+
+    # A1: homepage contains pypi.org
+    if "pypi.org" in homepage:
+        return ("pypi", name, version, 95, homepage)
+
+    # A2: src URL contains files.pythonhosted.org
+    for url in src_urls:
+        if "files.pythonhosted.org" in url:
+            return ("pypi", name, version, 95, url)
+
+    # A3: src path/URL matches Python wheel filename
+    for url in src_urls:
+        if WHEEL_RE.search(url):
+            return ("pypi", name, version, 90, url)
+
+    # A4: src URL contains proxy.golang.org
+    for url in src_urls:
+        if "proxy.golang.org" in url:
+            return ("golang", name, version, 95, url)
+
+    # A5: homepage matches pkg.go.dev or golang.org/x/
+    if "pkg.go.dev" in homepage or "golang.org/x/" in homepage:
+        return ("golang", name, version, 90, homepage)
+
+    # A6: src URL contains crates.io
+    for url in src_urls:
+        if "crates.io" in url or "static.crates.io" in url:
+            return ("cargo", name, version, 95, url)
+
+    # A7: src URL contains registry.npmjs.org
+    for url in src_urls:
+        if "registry.npmjs.org" in url:
+            return ("npm", name, version, 95, url)
+
+    # A8: src URL contains hackage.haskell.org
+    for url in src_urls:
+        if "hackage.haskell.org" in url:
+            return ("hackage", name, version, 95, url)
+
+    # A9: src URL contains rubygems.org
+    for url in src_urls:
+        if "rubygems.org" in url:
+            return ("gem", name, version, 95, url)
+
+    # A10: src URL contains cpan.org or cpan.metacpan.org
+    for url in src_urls:
+        if "cpan.org" in url or "cpan.metacpan.org" in url:
+            return ("cpan", name, version, 95, url)
+
+    return None
+
+
+def build_component(
+    dep: dict,
+) -> tuple[Component, tuple[str, str, str, int, str] | None]:
+    """Build a CycloneDX Component from a joined dependency entry.
+
+    When an upstream ecosystem is detected, the component PURL uses the
+    upstream type (e.g., pkg:pypi/django@5.2.11) for scanner compatibility.
+    Nix-specific metadata is captured in component properties, pedigree,
+    and evidence.
+
+    Returns (component, ecosystem_info).
+    """
     name = dep.get("pname") or dep.get("name", "unknown")
     version = dep.get("version", "")
     store_path = dep.get("storePath", "") or dep.get("path", "")
     meta = dep.get("meta", {})
 
-    purl = PackageURL(type="nix", name=name, version=version or None)
     bom_ref = make_bom_ref(store_path, name, version)
 
+    # Ecosystem detection
+    ecosystem_info = detect_upstream_ecosystem(dep)
+
+    # PURL: use upstream ecosystem type when detected, otherwise pkg:nix/
+    if ecosystem_info:
+        eco_type, eco_name, eco_version, confidence, reason = ecosystem_info
+        purl = PackageURL(type=eco_type, name=eco_name, version=eco_version or None)
+    else:
+        purl = PackageURL(type="nix", name=name, version=version or None)
+
+    # CPE: only from existing meta.identifiers (system libs)
     cpe = generate_cpe(dep)
+
+    # Component type: APPLICATION if it has a main executable, otherwise LIBRARY
+    comp_type = (ComponentType.APPLICATION
+                 if meta.get("mainProgram")
+                 else ComponentType.LIBRARY)
 
     component = Component(
         name=name,
         version=version,
-        type=ComponentType.APPLICATION,
+        type=comp_type,
         scope=ComponentScope.REQUIRED,
         purl=purl,
         bom_ref=bom_ref,
         cpe=cpe,
     )
+
+    # Evidence: document how the PURL was determined
+    if ecosystem_info:
+        eco_type, _, _, confidence, reason = ecosystem_info
+        technique = (AnalysisTechnique.MANIFEST_ANALYSIS
+                     if confidence in (99, 80)
+                     else AnalysisTechnique.OTHER)
+        component.evidence = ComponentEvidence(
+            identity=[Identity(
+                field=IdentityField.PURL,
+                confidence=Decimal(confidence) / Decimal(100),
+                concluded_value=str(purl),
+                methods=[Method(
+                    technique=technique,
+                    confidence=Decimal(confidence) / Decimal(100),
+                    value=reason,
+                )],
+            )],
+        )
+    else:
+        component.evidence = ComponentEvidence(
+            identity=[Identity(
+                field=IdentityField.PURL,
+                confidence=Decimal(1),
+                concluded_value=str(purl),
+                methods=[Method(
+                    technique=AnalysisTechnique.MANIFEST_ANALYSIS,
+                    confidence=Decimal(1),
+                    value=store_path or "nix store path",
+                )],
+            )],
+        )
+
+    # Nix metadata properties
+    if store_path:
+        component.properties.add(Property(name="nix:storePath", value=store_path))
+    component.properties.add(Property(name="nix:packaged", value="true"))
+
+    # Maintainer properties
+    for i, maintainer in enumerate(meta.get("maintainers", [])):
+        prefix = f"nix:maintainer:{i}"
+        if maintainer.get("name"):
+            component.properties.add(Property(name=f"{prefix}:name", value=maintainer["name"]))
+        if maintainer.get("email"):
+            component.properties.add(Property(name=f"{prefix}:email", value=maintainer["email"]))
+        if maintainer.get("github"):
+            component.properties.add(Property(name=f"{prefix}:github", value=maintainer["github"]))
+
+    # Pedigree: Nix patches applied to the package
+    nix_patches = dep.get("patches", [])
+    if nix_patches:
+        cdx_patches = []
+        for patch_path in nix_patches:
+            cdx_patches.append(
+                Patch(
+                    type=PatchClassification.UNOFFICIAL,
+                    diff=Diff(url=XsUri(patch_path)),
+                )
+            )
+        component.pedigree = Pedigree(patches=cdx_patches)
+
+    # Log mapping decision
+    if ecosystem_info:
+        eco_type, _, _, confidence, _ = ecosystem_info
+        logger.info(
+            "upstream mapping: %s@%s → pkg:%s/%s@%s (confidence: %d%%)",
+            name, version, eco_type, name, version, confidence,
+        )
+    else:
+        logger.info(
+            "upstream mapping: %s@%s → pkg:nix/%s@%s (unmapped)",
+            name, version, name, version,
+        )
 
     # Description
     description = meta.get("description")
@@ -269,11 +496,11 @@ def build_component(dep: dict) -> Component:
     for lic in extract_licenses(meta):
         component.licenses.add(lic)
 
-    # External references
+    # External references (includes changelog)
     for ext_ref in extract_external_references(dep):
         component.external_references.add(ext_ref)
 
-    return component
+    return component, ecosystem_info
 
 
 def build_bom(
@@ -308,15 +535,41 @@ def build_bom(
     # Join and build components, tracking path-to-bom_ref for dependency wiring
     joined = join_dependencies(buildtime, runtime)
     path_to_bom_ref: dict[str, str] = {}
-    components_by_path: dict[str, Component] = {}
+    ecosystem_counts: dict[str, int] = {}
+    unmapped_count = 0
+    nvd_source = VulnerabilitySource(name="NVD", url=XsUri("https://nvd.nist.gov/"))
 
     for dep in joined:
-        component = build_component(dep)
+        component, eco_info = build_component(dep)
         bom.components.add(component)
         store_path = dep.get("storePath", "") or dep.get("path", "")
         if store_path:
             path_to_bom_ref[store_path] = component.bom_ref
-            components_by_path[store_path] = component
+
+        # Track mapping statistics
+        if eco_info:
+            ecosystem_counts[eco_info[0]] = ecosystem_counts.get(eco_info[0], 0) + 1
+        else:
+            unmapped_count += 1
+
+        # Emit knownVulnerabilities as BOM-level vulnerabilities
+        for cve_id in dep.get("meta", {}).get("knownVulnerabilities", []):
+            vuln = Vulnerability(
+                id=cve_id,
+                source=nvd_source,
+                description="Known vulnerability flagged by Nix (meta.knownVulnerabilities)",
+            )
+            if store_path and store_path in path_to_bom_ref:
+                vuln.affects.add(BomTarget(ref=path_to_bom_ref[store_path]))
+            bom.vulnerabilities.add(vuln)
+
+    mapped_count = sum(ecosystem_counts.values())
+    total_count = mapped_count + unmapped_count
+    parts = [f"{eco}: {count}" for eco, count in sorted(ecosystem_counts.items())]
+    logger.info(
+        "ecosystem mapping summary: %d/%d components mapped (%s, unmapped: %d)",
+        mapped_count, total_count, ", ".join(parts) if parts else "none", unmapped_count,
+    )
 
     root_dep = Dependency(ref=bom.metadata.component.bom_ref)
 
@@ -406,6 +659,7 @@ def main():
     )
 
     args = parser.parse_args()
+
     result = transform(args.buildtime, args.runtime, args.name, args.references)
 
     # Pretty-print the JSON
