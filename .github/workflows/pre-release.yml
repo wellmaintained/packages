@@ -22,6 +22,7 @@ permissions:
   contents: write
   packages: write
   security-events: write
+  workflows: write
 
 # useblacksmith/stickydisk and DeterminateSystems/determinate-nix-action still
 # ship node20 with no node24 releases available. Opt in early ahead of the
