@@ -21,4 +21,22 @@
 "@id": https://github.com/wellmaintained/packages/vex/postgres
 author: wellmaintained/packages maintainers
 timestamp: "2026-04-04T00:00:00Z"
-statements: []
+statements:
+  - vulnerability:
+      "@id": CVE-2019-1010022
+      name: CVE-2019-1010022
+      description: >-
+        Claimed stack guard bypass in glibc NPTL. Disputed by upstream.
+    products:
+      - "@id": pkg:nix/glibc@2.42
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      Disputed by glibc upstream — treated as a non-security bug with no
+      real threat. Requires a pre-existing stack buffer overflow to exploit,
+      making the bypass academic. No fix will be issued.
+
+      References:
+      - https://sourceware.org/bugzilla/show_bug.cgi?id=22850 (upstream: not a security bug)
+      - https://security-tracker.debian.org/tracker/CVE-2019-1010022 (Debian: unimportant)
+      - https://ubuntu.com/security/CVE-2019-1010022 (Ubuntu: negligible)
