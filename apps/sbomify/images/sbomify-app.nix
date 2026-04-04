@@ -1,4 +1,4 @@
-{ pkgs, sbomifyPythonStack, sbomifyFrontendStack, sbomifyVersion, sbomifyPythonDeps ? [] }:
+{ pkgs, sbomifyPythonStack, sbomifyFrontendStack, sbomifyVersion, sbomifyPythonDeps ? [], sbomifyBunDeps ? [] }:
 
 pkgs.buildCompliantImage {
   name = "sbomify-app";
@@ -6,10 +6,11 @@ pkgs.buildCompliantImage {
   license = "Apache-2.0";
   description = "sbomify web application — Nix-built OCI image";
 
-  # Individual Python package derivations from pythonSet — passed as
-  # sbomExtraDeps so the SBOM buildtime walker can reach their metadata
-  # (the venv bundles them as string store paths, hiding their attributes).
-  sbomExtraDeps = sbomifyPythonDeps;
+  # Individual package derivations passed as sbomExtraDeps so the SBOM
+  # buildtime walker can reach their metadata. Both Python (mkVirtualEnv)
+  # and bun2nix (fetchBunDeps) bundle deps into single derivations,
+  # hiding individual packages from the walker.
+  sbomExtraDeps = sbomifyPythonDeps ++ sbomifyBunDeps;
 
   creator = {
     name = "sbomify";

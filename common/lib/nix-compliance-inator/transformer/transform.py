@@ -65,6 +65,13 @@ STORE_PATH_RE = re.compile(
 # Store paths with these output suffixes are not useful SBOM components.
 EXCLUDED_SUFFIXES = ("-doc", "-man", "-info", "-devdoc")
 
+# Regex to extract npm package name and version from registry.npmjs.org URLs:
+# https://registry.npmjs.org/@scope/name/-/name-version.tgz  → (@scope/name, version)
+# https://registry.npmjs.org/name/-/name-version.tgz         → (name, version)
+NPM_URL_RE = re.compile(
+    r"registry\.npmjs\.org/(?P<name>(?:@[^/]+/)?[^/]+)/-/[^/]+-(?P<version>\d[^/]*)\.tgz$"
+)
+
 
 def parse_store_path(path: str) -> tuple[str, str]:
     """Extract (name, version) from a Nix store path string.
@@ -82,14 +89,31 @@ def parse_store_path(path: str) -> tuple[str, str]:
     return basename, ""
 
 
+def _parse_npm_url(url: str) -> tuple[str, str] | None:
+    """Extract (name, version) from a registry.npmjs.org URL, or None."""
+    m = NPM_URL_RE.search(url)
+    return (m.group("name"), m.group("version")) if m else None
+
+
+def _npm_info_from_dep(dep: dict) -> tuple[str, str] | None:
+    """Extract npm package name and version from a dep's source URLs."""
+    src = dep.get("src", {})
+    if isinstance(src, dict):
+        for url in src.get("urls", []):
+            info = _parse_npm_url(url)
+            if info:
+                return info
+    return None
+
+
 def join_dependencies(
     buildtime: list[dict], runtime: list[str]
 ) -> list[dict]:
     """Join runtime store paths with buildtime metadata.
 
     For each runtime store path, find the matching buildtime entry.
-    Falls back to parsing name/version from the store path if no
-    buildtime metadata is found.
+    Falls back to parsing name/version from the store path or from
+    npm registry URLs if no buildtime metadata is found.
     """
     # Index buildtime deps by output path for O(1) lookup.
     # Our buildtime JSON uses "path" as the store path key.
@@ -114,9 +138,20 @@ def join_dependencies(
             name, version = parse_store_path(store_path)
             entry = {"name": name, "version": version, "storePath": store_path}
 
-        # Skip entries without a version (can't produce meaningful PURL)
         name = entry.get("pname") or entry.get("name", "")
         version = entry.get("version", "")
+
+        # fetchurl derivations (e.g., from bun2nix) lack pname/version
+        # attributes but have npm registry URLs. Extract the canonical
+        # npm package name and version from the URL.
+        if not version or not name:
+            npm_info = _npm_info_from_dep(entry)
+            if npm_info:
+                name, version = npm_info
+                entry["name"] = name
+                entry["version"] = version
+
+        # Skip entries without a version (can't produce meaningful PURL)
         if not version or not name:
             continue
 
@@ -344,8 +379,11 @@ def detect_upstream_ecosystem(
         if "crates.io" in url or "static.crates.io" in url:
             return ("cargo", name, version, 95, url)
 
-    # A7: src URL contains registry.npmjs.org
+    # A7: src URL contains registry.npmjs.org — extract scoped name from URL
     for url in src_urls:
+        info = _parse_npm_url(url)
+        if info:
+            return ("npm", info[0], info[1], 95, url)
         if "registry.npmjs.org" in url:
             return ("npm", name, version, 95, url)
 
