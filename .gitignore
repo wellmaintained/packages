@@ -38,9 +38,8 @@ go.work.sum
 .claude/settings.local.json
 .claude/scheduled_tasks.lock
 
-# Nix build outputs
-result
-result-*
+# Local build outputs (images, SBOMs, scan results)
+.local/
 
 # Yak-box sandbox home file leaks
 .bash_profile
@@ -57,5 +56,4 @@ result-*
 http_cache.sqlite
 sbom.csv
 sbom.spdx.json
-sboms/
 .yaks/
