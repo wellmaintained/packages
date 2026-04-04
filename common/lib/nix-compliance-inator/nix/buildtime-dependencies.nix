@@ -74,11 +74,18 @@ let
     else [ (normalizeLicense meta.license) ];
 
   # Extract source download metadata (URLs and hash).
-  extractSrc = src:
-    lib.optionalAttrs (src != null && src ? urls) (
+  # Checks the `src` attribute first, then falls back to `drvAttrs.urls`
+  # for fetchurl derivations (which ARE the source fetch, so they have
+  # urls/outputHash directly in drvAttrs rather than in a nested src).
+  extractSrc = src: drv:
+    if src != null && src ? urls then
       { urls = src.urls; }
       // lib.optionalAttrs (src ? outputHash) { hash = src.outputHash; }
-    );
+    else if drv.drvAttrs ? urls then
+      { urls = drv.drvAttrs.urls; }
+      // lib.optionalAttrs (drv.drvAttrs ? outputHash) { hash = drv.drvAttrs.outputHash; }
+    else
+      {};
 
   # Extract the meta block (license, homepage, description, etc.) from a derivation.
   extractMeta = meta:
@@ -132,7 +139,7 @@ let
     meta = optionalAttr "meta" drv;
     src = optionalAttr "src" drv;
     extractedMeta = extractMeta meta;
-    extractedSrc = extractSrc src;
+    extractedSrc = extractSrc src drv;
   in
     {
       path = drv.outPath;

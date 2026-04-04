@@ -231,8 +231,18 @@
           builtins.mapAttrs (name: _: pythonSet.${name}) sbomifyWorkspace.deps.default
         );
 
+        # Individual bun/npm package derivations from bun.nix.
+        # bun2nix bundles all JS deps into a single cache derivation,
+        # hiding them from the SBOM buildtime walker. Calling bun.nix
+        # directly gives us the individual fetchurl derivations.
+        sbomifyBunDeps = builtins.attrValues (
+          pkgs.lib.filterAttrs (_: pkgs.lib.isDerivation) (
+            pkgs.callPackage ./apps/sbomify/pkgs/sbomify-frontend-stack/bun.nix {}
+          )
+        );
+
         sbomifyAppSpec = import ./apps/sbomify/images/sbomify-app.nix {
-          inherit pkgs sbomifyPythonStack sbomifyFrontendStack sbomifyVersion sbomifyPythonDeps;
+          inherit pkgs sbomifyPythonStack sbomifyFrontendStack sbomifyVersion sbomifyPythonDeps sbomifyBunDeps;
         };
 
         sbomifyKeycloakSpec = import ./apps/sbomify/images/sbomify-keycloak.nix {
