@@ -19,7 +19,7 @@ pkgs.buildCompliantImage {
     pkgs.minio
     pkgs.minio-client
     pkgs.bashInteractive
-    pkgs.coreutils
+    pkgs.busybox
   ];
 
   # CVE-2026-4046: iconv assertion crash via IBM1390/IBM1399 charsets (no upstream fix)

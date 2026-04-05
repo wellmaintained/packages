@@ -84,7 +84,7 @@ pkgs.buildCompliantImage {
     pkgs.postgresql_17
     pkgs.cacert
     pkgs.bash
-    pkgs.coreutils
+    pkgs.busybox
   ];
 
   # CVE-2026-4046: iconv assertion crash via IBM1390/IBM1399 charsets (no upstream fix)
