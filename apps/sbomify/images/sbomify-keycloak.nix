@@ -1,4 +1,4 @@
-{ pkgs, sbomifySrc, sbomifyKeycloakTheme }:
+{ pkgs, minimalBusybox, sbomifySrc, sbomifyKeycloakTheme }:
 
 let
   # Bundle sbomify's Keycloak theme and bootstrap script into a single derivation
@@ -36,7 +36,7 @@ pkgs.buildCompliantImage {
   packages = [
     pkgs.keycloak
     pkgs.cacert
-    pkgs.busybox
+    minimalBusybox
     pkgs.gnugrep
     pkgs.gnused
     pkgs.findutils

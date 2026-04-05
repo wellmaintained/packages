@@ -234,3 +234,68 @@ statements:
     impact_statement: >-
       minio-init is a short-lived init script, not a DNS client. No
       upstream fix yet (affects through glibc 2.43).
+
+  # ── busybox 1.37.0 (minimal build — tar, wget, netstat compiled out) ──
+
+  - vulnerability:
+      "@id": CVE-2024-58251
+      name: CVE-2024-58251
+      description: >-
+        In netstat in BusyBox through 1.37.0, local users can launch a
+        network application with an argv[0] containing an ANSI terminal
+        escape sequence, causing denial of service (terminal lockup) when
+        netstat is used by a victim.
+    products:
+      - "@id": pkg:nix/busybox@1.37.0
+    status: not_affected
+    justification: vulnerable_code_not_present
+    impact_statement: >-
+      The netstat applet is not compiled into this image's BusyBox binary.
+      Images use a minimal BusyBox build (common/pkgs/minimal-busybox)
+      with enableMinimal=true that includes only file operations and shell
+      scripting applets. The vulnerable netstat code does not exist in the
+      shipped binary.
+
+      References:
+      - https://github.com/advisories/GHSA-rrv5-483w-xmr9
+
+  - vulnerability:
+      "@id": CVE-2025-46394
+      name: CVE-2025-46394
+      description: >-
+        In tar in BusyBox through 1.37.0, a TAR archive can have filenames
+        hidden from directory listings via terminal escape sequences.
+    products:
+      - "@id": pkg:nix/busybox@1.37.0
+    status: not_affected
+    justification: vulnerable_code_not_present
+    impact_statement: >-
+      The tar applet is not compiled into this image's BusyBox binary.
+      Images use a minimal BusyBox build (common/pkgs/minimal-busybox)
+      with enableMinimal=true that includes only file operations and shell
+      scripting applets. The vulnerable tar code does not exist in the
+      shipped binary.
+
+      References:
+      - https://github.com/advisories/GHSA-wp4q-9jq4-gv74
+
+  - vulnerability:
+      "@id": CVE-2025-60876
+      name: CVE-2025-60876
+      description: >-
+        BusyBox wget through 1.37.0 accepts raw CR/LF and other C0 control
+        bytes in the HTTP request-target, allowing request-line splitting
+        and header injection.
+    products:
+      - "@id": pkg:nix/busybox@1.37.0
+    status: not_affected
+    justification: vulnerable_code_not_present
+    impact_statement: >-
+      The wget applet is not compiled into this image's BusyBox binary.
+      Images use a minimal BusyBox build (common/pkgs/minimal-busybox)
+      with enableMinimal=true that includes only file operations and shell
+      scripting applets. The vulnerable wget code does not exist in the
+      shipped binary.
+
+      References:
+      - https://www.cvedetails.com/cve/CVE-2025-60876/

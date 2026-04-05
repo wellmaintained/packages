@@ -1,4 +1,4 @@
-{ pkgs }:
+{ pkgs, minimalBusybox }:
 
 pkgs.buildCompliantImage {
   name = "minio";
@@ -18,7 +18,7 @@ pkgs.buildCompliantImage {
   packages = [
     pkgs.minio
     pkgs.minio-client
-    pkgs.busybox
+    minimalBusybox
   ];
 
   # CVE-2026-4046: iconv assertion crash via IBM1390/IBM1399 charsets (no upstream fix)

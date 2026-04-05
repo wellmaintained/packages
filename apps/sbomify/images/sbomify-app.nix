@@ -1,4 +1,4 @@
-{ pkgs, sbomifyPythonStack, sbomifyFrontendStack, sbomifyVersion, sbomifyPythonDeps ? [], sbomifyBunDeps ? [] }:
+{ pkgs, minimalBusybox, sbomifyPythonStack, sbomifyFrontendStack, sbomifyVersion, sbomifyPythonDeps ? [], sbomifyBunDeps ? [] }:
 
 pkgs.buildCompliantImage {
   name = "sbomify-app";
@@ -24,7 +24,7 @@ pkgs.buildCompliantImage {
   packages = [
     sbomifyPythonStack
     sbomifyFrontendStack
-    pkgs.busybox
+    minimalBusybox
     pkgs.cacert
     pkgs.osv-scanner
     pkgs.cosign
