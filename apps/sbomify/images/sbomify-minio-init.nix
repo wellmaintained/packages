@@ -27,7 +27,6 @@ pkgs.buildCompliantImage {
 
   packages = [
     pkgs.minio-client
-    pkgs.bashInteractive
     pkgs.busybox
   ];
 

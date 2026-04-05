@@ -36,7 +36,6 @@ pkgs.buildCompliantImage {
   packages = [
     pkgs.keycloak
     pkgs.cacert
-    pkgs.bashInteractive
     pkgs.busybox
     pkgs.gnugrep
     pkgs.gnused
