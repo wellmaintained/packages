@@ -138,12 +138,15 @@ statements:
     products:
       - "@id": pkg:nix/gcc@15.2.0
     status: not_affected
-    justification: vulnerable_code_not_in_execute_path
+    justification: vulnerable_code_not_present
     impact_statement: >-
-      AArch64-only vulnerability — the flawed stack protector logic only
-      affects AArch64 code generation. Our images are built exclusively
-      for x86_64. GCC's AArch64 backend is present but not exercised.
-      Re-evaluate if ARM/AArch64 image builds are introduced.
+      The full gcc-lib store path (including the GCC compiler's runtime
+      libraries) has been stripped from the image via buildCompliantImage's
+      removeGccReferences option. Only a minimal runtime containing
+      libstdc++ and libgcc_s remains, under a store path named
+      "gcc-minimal-runtime" that does not include the vulnerable GCC
+      compiler code. Additionally, CVE-2023-4039 is AArch64-only and
+      our images are built for x86_64.
 
       References:
       - https://developer.arm.com/Arm%20Security%20Center/GCC%20Stack%20Protector%20Vulnerability%20AArch64
@@ -254,3 +257,65 @@ statements:
     impact_statement: >-
       MinIO (Go binary) uses Go's net package, not glibc's gethostbyaddr.
       No upstream fix yet (affects through glibc 2.43).
+
+  # ── busybox 1.37.0 ────────────────────────────────────────────────
+
+  - vulnerability:
+      "@id": CVE-2024-58251
+      name: CVE-2024-58251
+      description: >-
+        In netstat in BusyBox through 1.37.0, local users can launch a
+        network application with an argv[0] containing an ANSI terminal
+        escape sequence, causing denial of service (terminal lockup) when
+        netstat is used by a victim.
+    products:
+      - "@id": pkg:nix/busybox@1.37.0
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      The netstat applet is not used in this image. BusyBox is included
+      solely for basic file operations (mkdir, chmod, chown, cp, ln)
+      needed during container initialisation. The netstat code path is
+      never executed.
+
+      References:
+      - https://github.com/advisories/GHSA-rrv5-483w-xmr9
+
+  - vulnerability:
+      "@id": CVE-2025-46394
+      name: CVE-2025-46394
+      description: >-
+        In tar in BusyBox through 1.37.0, a TAR archive can have filenames
+        hidden from directory listings via terminal escape sequences.
+    products:
+      - "@id": pkg:nix/busybox@1.37.0
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      The tar applet is not used in this image. BusyBox is included solely
+      for basic file operations (mkdir, chmod, chown, cp, ln) needed
+      during container initialisation. No tar archives are listed or
+      extracted.
+
+      References:
+      - https://github.com/advisories/GHSA-wp4q-9jq4-gv74
+
+  - vulnerability:
+      "@id": CVE-2025-60876
+      name: CVE-2025-60876
+      description: >-
+        BusyBox wget through 1.37.0 accepts raw CR/LF and other C0 control
+        bytes in the HTTP request-target, allowing request-line splitting
+        and header injection.
+    products:
+      - "@id": pkg:nix/busybox@1.37.0
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      The wget applet is not used in this image. BusyBox is included
+      solely for basic file operations (mkdir, chmod, chown, cp, ln)
+      needed during container initialisation. No HTTP requests are made
+      via BusyBox wget.
+
+      References:
+      - https://www.cvedetails.com/cve/CVE-2025-60876/

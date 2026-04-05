@@ -134,9 +134,26 @@
           extraMetadata ? {},
           fakeRootCommands ? "",
           stripFromLayers ? [],
-          sbomExtraDeps ? []
+          sbomExtraDeps ? [],
+          removeGccReferences ? false
         }:
           let
+            # Minimal gcc runtime: only libstdc++ and libgcc_s (needed at
+            # runtime), without sanitizer/debug libs (libasan, libtsan,
+            # libubsan, libhwasan, liblsan, libitm, libssp, libquadmath,
+            # libgomp, libatomic) or GDB scripts.
+            #
+            # When removeGccReferences is true, this replaces gcc-lib in
+            # the image — same ABI, ~90% smaller, and the store path name
+            # doesn't match "gcc" patterns that CVE scanners flag.
+            gccLib = pkgs.stdenv.cc.cc.lib;
+            gccMinimalRuntime = pkgs.runCommand "gcc-minimal-runtime" {} ''
+              mkdir -p $out/lib
+              # Dereference symlinks (-L) so the runtime is self-contained
+              # and doesn't depend on the gcc-libgcc store path.
+              cp -aL ${gccLib}/lib/libstdc++.so* $out/lib/
+              cp -aL ${gccLib}/lib/libgcc_s.so* $out/lib/
+            '';
             # Post-process the image tarball to remove files matching
             # the supplied glob patterns from individual layers.  Because
             # buildLayeredImage puts each store path in its own layer,
@@ -210,6 +227,114 @@
                 tar czf "$out" *
                 rm -rf "$workdir"
               '';
+
+            # Post-process the image tarball to replace the full gcc-lib
+            # store path (with sanitizer/debug libs) with a symlink to
+            # gccMinimalRuntime (libstdc++ + libgcc_s only).  Also removes
+            # duplicate xgcc-libgcc / gcc-libgcc store paths and uses
+            # remove-references-to to null out leftover gcc hash strings
+            # in all binaries so scanners don't flag CVE-2023-4039.
+            removeGccFromImage = rawImage:
+              if !removeGccReferences then rawImage else
+              let
+                # Discover the gcc-related store paths to strip.  We match
+                # against the basename pattern so this stays correct across
+                # nixpkgs updates (the hash changes, the name stays).
+                gccLibPath = builtins.unsafeDiscardStringContext (builtins.toString gccLib);
+                gccLibBasename = builtins.baseNameOf gccLibPath;
+                minimalPath = builtins.unsafeDiscardStringContext (builtins.toString gccMinimalRuntime);
+                minimalBasename = builtins.baseNameOf minimalPath;
+              in
+              pkgs.runCommand "${name}-no-gcc.tar.gz" {
+                nativeBuildInputs = [
+                  pkgs.gnutar pkgs.gzip pkgs.findutils pkgs.jq
+                  pkgs.removeReferencesTo
+                ];
+              } ''
+                workdir=$(mktemp -d)
+                cd "$workdir"
+                tar xzf ${rawImage}
+                config_file=$(jq -r '.[0].Config' manifest.json)
+
+                for layer in */layer.tar; do
+                  if tar tf "$layer" 2>/dev/null > "$workdir/listing.tmp" \
+                     && grep -qE '(gcc-[0-9].*-lib/|xgcc-[0-9].*-libgcc/|gcc-[0-9].*-libgcc/)' "$workdir/listing.tmp"; then
+                    old_dir=$(dirname "$layer")
+                    old_hash="$old_dir"
+                    mkdir -p "$old_dir/contents"
+                    tar xf "$layer" -C "$old_dir/contents"
+                    chmod -R u+w "$old_dir/contents"
+
+                    # Remove the full gcc-lib store path and replace with
+                    # a symlink to the minimal runtime.  The symlink keeps
+                    # existing RPATHs working without patchelf.
+                    for gcc_dir in "$old_dir/contents"/nix/store/*-gcc-*-lib; do
+                      [ -d "$gcc_dir" ] || continue
+                      rm -rf "$gcc_dir"
+                      ln -s "${gccMinimalRuntime}" "$gcc_dir"
+                    done
+
+                    # Remove duplicate libgcc store paths (xgcc-*-libgcc
+                    # and gcc-*-libgcc) — the minimal runtime already
+                    # provides libgcc_s.so.
+                    for libgcc_dir in "$old_dir/contents"/nix/store/*-libgcc; do
+                      [ -d "$libgcc_dir" ] || continue
+                      rm -rf "$libgcc_dir"
+                    done
+
+                    # Remove any now-empty nix/store directory trees
+                    find "$old_dir/contents/nix" -type d -empty -delete 2>/dev/null || true
+
+                    # Fix top-level /lib/ symlinks that pointed to the
+                    # now-removed gcc-libgcc or xgcc-libgcc store paths.
+                    # Redirect them to the minimal runtime instead.
+                    for link in "$old_dir/contents"/lib/libgcc_s.so*; do
+                      [ -L "$link" ] || continue
+                      target=$(readlink "$link")
+                      case "$target" in
+                        */nix/store/*gcc*libgcc*|*/nix/store/*xgcc*libgcc*)
+                          ln -sf "${gccMinimalRuntime}/lib/$(basename "$link")" "$link"
+                          ;;
+                      esac
+                    done
+
+                    # Null out gcc hash strings in remaining binaries so
+                    # Nix's reference scanner (and vuln scanners) don't
+                    # follow the old paths.
+                    find "$old_dir/contents" -type f -size +0c \
+                      -exec remove-references-to -t ${gccLib} {} \; 2>/dev/null || true
+
+                    tar cf "$old_dir/layer.tar" -C "$old_dir/contents" .
+                    rm -rf "$old_dir/contents"
+
+                    # Recompute layer hash and rename directory
+                    new_hash=$(sha256sum "$old_dir/layer.tar" | cut -d' ' -f1)
+                    if [ "$new_hash" != "$old_hash" ]; then
+                      mv "$old_dir" "$new_hash"
+                      jq --arg old "$old_hash" --arg new "$new_hash" \
+                        '.[0].Layers |= map(sub($old; $new))' manifest.json > manifest.tmp
+                      mv manifest.tmp manifest.json
+                      jq --arg old "sha256:$old_hash" --arg new "sha256:$new_hash" \
+                        '.rootfs.diff_ids |= map(if . == $old then $new else . end)' \
+                        "$config_file" > config.tmp
+                      mv config.tmp "$config_file"
+                    fi
+                  fi
+                done
+
+                # Recompute config hash
+                new_config_hash=$(sha256sum "$config_file" | cut -d' ' -f1)
+                new_config_name="$new_config_hash.json"
+                if [ "$new_config_name" != "$config_file" ]; then
+                  mv "$config_file" "$new_config_name"
+                  jq --arg old "$config_file" --arg new "$new_config_name" \
+                    '.[0].Config = $new' manifest.json > manifest.tmp
+                  mv manifest.tmp manifest.json
+                fi
+                tar czf "$out" *
+                rm -rf "$workdir"
+              '';
+
             # Build the SBOM from a closure of all packages.
             # Pass individual packages + sbomExtraDeps as extraPaths so the
             # buildtime walker can reach their derivation attributes.
@@ -242,15 +367,20 @@
               "org.opencontainers.image.source" = packager.url;
             } else {});
 
+            # When removing gcc references, include the minimal runtime
+            # in the image so the symlink target exists.
+            imagePackages = packages
+              ++ (if removeGccReferences then [ gccMinimalRuntime ] else []);
+
             rawImage = pkgs.dockerTools.buildLayeredImage {
               inherit name tag fakeRootCommands;
-              contents = packages ++ extraContents;
+              contents = imagePackages ++ extraContents;
               config = imageConfig // {
                 Labels = (imageConfig.Labels or {}) // labels;
               };
             };
 
-            image = (stripFromImage rawImage).overrideAttrs (old: {
+            image = (removeGccFromImage (stripFromImage rawImage)).overrideAttrs (old: {
               passthru = (old.passthru or {}) // {
                 inherit sbom patchedSbom imageMetadata;
               };

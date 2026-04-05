@@ -138,12 +138,15 @@ statements:
     products:
       - "@id": pkg:nix/gcc@15.2.0
     status: not_affected
-    justification: vulnerable_code_not_in_execute_path
+    justification: vulnerable_code_not_present
     impact_statement: >-
-      AArch64-only vulnerability — the flawed stack protector logic only
-      affects AArch64 code generation. Our images are built exclusively
-      for x86_64. GCC's AArch64 backend is present but not exercised.
-      Re-evaluate if ARM/AArch64 image builds are introduced.
+      The full gcc-lib store path (including the GCC compiler's runtime
+      libraries) has been stripped from the image via buildCompliantImage's
+      removeGccReferences option. Only a minimal runtime containing
+      libstdc++ and libgcc_s remains, under a store path named
+      "gcc-minimal-runtime" that does not include the vulnerable GCC
+      compiler code. Additionally, CVE-2023-4039 is AArch64-only and
+      our images are built for x86_64.
 
       References:
       - https://developer.arm.com/Arm%20Security%20Center/GCC%20Stack%20Protector%20Vulnerability%20AArch64

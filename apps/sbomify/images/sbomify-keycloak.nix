@@ -48,6 +48,10 @@ pkgs.buildCompliantImage {
   # CVE-2026-4046: iconv assertion crash via IBM1390/IBM1399 charsets (no upstream fix)
   stripFromLayers = [ "lib/gconv/IBM1390.so" "lib/gconv/IBM1399.so" ];
 
+  # CVE-2023-4039: Strip full gcc-lib (sanitizer/debug libs) from image;
+  # replace with minimal runtime (libstdc++ + libgcc_s only).
+  removeGccReferences = true;
+
   extraContents = [
     sbomifyKeycloakAssets
     keycloakOptLink
