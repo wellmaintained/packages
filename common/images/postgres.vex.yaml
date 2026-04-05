@@ -170,20 +170,11 @@ statements:
         supplementary group privileges after changing to a new root directory.
     products:
       - "@id": pkg:nix/coreutils@9.10
-    status: affected
-    action_statement: >-
-      The chroot binary is present in the image via coreutils even though
-      it is not used by our workloads. An attacker who gains shell access
-      could use it for privilege manipulation. No upstream fix expected —
-      coreutils maintainers consider the behavior documented.
-
-      Planned mitigation: replace coreutils with busybox in container
-      images. Busybox provides the basic commands our entrypoints need
-      (mkdir, chmod, chown) without shipping chroot or other unnecessary
-      security-sensitive utilities.
-
-      References:
-      - https://security-tracker.debian.org/tracker/CVE-2016-2781 (Debian: low)
+    status: not_affected
+    justification: vulnerable_code_not_present
+    impact_statement: >-
+      coreutils has been replaced with busybox in this image. The
+      vulnerable chroot binary is no longer present.
 
   # ── glibc 2.42 (2025/2026 CVEs — 3 fixed in 2.42-51 via backport, 3 no fix yet) ─
 
