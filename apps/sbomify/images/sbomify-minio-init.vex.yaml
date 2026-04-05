@@ -166,7 +166,7 @@ statements:
       References:
       - https://security-tracker.debian.org/tracker/CVE-2016-2781 (Debian: low)
 
-  # ── glibc 2.42 (2025/2026 CVEs — some fixed in 2.43, some no fix yet) ─
+  # ── glibc 2.42 (2025/2026 CVEs — 3 fixed in 2.42-51 via backport, 3 no fix yet) ─
 
   - vulnerability:
       "@id": CVE-2025-15281
@@ -176,9 +176,11 @@ statements:
     products:
       - "@id": pkg:nix/glibc@2.42
     status: not_affected
-    justification: vulnerable_code_not_in_execute_path
+    justification: vulnerable_code_not_present
     impact_statement: >-
-      minio-init does not call wordexp(). Fixed in glibc 2.43.
+      Fixed in nixpkgs glibc 2.42-51 via 2.42-master.patch (cherry-picked
+      from upstream). The vulnerable wordexp WRDE_REUSE+WRDE_APPEND code
+      path has been patched.
 
   - vulnerability:
       "@id": CVE-2026-0861
@@ -188,10 +190,11 @@ statements:
     products:
       - "@id": pkg:nix/glibc@2.42
     status: not_affected
-    justification: vulnerable_code_not_in_execute_path
+    justification: vulnerable_code_not_present
     impact_statement: >-
-      Requires attacker control of alignment params near PTRDIFF_MAX —
-      practically unexploitable. Fixed in glibc 2.43.
+      Fixed in nixpkgs glibc 2.42-51 via 2.42-master.patch (cherry-picked
+      from upstream). The memalign alignment overflow check has been
+      reinstated.
 
   - vulnerability:
       "@id": CVE-2026-0915
@@ -202,9 +205,11 @@ statements:
     products:
       - "@id": pkg:nix/glibc@2.42
     status: not_affected
-    justification: vulnerable_code_not_in_execute_path
+    justification: vulnerable_code_not_present
     impact_statement: >-
-      minio-init does not use getnetbyaddr. Fixed in glibc 2.43.
+      Fixed in nixpkgs glibc 2.42-51 via 2.42-master.patch (cherry-picked
+      from upstream). The getnetbyaddr DNS backend stack leak has been
+      patched.
 
   - vulnerability:
       "@id": CVE-2026-4046
