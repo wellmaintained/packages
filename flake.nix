@@ -29,7 +29,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     sbomify-src = {
-      url = "github:sbomify/sbomify/v0.27.0";
+      url = "github:sbomify/sbomify/v26.1.0";
       flake = false;
     };
     sbomify-action-src = {

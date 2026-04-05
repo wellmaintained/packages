@@ -2,7 +2,7 @@
 
 pkgs.stdenv.mkDerivation {
   pname = "sbomify-frontend-stack";
-  version = "0.27.0";
+  version = "26.1.0";
   src = sbomifySrc;
 
   nativeBuildInputs = [ pkgs.bun pkgs.nodejs_22 pkgs.bun2nix.hook ];

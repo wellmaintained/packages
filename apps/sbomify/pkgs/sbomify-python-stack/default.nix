@@ -2,7 +2,7 @@
 
 pkgs.stdenv.mkDerivation {
   pname = "sbomify-python-stack";
-  version = "0.27.0";
+  version = "26.1.0";
   src = sbomifySrc;
 
   nativeBuildInputs = [ sbomifyVenv ];
