@@ -24,8 +24,7 @@ pkgs.buildCompliantImage {
   packages = [
     sbomifyPythonStack
     sbomifyFrontendStack
-    pkgs.bashInteractive
-    pkgs.coreutils
+    pkgs.busybox
     pkgs.cacert
     pkgs.osv-scanner
     pkgs.cosign

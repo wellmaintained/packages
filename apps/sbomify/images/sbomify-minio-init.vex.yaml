@@ -147,25 +147,6 @@ statements:
       References:
       - https://developer.arm.com/Arm%20Security%20Center/GCC%20Stack%20Protector%20Vulnerability%20AArch64
 
-  # ── coreutils 9.10 ──────────────────────────────────────────────────
-
-  - vulnerability:
-      "@id": CVE-2016-2781
-      name: CVE-2016-2781
-      description: >-
-        chroot in GNU coreutils does not properly restrict additional
-        supplementary group privileges after changing to a new root directory.
-    products:
-      - "@id": pkg:nix/coreutils@9.10
-    status: affected
-    action_statement: >-
-      The chroot binary is present in the image via coreutils even though
-      it is not used by our workloads. Planned mitigation: replace
-      coreutils with busybox in container images.
-
-      References:
-      - https://security-tracker.debian.org/tracker/CVE-2016-2781 (Debian: low)
-
   # ── glibc 2.42 (2025/2026 CVEs — 3 fixed in 2.42-51 via backport, 3 no fix yet) ─
 
   - vulnerability:
