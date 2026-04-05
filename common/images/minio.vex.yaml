@@ -138,9 +138,12 @@ statements:
     products:
       - "@id": pkg:nix/gcc@15.2.0
     status: not_affected
-    justification: vulnerable_code_not_present
+    justification: vulnerable_code_not_in_execute_path
     impact_statement: >-
-      AArch64-only vulnerability — our images are built for x86_64.
+      AArch64-only vulnerability — the flawed stack protector logic only
+      affects AArch64 code generation. Our images are built exclusively
+      for x86_64. GCC's AArch64 backend is present but not exercised.
+      Re-evaluate if ARM/AArch64 image builds are introduced.
 
       References:
       - https://developer.arm.com/Arm%20Security%20Center/GCC%20Stack%20Protector%20Vulnerability%20AArch64
@@ -228,8 +231,9 @@ statements:
     status: not_affected
     justification: vulnerable_code_not_in_execute_path
     impact_statement: >-
-      MinIO (Go binary) uses Go's net package, not glibc's gethostbyaddr.
-      No upstream fix yet (affects through glibc 2.43).
+      MinIO is a statically-linked Go binary that uses Go's pure-Go DNS
+      resolver by default, bypassing glibc's gethostbyaddr entirely. No
+      upstream fix yet (affects through glibc 2.43).
 
   - vulnerability:
       "@id": CVE-2026-4438

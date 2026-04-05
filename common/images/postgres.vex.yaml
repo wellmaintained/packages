@@ -76,12 +76,16 @@ statements:
     products:
       - "@id": pkg:nix/gcc@15.2.0
     status: not_affected
-    justification: vulnerable_code_not_present
+    justification: vulnerable_code_not_in_execute_path
     impact_statement: >-
-      AArch64-only vulnerability — our images are built for x86_64 where
-      the stack protector works correctly. Additionally disputed by the GCC
-      project as a missed hardening bug, not a vulnerability. Requires a
-      pre-existing buffer overflow to exploit.
+      AArch64-only vulnerability — the flawed stack protector logic only
+      affects code generated for AArch64. Our images are built exclusively
+      for x86_64 where the stack protector works correctly. GCC's AArch64
+      backend is present in the toolchain but is not exercised during our
+      x86_64 builds. Re-evaluate if ARM/AArch64 image builds are introduced.
+
+      Additionally disputed by the GCC project as a missed hardening bug,
+      not a vulnerability. Requires a pre-existing buffer overflow to exploit.
 
       References:
       - https://developer.arm.com/Arm%20Security%20Center/GCC%20Stack%20Protector%20Vulnerability%20AArch64 (Arm advisory: AArch64 only)
@@ -248,12 +252,19 @@ statements:
         crafted DNS response as valid answers.
     products:
       - "@id": pkg:nix/glibc@2.42
-    status: not_affected
-    justification: vulnerable_code_not_in_execute_path
-    impact_statement: >-
-      PostgreSQL uses getaddrinfo for name resolution, not the deprecated
-      gethostbyaddr. The vulnerable code path is not exercised. No upstream
-      fix yet (affects through glibc 2.43).
+    status: affected
+    action_statement: >-
+      PostgreSQL uses getnameinfo() for reverse DNS lookups in hostname-based
+      pg_hba.conf authentication. On glibc, getnameinfo routes through the
+      same NSS DNS backend as gethostbyaddr. A crafted DNS response from a
+      compromised resolver could cause PostgreSQL to accept a spoofed
+      hostname, potentially bypassing host-based access controls.
+
+      No upstream fix yet (affects through glibc 2.43). Mitigated in
+      deployments that use IP-based pg_hba.conf rules instead of hostnames.
+
+      References:
+      - https://www.postgresql.org/docs/current/auth-pg-hba-conf.html
 
   - vulnerability:
       "@id": CVE-2026-4438

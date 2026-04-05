@@ -138,9 +138,12 @@ statements:
     products:
       - "@id": pkg:nix/gcc@15.2.0
     status: not_affected
-    justification: vulnerable_code_not_present
+    justification: vulnerable_code_not_in_execute_path
     impact_statement: >-
-      AArch64-only vulnerability — our images are built for x86_64.
+      AArch64-only vulnerability — the flawed stack protector logic only
+      affects AArch64 code generation. Our images are built exclusively
+      for x86_64. GCC's AArch64 backend is present but not exercised.
+      Re-evaluate if ARM/AArch64 image builds are introduced.
 
       References:
       - https://developer.arm.com/Arm%20Security%20Center/GCC%20Stack%20Protector%20Vulnerability%20AArch64
@@ -225,11 +228,16 @@ statements:
         as valid answers.
     products:
       - "@id": pkg:nix/glibc@2.42
-    status: not_affected
-    justification: vulnerable_code_not_in_execute_path
-    impact_statement: >-
-      Keycloak (Java) uses Java's InetAddress, not glibc's gethostbyaddr.
-      No upstream fix yet (affects through glibc 2.43).
+    status: affected
+    action_statement: >-
+      Java's InetAddress.getHostName() performs reverse DNS lookups via
+      getnameinfo()/gethostbyaddr() on glibc-based containers. Keycloak
+      uses this for audit logging and client identification. A crafted DNS
+      response from a compromised resolver could return spoofed hostnames.
+
+      No upstream fix yet (affects through glibc 2.43). Reduced severity:
+      Keycloak sits behind a reverse proxy; reverse DNS is used for
+      logging, not access control decisions.
 
   - vulnerability:
       "@id": CVE-2026-4438
