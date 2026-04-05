@@ -45,6 +45,9 @@ pkgs.buildCompliantImage {
     pkgs.jq
   ];
 
+  # CVE-2026-4046: iconv assertion crash via IBM1390/IBM1399 charsets (no upstream fix)
+  stripFromLayers = [ "lib/gconv/IBM1390.so" "lib/gconv/IBM1399.so" ];
+
   extraContents = [
     sbomifyKeycloakAssets
     keycloakOptLink
