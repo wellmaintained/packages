@@ -133,9 +133,83 @@
           imageConfig ? {},
           extraMetadata ? {},
           fakeRootCommands ? "",
+          stripFromLayers ? [],
           sbomExtraDeps ? []
         }:
           let
+            # Post-process the image tarball to remove files matching
+            # the supplied glob patterns from individual layers.  Because
+            # buildLayeredImage puts each store path in its own layer,
+            # fakeRootCommands can only affect the customisation layer —
+            # it cannot reach files inside store-path layers.  This
+            # derivation unpacks each layer, deletes matching files, and
+            # repacks.
+            stripFromImage = rawImage:
+              if stripFromLayers == [] then rawImage else
+              let
+                # Build a grep pattern that matches any of the strip globs
+                # so we only unpack layers that contain relevant files.
+                # Convert globs to grep-safe fixed strings (the directory
+                # components before any wildcard).
+                grepPatterns = builtins.map
+                  (pat: builtins.head (builtins.split "\\*" pat))
+                  stripFromLayers;
+                grepArgs = builtins.concatStringsSep " "
+                  (builtins.map (p: "-e '${p}'") grepPatterns);
+              in
+              pkgs.runCommand "${name}-stripped.tar.gz" {
+                nativeBuildInputs = [ pkgs.gnutar pkgs.gzip pkgs.findutils pkgs.jq ];
+              } ''
+                workdir=$(mktemp -d)
+                cd "$workdir"
+                tar xzf ${rawImage}
+                config_file=$(jq -r '.[0].Config' manifest.json)
+                for layer in */layer.tar; do
+                  # Write listing to file to avoid SIGPIPE from grep -q
+                  # closing the pipe (stdenv sets pipefail)
+                  if tar tf "$layer" 2>/dev/null > "$workdir/listing.tmp" \
+                     && grep -q ${grepArgs} "$workdir/listing.tmp"; then
+                    old_dir=$(dirname "$layer")
+                    old_hash="$old_dir"
+                    mkdir -p "$old_dir/contents"
+                    tar xf "$layer" -C "$old_dir/contents"
+                    chmod -R u+w "$old_dir/contents"
+                    find "$old_dir/contents" \( \
+                      ${builtins.concatStringsSep " -o " (
+                        builtins.map (pat: ''-path "*/${pat}"'') stripFromLayers
+                      )} \
+                    \) -delete
+                    tar cf "$old_dir/layer.tar" -C "$old_dir/contents" .
+                    rm -rf "$old_dir/contents"
+
+                    # Recompute layer hash and rename directory
+                    new_hash=$(sha256sum "$old_dir/layer.tar" | cut -d' ' -f1)
+                    if [ "$new_hash" != "$old_hash" ]; then
+                      mv "$old_dir" "$new_hash"
+                      # Update manifest.json
+                      jq --arg old "$old_hash" --arg new "$new_hash" \
+                        '.[0].Layers |= map(sub($old; $new))' manifest.json > manifest.tmp
+                      mv manifest.tmp manifest.json
+                      # Update config rootfs.diff_ids
+                      jq --arg old "sha256:$old_hash" --arg new "sha256:$new_hash" \
+                        '.rootfs.diff_ids |= map(if . == $old then $new else . end)' \
+                        "$config_file" > config.tmp
+                      mv config.tmp "$config_file"
+                    fi
+                  fi
+                done
+                # Config content changed, so its filename (content hash) must update too
+                new_config_hash=$(sha256sum "$config_file" | cut -d' ' -f1)
+                new_config_name="$new_config_hash.json"
+                if [ "$new_config_name" != "$config_file" ]; then
+                  mv "$config_file" "$new_config_name"
+                  jq --arg old "$config_file" --arg new "$new_config_name" \
+                    '.[0].Config = $new' manifest.json > manifest.tmp
+                  mv manifest.tmp manifest.json
+                fi
+                tar czf "$out" *
+                rm -rf "$workdir"
+              '';
             # Build the SBOM from a closure of all packages.
             # Pass individual packages + sbomExtraDeps as extraPaths so the
             # buildtime walker can reach their derivation attributes.
@@ -168,13 +242,15 @@
               "org.opencontainers.image.source" = packager.url;
             } else {});
 
-            image = (pkgs.dockerTools.buildLayeredImage {
+            rawImage = pkgs.dockerTools.buildLayeredImage {
               inherit name tag fakeRootCommands;
               contents = packages ++ extraContents;
               config = imageConfig // {
                 Labels = (imageConfig.Labels or {}) // labels;
               };
-            }).overrideAttrs (old: {
+            };
+
+            image = (stripFromImage rawImage).overrideAttrs (old: {
               passthru = (old.passthru or {}) // {
                 inherit sbom patchedSbom imageMetadata;
               };
