@@ -219,11 +219,12 @@ statements:
         iconv() crashes when converting from IBM1390 or IBM1399 charsets.
     products:
       - "@id": pkg:nix/glibc@2.42
-    status: not_affected
-    justification: vulnerable_code_not_in_execute_path
-    impact_statement: >-
-      MinIO does not use iconv with IBM1390/IBM1399 charsets. No upstream
-      fix yet (affects through glibc 2.43).
+    status: affected
+    action_statement: >-
+      The vulnerable IBM1390.so and IBM1399.so gconv modules are present
+      in the glibc installation. No upstream fix yet (affects through
+      glibc 2.43). Impact is DoS only. Planned mitigation: strip these
+      modules from production image layers.
 
   - vulnerability:
       "@id": CVE-2026-4437

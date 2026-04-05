@@ -241,12 +241,16 @@ statements:
         or IBM1399 character sets.
     products:
       - "@id": pkg:nix/glibc@2.42
-    status: not_affected
-    justification: vulnerable_code_not_in_execute_path
-    impact_statement: >-
-      PostgreSQL uses UTF-8 encoding and does not convert to/from IBM1390
-      or IBM1399 character sets. The vulnerable iconv conversion is not
-      invoked. No upstream fix yet (affects through glibc 2.43).
+    status: affected
+    action_statement: >-
+      The vulnerable IBM1390.so and IBM1399.so gconv modules are present
+      in the glibc installation. No upstream fix yet (affects through
+      glibc 2.43). Our workloads do not use these charsets, but the
+      modules are loadable. Impact is DoS only (crash, no RCE).
+
+      Planned mitigation: strip IBM1390.so and IBM1399.so from production
+      image layers via fakeRootCommands. The CVE advisory itself recommends
+      this as the trivial mitigation.
 
   - vulnerability:
       "@id": CVE-2026-4437
