@@ -158,11 +158,11 @@ statements:
         supplementary group privileges after changing to a new root directory.
     products:
       - "@id": pkg:nix/coreutils@9.10
-    status: not_affected
-    justification: vulnerable_code_not_in_execute_path
-    impact_statement: >-
-      The chroot command is not used in our container images — processes run
-      directly in the container namespace. No upstream fix expected.
+    status: affected
+    action_statement: >-
+      The chroot binary is present in the image via coreutils even though
+      it is not used by our workloads. Planned mitigation: replace
+      coreutils with busybox in container images.
 
       References:
       - https://security-tracker.debian.org/tracker/CVE-2016-2781 (Debian: low)
