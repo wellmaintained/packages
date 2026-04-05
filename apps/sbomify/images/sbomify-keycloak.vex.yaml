@@ -20,5 +20,226 @@
 "@context": https://openvex.dev/ns/v0.2.0
 "@id": https://github.com/wellmaintained/packages/vex/sbomify-keycloak
 author: wellmaintained/packages maintainers
-timestamp: "2026-04-04T00:00:00Z"
-statements: []
+timestamp: "2026-04-05T00:00:00Z"
+statements:
+  # ── glibc 2.42 (disputed CVEs) ──────────────────────────────────────
+
+  - vulnerability:
+      "@id": CVE-2019-1010022
+      name: CVE-2019-1010022
+      description: >-
+        Claimed stack guard bypass in glibc NPTL. Disputed by upstream.
+    products:
+      - "@id": pkg:nix/glibc@2.42
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      Disputed by glibc upstream — treated as a non-security bug. Requires
+      a pre-existing stack buffer overflow to exploit. No fix will be issued.
+
+      References:
+      - https://sourceware.org/bugzilla/show_bug.cgi?id=22850 (upstream: not a security bug)
+      - https://security-tracker.debian.org/tracker/CVE-2019-1010022 (Debian: unimportant)
+
+  - vulnerability:
+      "@id": CVE-2019-1010023
+      name: CVE-2019-1010023
+      description: >-
+        Claimed trampoline pointer overwrite in glibc. Disputed by upstream.
+    products:
+      - "@id": pkg:nix/glibc@2.42
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      Disputed by glibc upstream. No fix will be issued.
+
+      References:
+      - https://security-tracker.debian.org/tracker/CVE-2019-1010023 (Debian: unimportant)
+
+  - vulnerability:
+      "@id": CVE-2019-1010024
+      name: CVE-2019-1010024
+      description: >-
+        Claimed ASLR bypass via /proc/self/maps in glibc. Disputed by upstream.
+    products:
+      - "@id": pkg:nix/glibc@2.42
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      Disputed by glibc upstream. Requires local access to /proc/self/maps.
+      No fix will be issued.
+
+      References:
+      - https://security-tracker.debian.org/tracker/CVE-2019-1010024 (Debian: unimportant)
+
+  - vulnerability:
+      "@id": CVE-2019-1010025
+      name: CVE-2019-1010025
+      description: >-
+        Claimed heap address disclosure via __abort_msg in glibc. Disputed by upstream.
+    products:
+      - "@id": pkg:nix/glibc@2.42
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      Disputed by glibc upstream. No remote exploitation path. No fix will
+      be issued.
+
+      References:
+      - https://security-tracker.debian.org/tracker/CVE-2019-1010025 (Debian: unimportant)
+
+  - vulnerability:
+      "@id": CVE-2010-4756
+      name: CVE-2010-4756
+      description: >-
+        glibc glob implementation allows resource exhaustion via crafted
+        glob expressions.
+    products:
+      - "@id": pkg:nix/glibc@2.42
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      Keycloak does not use glob() on user-supplied input. Ancient CVE from
+      2010, no upstream fix planned.
+
+      References:
+      - https://security-tracker.debian.org/tracker/CVE-2010-4756 (Debian: unimportant)
+
+  # ── openssl 3.6.1 ───────────────────────────────────────────────────
+
+  - vulnerability:
+      "@id": CVE-2026-2673
+      name: CVE-2026-2673
+      description: >-
+        OpenSSL TLS 1.3 server may fail to negotiate the preferred post-quantum
+        key exchange group when using the DEFAULT keyword in group configuration.
+    products:
+      - "@id": pkg:nix/openssl@3.6.1
+    status: affected
+    action_statement: >-
+      Fix available in OpenSSL 3.6.2 (released 2026-03-13). Waiting on
+      upstream nixpkgs to bump openssl from 3.6.1 to 3.6.2.
+
+      Reduced severity: Keycloak sits behind a reverse proxy and is not
+      directly internet-facing. The connection still uses a secure classical
+      key exchange.
+
+      References:
+      - https://openssl-library.org/news/secadv/20260313.txt (advisory)
+
+  # ── gcc 15.2.0 ──────────────────────────────────────────────────────
+
+  - vulnerability:
+      "@id": CVE-2023-4039
+      name: CVE-2023-4039
+      description: >-
+        GCC -fstack-protector fails to detect buffer overflows in
+        dynamically-sized local variables on AArch64.
+    products:
+      - "@id": pkg:nix/gcc@15.2.0
+    status: not_affected
+    justification: vulnerable_code_not_present
+    impact_statement: >-
+      AArch64-only vulnerability — our images are built for x86_64.
+
+      References:
+      - https://developer.arm.com/Arm%20Security%20Center/GCC%20Stack%20Protector%20Vulnerability%20AArch64
+
+  # ── coreutils 9.10 ──────────────────────────────────────────────────
+
+  - vulnerability:
+      "@id": CVE-2016-2781
+      name: CVE-2016-2781
+      description: >-
+        chroot in GNU coreutils does not properly restrict additional
+        supplementary group privileges after changing to a new root directory.
+    products:
+      - "@id": pkg:nix/coreutils@9.10
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      The chroot command is not used in our container images — processes run
+      directly in the container namespace. No upstream fix expected.
+
+      References:
+      - https://security-tracker.debian.org/tracker/CVE-2016-2781 (Debian: low)
+
+  # ── glibc 2.42 (2025/2026 CVEs — fixed in 2.43, not yet in nixpkgs) ─
+
+  - vulnerability:
+      "@id": CVE-2025-15281
+      name: CVE-2025-15281
+      description: >-
+        wordexp with WRDE_REUSE + WRDE_APPEND returns uninitialized memory.
+    products:
+      - "@id": pkg:nix/glibc@2.42
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      Keycloak (Java) does not call wordexp(). Fixed in glibc 2.43.
+
+  - vulnerability:
+      "@id": CVE-2026-0861
+      name: CVE-2026-0861
+      description: >-
+        Integer overflow in memalign when alignment is near PTRDIFF_MAX.
+    products:
+      - "@id": pkg:nix/glibc@2.42
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      Requires attacker control of alignment params near PTRDIFF_MAX —
+      practically unexploitable. Fixed in glibc 2.43.
+
+  - vulnerability:
+      "@id": CVE-2026-0915
+      name: CVE-2026-0915
+      description: >-
+        getnetbyaddr with DNS backend leaks stack contents for zero-valued
+        network queries.
+    products:
+      - "@id": pkg:nix/glibc@2.42
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      Keycloak does not use getnetbyaddr. Fixed in glibc 2.43.
+
+  - vulnerability:
+      "@id": CVE-2026-4046
+      name: CVE-2026-4046
+      description: >-
+        iconv() crashes when converting from IBM1390 or IBM1399 charsets.
+    products:
+      - "@id": pkg:nix/glibc@2.42
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      Keycloak does not use iconv with IBM1390/IBM1399 charsets. Fixed in
+      glibc 2.43.
+
+  - vulnerability:
+      "@id": CVE-2026-4437
+      name: CVE-2026-4437
+      description: >-
+        gethostbyaddr DNS response parsing may treat non-answer sections
+        as valid answers.
+    products:
+      - "@id": pkg:nix/glibc@2.42
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      Keycloak (Java) uses Java's InetAddress, not glibc's gethostbyaddr.
+      Fixed in glibc 2.43.
+
+  - vulnerability:
+      "@id": CVE-2026-4438
+      name: CVE-2026-4438
+      description: >-
+        gethostbyaddr with DNS backend may return invalid DNS hostnames.
+    products:
+      - "@id": pkg:nix/glibc@2.42
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      Keycloak (Java) uses Java's InetAddress, not glibc's gethostbyaddr.
+      Fixed in glibc 2.43.

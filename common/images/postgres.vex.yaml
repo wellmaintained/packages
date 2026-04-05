@@ -20,7 +20,7 @@
 "@context": https://openvex.dev/ns/v0.2.0
 "@id": https://github.com/wellmaintained/packages/vex/postgres
 author: wellmaintained/packages maintainers
-timestamp: "2026-04-04T00:00:00Z"
+timestamp: "2026-04-05T00:00:00Z"
 statements:
   - vulnerability:
       "@id": CVE-2019-1010022
@@ -86,3 +86,185 @@ statements:
       References:
       - https://developer.arm.com/Arm%20Security%20Center/GCC%20Stack%20Protector%20Vulnerability%20AArch64 (Arm advisory: AArch64 only)
       - https://github.com/metaredteam/external-disclosures/security/advisories/GHSA-x7ch-h5rf-w2mf (disclosure)
+
+  - vulnerability:
+      "@id": CVE-2019-1010023
+      name: CVE-2019-1010023
+      description: >-
+        Claimed trampoline pointer overwrite in glibc. Disputed by upstream.
+    products:
+      - "@id": pkg:nix/glibc@2.42
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      Disputed by glibc upstream. Requires attacker-controlled data in
+      specific memory layout — prerequisite conditions do not exist in a
+      normal PostgreSQL deployment. No fix will be issued.
+
+      References:
+      - https://security-tracker.debian.org/tracker/CVE-2019-1010023 (Debian: unimportant)
+
+  - vulnerability:
+      "@id": CVE-2019-1010024
+      name: CVE-2019-1010024
+      description: >-
+        Claimed ASLR bypass via /proc/self/maps in glibc. Disputed by upstream.
+    products:
+      - "@id": pkg:nix/glibc@2.42
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      Disputed by glibc upstream. ASLR bypass via /proc/self/maps requires
+      local access to read the process memory map; the container does not
+      expose this to external users. This is an OS information leak, not a
+      glibc vulnerability. No fix will be issued.
+
+      References:
+      - https://security-tracker.debian.org/tracker/CVE-2019-1010024 (Debian: unimportant)
+
+  - vulnerability:
+      "@id": CVE-2019-1010025
+      name: CVE-2019-1010025
+      description: >-
+        Claimed heap address disclosure via __abort_msg in glibc. Disputed by upstream.
+    products:
+      - "@id": pkg:nix/glibc@2.42
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      Disputed by glibc upstream. The __abort_msg symbol can leak heap
+      addresses only to a local attacker who already has access to the
+      process. No remote exploitation path. No fix will be issued.
+
+      References:
+      - https://security-tracker.debian.org/tracker/CVE-2019-1010025 (Debian: unimportant)
+
+  - vulnerability:
+      "@id": CVE-2010-4756
+      name: CVE-2010-4756
+      description: >-
+        glibc glob implementation allows resource exhaustion via crafted
+        glob expressions.
+    products:
+      - "@id": pkg:nix/glibc@2.42
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      The glob resource exhaustion requires an attacker to supply crafted
+      glob patterns to a program that passes them to glob(). PostgreSQL does
+      not use glob() on user-supplied input. Ancient CVE from 2010 with no
+      upstream fix planned — glibc treats this as expected behavior.
+
+      References:
+      - https://security-tracker.debian.org/tracker/CVE-2010-4756 (Debian: unimportant)
+
+  - vulnerability:
+      "@id": CVE-2016-2781
+      name: CVE-2016-2781
+      description: >-
+        chroot in GNU coreutils does not properly restrict additional
+        supplementary group privileges after changing to a new root directory.
+    products:
+      - "@id": pkg:nix/coreutils@9.10
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      The chroot command is not used in our container images — processes run
+      directly in the container namespace. Ancient CVE from 2016 with no
+      upstream fix expected; coreutils maintainers consider the behavior
+      documented and expected.
+
+      References:
+      - https://security-tracker.debian.org/tracker/CVE-2016-2781 (Debian: low)
+
+  # ── glibc 2.42 (2025/2026 CVEs — fixed in 2.43, not yet in nixpkgs) ─
+
+  - vulnerability:
+      "@id": CVE-2025-15281
+      name: CVE-2025-15281
+      description: >-
+        wordexp with WRDE_REUSE + WRDE_APPEND returns uninitialized memory
+        in we_wordv; subsequent wordfree may abort the process.
+    products:
+      - "@id": pkg:nix/glibc@2.42
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      PostgreSQL does not call wordexp(). The vulnerable code path is not
+      reachable in our deployment. Fixed in glibc 2.43.
+
+  - vulnerability:
+      "@id": CVE-2026-0861
+      name: CVE-2026-0861
+      description: >-
+        Integer overflow in memalign/posix_memalign/aligned_alloc when
+        alignment is near PTRDIFF_MAX, leading to potential heap corruption.
+    products:
+      - "@id": pkg:nix/glibc@2.42
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      Exploitation requires attacker control of both size and alignment
+      arguments with values near PTRDIFF_MAX. In practice, alignment values
+      are constrained constants (page size, struct size). No path for
+      external attacker to control these parameters. Fixed in glibc 2.43.
+
+  - vulnerability:
+      "@id": CVE-2026-0915
+      name: CVE-2026-0915
+      description: >-
+        getnetbyaddr with nsswitch.conf DNS backend for networks leaks
+        stack contents to the configured DNS resolver for zero-valued
+        network queries.
+    products:
+      - "@id": pkg:nix/glibc@2.42
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      Our container images do not use getnetbyaddr or configure nsswitch.conf
+      with DNS backend for the networks database. The vulnerable code path
+      is not reachable. Fixed in glibc 2.43.
+
+  - vulnerability:
+      "@id": CVE-2026-4046
+      name: CVE-2026-4046
+      description: >-
+        iconv() crashes with assertion failure when converting from IBM1390
+        or IBM1399 character sets.
+    products:
+      - "@id": pkg:nix/glibc@2.42
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      PostgreSQL uses UTF-8 encoding and does not convert to/from IBM1390
+      or IBM1399 character sets. The vulnerable iconv conversion is not
+      invoked. Fixed in glibc 2.43.
+
+  - vulnerability:
+      "@id": CVE-2026-4437
+      name: CVE-2026-4437
+      description: >-
+        gethostbyaddr with DNS backend may treat non-answer sections of a
+        crafted DNS response as valid answers.
+    products:
+      - "@id": pkg:nix/glibc@2.42
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      PostgreSQL uses getaddrinfo for name resolution, not the deprecated
+      gethostbyaddr. The vulnerable code path is not exercised. Fixed in
+      glibc 2.43.
+
+  - vulnerability:
+      "@id": CVE-2026-4438
+      name: CVE-2026-4438
+      description: >-
+        gethostbyaddr with DNS backend may return invalid DNS hostnames.
+    products:
+      - "@id": pkg:nix/glibc@2.42
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      PostgreSQL uses getaddrinfo for name resolution, not the deprecated
+      gethostbyaddr. The vulnerable code path is not exercised. Fixed in
+      glibc 2.43.
