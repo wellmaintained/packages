@@ -4,21 +4,611 @@
 #
 # Add a statement when a CVE is triaged as not_affected or mitigated.
 # See https://openvex.dev for the full specification.
-#
-# Example:
-#   statements:
-#     - vulnerability:
-#         "@id": CVE-2024-XXXXX
-#         name: CVE-2024-XXXXX
-#       products:
-#         - "@id": "pkg:nix/packagename@version"
-#       status: not_affected
-#       justification: vulnerable_code_not_in_execute_path
-#       impact_statement: >-
-#         The affected function is never called in our deployment.
 
 "@context": https://openvex.dev/ns/v0.2.0
 "@id": https://github.com/wellmaintained/packages/vex/sbomify-app
 author: wellmaintained/packages maintainers
-timestamp: "2026-04-04T00:00:00Z"
-statements: []
+timestamp: "2026-04-05T00:00:00Z"
+statements:
+
+  # ───────────────────────────────────────────────────────────────────────
+  # Nix system packages — same triage as other images (postgres, minio, etc.)
+  # ───��────────────────────────────────────���────────────────────────────��─
+
+  - vulnerability:
+      "@id": CVE-2019-1010022
+      name: CVE-2019-1010022
+      description: >-
+        Claimed stack guard bypass in glibc NPTL. Disputed by upstream.
+    products:
+      - "@id": pkg:nix/glibc@2.42
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      Disputed by glibc upstream — treated as a non-security bug with no
+      real threat. Requires a pre-existing stack buffer overflow to exploit,
+      making the bypass academic. No fix will be issued.
+
+      References:
+      - https://sourceware.org/bugzilla/show_bug.cgi?id=22850 (upstream: not a security bug)
+      - https://security-tracker.debian.org/tracker/CVE-2019-1010022 (Debian: unimportant)
+      - https://ubuntu.com/security/CVE-2019-1010022 (Ubuntu: negligible)
+
+  - vulnerability:
+      "@id": CVE-2019-1010023
+      name: CVE-2019-1010023
+      description: >-
+        Running ldd on a malicious ELF leads to code execution via
+        re-mapping of a loaded library. Disputed by upstream.
+    products:
+      - "@id": pkg:nix/glibc@2.42
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      Disputed by glibc upstream — "not a security bug." Requires an attacker
+      to send two ELF files and convince the victim to run ldd on them. The
+      ldd utility is not used at runtime in this container.
+
+      References:
+      - https://sourceware.org/bugzilla/show_bug.cgi?id=22853 (upstream: not a security bug)
+      - https://security-tracker.debian.org/tracker/CVE-2019-1010023 (Debian: unimportant)
+
+  - vulnerability:
+      "@id": CVE-2019-1010024
+      name: CVE-2019-1010024
+      description: >-
+        GNU glibc ASLR bypass via cache of thread stack and heap addresses.
+        Disputed by upstream.
+    products:
+      - "@id": pkg:nix/glibc@2.42
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      Disputed by glibc upstream — "ASLR bypass itself is not a vulnerability."
+      Requires pre-existing code execution. No fix will be issued.
+
+      References:
+      - https://sourceware.org/bugzilla/show_bug.cgi?id=22852 (upstream: not a security bug)
+      - https://security-tracker.debian.org/tracker/CVE-2019-1010024 (Debian: unimportant)
+
+  - vulnerability:
+      "@id": CVE-2019-1010025
+      name: CVE-2019-1010025
+      description: >-
+        GNU glibc heap address information leak via pthread thread creation.
+        Disputed by upstream.
+    products:
+      - "@id": pkg:nix/glibc@2.42
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      Disputed by glibc upstream — "ASLR bypass itself is not a vulnerability."
+      Attacker may guess heap addresses of pthread-created threads. Requires
+      pre-existing code execution. No fix will be issued.
+
+      References:
+      - https://sourceware.org/bugzilla/show_bug.cgi?id=22851 (upstream: not a security bug)
+      - https://security-tracker.debian.org/tracker/CVE-2019-1010025 (Debian: unimportant)
+
+  - vulnerability:
+      "@id": CVE-2010-4756
+      name: CVE-2010-4756
+      description: >-
+        glibc glob implementation allows resource exhaustion via crafted
+        glob patterns (GLOB_LIMIT bypass).
+    products:
+      - "@id": pkg:nix/glibc@2.42
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      Ancient (2010) denial-of-service via crafted glob patterns. Our
+      application does not expose glob expansion to untrusted input. Disputed
+      by upstream as a configuration/resource-limit issue rather than a
+      library bug. No fix will be issued.
+
+      References:
+      - https://security-tracker.debian.org/tracker/CVE-2010-4756 (Debian: unimportant)
+
+  - vulnerability:
+      "@id": CVE-2025-15281
+      name: CVE-2025-15281
+      description: >-
+        Use of uninitialized resource in glibc wordexp with WRDE_REUSE +
+        WRDE_APPEND flags, causing crash on wordfree.
+    products:
+      - "@id": pkg:nix/glibc@2.42
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      The wordexp function is a shell-word-expansion C function. Python/Django
+      does not call wordexp — the vulnerable code path is never exercised.
+      Fixed in glibc 2.43 (not yet in nixpkgs).
+
+  - vulnerability:
+      "@id": CVE-2026-0861
+      name: CVE-2026-0861
+      description: >-
+        Integer overflow in glibc memalign/posix_memalign/aligned_alloc
+        leading to heap corruption.
+    products:
+      - "@id": pkg:nix/glibc@2.42
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      Exploitation requires attacker control of both size and alignment
+      arguments to memalign. Python/Django does not expose these C allocation
+      functions to user-controlled input. Fixed in glibc 2.43 (not yet in
+      nixpkgs).
+
+  - vulnerability:
+      "@id": CVE-2026-0915
+      name: CVE-2026-0915
+      description: >-
+        glibc getnetbyaddr/getnetbyaddr_r leak stack contents to DNS
+        resolver when called with network value of zero. Bug present since 1996.
+    products:
+      - "@id": pkg:nix/glibc@2.42
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      Python/Django does not call getnetbyaddr with zero network values.
+      The affected C function is not in the application's execution path.
+      Fixed in glibc 2.43 (not yet in nixpkgs).
+
+  - vulnerability:
+      "@id": CVE-2026-4046
+      name: CVE-2026-4046
+      description: >-
+        Reachable assertion failure in glibc iconv when processing untrusted
+        input, causing crash (DoS). GLIBC-SA-2026-0007.
+    products:
+      - "@id": pkg:nix/glibc@2.42
+    status: not_affected
+    justification: vulnerable_code_not_present
+    impact_statement: >-
+      The vulnerable IBM1390/IBM1399 gconv modules have been stripped from
+      the image via stripFromLayers. Additionally, Python handles character
+      encoding internally via its own codec system, not glibc iconv. Fixed
+      in glibc 2.43 (not yet in nixpkgs).
+
+  - vulnerability:
+      "@id": CVE-2026-4437
+      name: CVE-2026-4437
+      description: >-
+        DNS specification violation in glibc gethostbyaddr/gethostbyaddr_r —
+        non-answer section of DNS response treated as valid answer.
+    products:
+      - "@id": pkg:nix/glibc@2.42
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      Django uses getaddrinfo (forward lookups), not gethostbyaddr (reverse
+      lookups). The affected code path is not exercised. Patch proposed
+      upstream (sourceware bug #34014), not yet in a released glibc.
+
+  - vulnerability:
+      "@id": CVE-2026-4438
+      name: CVE-2026-4438
+      description: >-
+        Improper input validation in glibc gethostbyaddr/gethostbyaddr_r —
+        can return invalid DNS hostnames violating DNS specs, potentially
+        bypassing hostname-based access controls.
+    products:
+      - "@id": pkg:nix/glibc@2.42
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      Django uses getaddrinfo (forward lookups), not gethostbyaddr (reverse
+      lookups). The application does not use reverse DNS for security
+      decisions. Patch proposed upstream, not yet in a released glibc.
+
+  - vulnerability:
+      "@id": CVE-2026-2673
+      name: CVE-2026-2673
+      description: >-
+        OpenSSL TLS 1.3 server may fail to negotiate the preferred post-quantum
+        key exchange group when using the DEFAULT keyword in group configuration.
+    products:
+      - "@id": pkg:nix/openssl@3.6.1
+    status: affected
+    action_statement: >-
+      Fix available in OpenSSL 3.6.2 (released 2026-03-13). Waiting on
+      upstream nixpkgs to bump openssl from 3.6.1 to 3.6.2.
+
+      Reduced severity in our deployment: the sbomify-app sits behind a
+      reverse proxy and is not directly internet-facing. The vulnerability
+      only affects TLS 1.3 server group negotiation when using the DEFAULT
+      keyword — the connection still uses a secure classical key exchange
+      (e.g. X25519). No data exposure, authentication bypass, or denial
+      of service is possible.
+
+      References:
+      - https://openssl-library.org/news/secadv/20260313.txt (advisory)
+      - https://github.com/openssl/openssl/commit/85977e013f32ceb96aa034c0e741adddc1a05e34 (fix)
+
+  - vulnerability:
+      "@id": CVE-2023-4039
+      name: CVE-2023-4039
+      description: >-
+        GCC -fstack-protector fails to detect buffer overflows in
+        dynamically-sized local variables on AArch64.
+    products:
+      - "@id": pkg:nix/gcc@15.2.0
+    status: not_affected
+    justification: vulnerable_code_not_present
+    impact_statement: >-
+      AArch64-only vulnerability — our images are built for x86_64 where
+      the stack protector works correctly. Additionally disputed by the GCC
+      project as a missed hardening bug, not a vulnerability. Requires a
+      pre-existing buffer overflow to exploit.
+
+      References:
+      - https://developer.arm.com/Arm%20Security%20Center/GCC%20Stack%20Protector%20Vulnerability%20AArch64 (Arm advisory: AArch64 only)
+      - https://github.com/metaredteam/external-disclosures/security/advisories/GHSA-x7ch-h5rf-w2mf (disclosure)
+
+  # CVE-2016-2781 (coreutils) — REMOVED: coreutils replaced with busybox
+  # in sbomify-app image. The vulnerable package is no longer present.
+
+  # ───────────────────────────────────────────────────────────────────────
+  # npm/frontend build dependencies — bun2nix packages
+  #
+  # These packages are used ONLY during the Nix build to produce static
+  # JS/CSS assets via `bun install` + `vite build`. The output derivation
+  # ($out/sbomify/static/) contains only compiled frontend assets — no npm
+  # package code executes at runtime in the container.
+  #
+  # Status: not_affected
+  # Justification: vulnerable_code_not_in_execute_path
+  # ─────────────────────────────────────��─────────────────────────────────
+
+  # --- minimatch (3 GHSAs × 4 versions = 12 alerts) ---
+
+  - vulnerability:
+      "@id": GHSA-7r86-cg39-jmmj
+      name: GHSA-7r86-cg39-jmmj
+      description: >-
+        minimatch ReDoS vulnerability via crafted glob patterns.
+    products:
+      - "@id": pkg:npm/minimatch@3.1.2
+      - "@id": pkg:npm/minimatch@5.1.6
+      - "@id": pkg:npm/minimatch@9.0.5
+      - "@id": pkg:npm/minimatch@10.1.1
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      Build-only dependency used during Nix derivation build (bun install +
+      vite build). No npm code executes in the runtime container — only
+      static JS/CSS assets are included in the image.
+
+  - vulnerability:
+      "@id": GHSA-3ppc-4f35-3m26
+      name: GHSA-3ppc-4f35-3m26
+      description: >-
+        minimatch ReDoS vulnerability via crafted glob patterns.
+    products:
+      - "@id": pkg:npm/minimatch@3.1.2
+      - "@id": pkg:npm/minimatch@5.1.6
+      - "@id": pkg:npm/minimatch@9.0.5
+      - "@id": pkg:npm/minimatch@10.1.1
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      Build-only dependency used during Nix derivation build (bun install +
+      vite build). No npm code executes in the runtime container — only
+      static JS/CSS assets are included in the image.
+
+  - vulnerability:
+      "@id": GHSA-23c5-xmqv-rm74
+      name: GHSA-23c5-xmqv-rm74
+      description: >-
+        minimatch ReDoS vulnerability via crafted glob patterns.
+    products:
+      - "@id": pkg:npm/minimatch@3.1.2
+      - "@id": pkg:npm/minimatch@5.1.6
+      - "@id": pkg:npm/minimatch@9.0.5
+      - "@id": pkg:npm/minimatch@10.1.1
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      Build-only dependency used during Nix derivation build (bun install +
+      vite build). No npm code executes in the runtime container — only
+      static JS/CSS assets are included in the image.
+
+  # --- picomatch (2 GHSAs × 2 versions = 4 alerts) ---
+
+  - vulnerability:
+      "@id": GHSA-c2c7-rcm5-vvqj
+      name: GHSA-c2c7-rcm5-vvqj
+      description: >-
+        picomatch ReDoS vulnerability via crafted glob patterns.
+    products:
+      - "@id": pkg:npm/picomatch@2.3.1
+      - "@id": pkg:npm/picomatch@4.0.3
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      Build-only dependency used during Nix derivation build (bun install +
+      vite build). No npm code executes in the runtime container — only
+      static JS/CSS assets are included in the image.
+
+  - vulnerability:
+      "@id": GHSA-3v7f-55p6-f55p
+      name: GHSA-3v7f-55p6-f55p
+      description: >-
+        picomatch method injection in POSIX character classes causes incorrect
+        glob matching.
+    products:
+      - "@id": pkg:npm/picomatch@2.3.1
+      - "@id": pkg:npm/picomatch@4.0.3
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      Build-only dependency used during Nix derivation build (bun install +
+      vite build). No npm code executes in the runtime container — only
+      static JS/CSS assets are included in the image.
+
+  # --- flatted (2 GHSAs × 1 version = 2 alerts) ---
+
+  - vulnerability:
+      "@id": GHSA-25h7-pfq9-p65f
+      name: GHSA-25h7-pfq9-p65f
+      description: >-
+        flatted prototype pollution vulnerability.
+    products:
+      - "@id": pkg:npm/flatted@3.3.3
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      Build-only dependency used during Nix derivation build (bun install +
+      vite build). No npm code executes in the runtime container — only
+      static JS/CSS assets are included in the image.
+
+  - vulnerability:
+      "@id": GHSA-rf6f-7fwh-wjgh
+      name: GHSA-rf6f-7fwh-wjgh
+      description: >-
+        flatted prototype pollution vulnerability.
+    products:
+      - "@id": pkg:npm/flatted@3.3.3
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      Build-only dependency used during Nix derivation build (bun install +
+      vite build). No npm code executes in the runtime container — only
+      static JS/CSS assets are included in the image.
+
+  # --- rollup (1 GHSA × 2 versions = 2 alerts) ---
+
+  - vulnerability:
+      "@id": GHSA-mw96-cpmx-2vgc
+      name: GHSA-mw96-cpmx-2vgc
+      description: >-
+        rollup arbitrary file write via path traversal during bundle
+        generation.
+    products:
+      - "@id": pkg:npm/rollup@2.79.2
+      - "@id": pkg:npm/rollup@4.45.1
+    status: not_affected
+    justification: inline_mitigations_already_exist
+    impact_statement: >-
+      Rollup is vite's bundler and its vulnerable bundle.write() code
+      path IS executed during every build. However, the Nix build sandbox
+      constrains the blast radius: builds run in a chroot with the Nix
+      store mounted read-only, only $out is writable, and network access
+      is disabled. A path traversal could corrupt files within the build
+      output but cannot escape the sandbox to affect the host or Nix
+      store. All npm dependencies are pinned via bun.nix lockfile with
+      integrity hashes, limiting supply-chain injection risk. Rollup
+      itself is not included in the runtime container image.
+
+  # --- serialize-javascript (2 GHSAs × 1 version = 2 alerts) ---
+
+  - vulnerability:
+      "@id": GHSA-5c6j-r48x-rmvq
+      name: GHSA-5c6j-r48x-rmvq
+      description: >-
+        serialize-javascript RCE via RegExp.flags and
+        Date.prototype.toISOString() during serialization.
+    products:
+      - "@id": pkg:npm/serialize-javascript@6.0.2
+    status: affected
+    action_statement: >-
+      serialize-javascript is used by vite/terser internals during the
+      build — its vulnerable serialization code IS executed, and its
+      output (serialized JS chunks) ends up in the browser bundle. An
+      RCE during the build could write arbitrary content to $out,
+      injecting backdoors into the JS served to users. The Nix build
+      sandbox protects the host (no network, read-only store, chroot)
+      but explicitly permits writes to $out — the one thing a
+      supply-chain attacker needs.
+
+      Barriers to exploitation: all npm dependencies are pinned via
+      bun.nix with integrity hashes, so an attacker cannot substitute
+      a malicious tarball without changing the lockfile (a code-reviewed
+      artifact). However, this protects against tampering after pinning,
+      not against a package that was already compromised when pinned.
+
+      Fix available in serialize-javascript >= 6.0.3. Remediation
+      requires updating the transitive dependency via upstream sbomify
+      or overriding in bun.nix.
+
+  - vulnerability:
+      "@id": GHSA-qj8w-gfj5-8c6v
+      name: GHSA-qj8w-gfj5-8c6v
+      description: >-
+        serialize-javascript CPU exhaustion DoS via crafted array-like
+        objects.
+    products:
+      - "@id": pkg:npm/serialize-javascript@6.0.2
+    status: affected
+    action_statement: >-
+      serialize-javascript runs during the vite build. CPU exhaustion
+      during the build would prevent deployment of security patches — a
+      DoS against the build pipeline. The Nix sandbox does not mitigate
+      CPU exhaustion. All npm dependencies are pinned via bun.nix with
+      integrity hashes, which limits supply-chain injection but does not
+      prevent it if a package was compromised before pinning.
+
+      Fix available in serialize-javascript >= 7.0.5. Remediation
+      requires updating the transitive dependency via upstream sbomify
+      or overriding in bun.nix.
+
+  # --- lodash (3 GHSAs × 1 version = 3 alerts) ---
+
+  - vulnerability:
+      "@id": GHSA-r5fr-rjxr-66jc
+      name: GHSA-r5fr-rjxr-66jc
+      description: >-
+        lodash prototype pollution vulnerability.
+    products:
+      - "@id": pkg:npm/lodash@4.17.21
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      Build-only dependency used during Nix derivation build (bun install +
+      vite build). No npm code executes in the runtime container — only
+      static JS/CSS assets are included in the image.
+
+  - vulnerability:
+      "@id": GHSA-xxjr-mmjv-4gpg
+      name: GHSA-xxjr-mmjv-4gpg
+      description: >-
+        lodash command injection vulnerability.
+    products:
+      - "@id": pkg:npm/lodash@4.17.21
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      Build-only dependency used during Nix derivation build (bun install +
+      vite build). No npm code executes in the runtime container — only
+      static JS/CSS assets are included in the image.
+
+  - vulnerability:
+      "@id": GHSA-f23m-r3pf-42rh
+      name: GHSA-f23m-r3pf-42rh
+      description: >-
+        lodash prototype pollution vulnerability.
+    products:
+      - "@id": pkg:npm/lodash@4.17.21
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      Build-only dependency used during Nix derivation build (bun install +
+      vite build). No npm code executes in the runtime container — only
+      static JS/CSS assets are included in the image.
+
+  # --- brace-expansion (1 GHSA × 2 versions = 2 alerts) ---
+
+  - vulnerability:
+      "@id": GHSA-f886-m6hf-6m8v
+      name: GHSA-f886-m6hf-6m8v
+      description: >-
+        brace-expansion ReDoS vulnerability via crafted brace patterns.
+    products:
+      - "@id": pkg:npm/brace-expansion@1.1.12
+      - "@id": pkg:npm/brace-expansion@2.0.2
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      Build-only dependency used during Nix derivation build (bun install +
+      vite build). No npm code executes in the runtime container — only
+      static JS/CSS assets are included in the image.
+
+  # --- @isaacs/brace-expansion (1 GHSA × 1 version = 1 alert) ---
+
+  - vulnerability:
+      "@id": GHSA-7h2j-956f-4vf2
+      name: GHSA-7h2j-956f-4vf2
+      description: >-
+        @isaacs/brace-expansion ReDoS vulnerability via crafted brace patterns.
+    products:
+      - "@id": "pkg:npm/%40isaacs/brace-expansion@5.0.0"
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      Build-only dependency used during Nix derivation build (bun install +
+      vite build). No npm code executes in the runtime container — only
+      static JS/CSS assets are included in the image.
+
+  # --- ajv (1 GHSA × 2 versions = 2 alerts) ---
+
+  - vulnerability:
+      "@id": GHSA-2g4f-4pwh-qvx6
+      name: GHSA-2g4f-4pwh-qvx6
+      description: >-
+        ajv prototype pollution vulnerability via schema compilation.
+    products:
+      - "@id": pkg:npm/ajv@6.12.6
+      - "@id": pkg:npm/ajv@8.17.1
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      Build-only dependency used during Nix derivation build (bun install +
+      vite build). No npm code executes in the runtime container — only
+      static JS/CSS assets are included in the image.
+
+  # --- axios (1 GHSA × 1 version = 1 alert) ---
+  # NOTE: axios is a RUNTIME dependency — it is imported by
+  # sbomify/apps/core/js/utils.ts and bundled by vite into the JS
+  # served to browsers. It is the frontend's HTTP client.
+  #
+  # Adversarial review (2026-04-05) found that mergeConfig() — the
+  # vulnerable function — only processes developer-authored config
+  # objects during request setup. API response bodies flow through
+  # dispatchRequest and interceptors, never into config merging.
+  # The __proto__ key payload cannot be delivered via server response.
+
+  - vulnerability:
+      "@id": GHSA-43fc-jf86-j433
+      name: GHSA-43fc-jf86-j433
+      description: >-
+        axios DoS via __proto__ key in mergeConfig (prototype pollution
+        in config merging).
+    products:
+      - "@id": pkg:npm/axios@1.13.2
+    status: not_affected
+    justification: vulnerable_code_not_reachable
+    impact_statement: >-
+      axios is bundled into the frontend JS (imported in
+      sbomify/apps/core/js/utils.ts), but the vulnerable mergeConfig()
+      function only processes developer-authored config literals during
+      request setup. API response bodies flow through dispatchRequest
+      and interceptors — they never enter mergeConfig. An attacker
+      cannot deliver the __proto__ payload via a crafted API response
+      or any other external input.
+
+      Upgrade to axios 1.13.5 is recommended as routine dependency
+      maintenance, but there is no active exploitable path in sbomify's
+      usage pattern.
+
+  # --- smol-toml (1 GHSA × 1 version = 1 alert) ---
+
+  - vulnerability:
+      "@id": GHSA-v3rj-xjv7-4jmq
+      name: GHSA-v3rj-xjv7-4jmq
+      description: >-
+        smol-toml prototype pollution vulnerability.
+    products:
+      - "@id": pkg:npm/smol-toml@1.5.2
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      Build-only dependency used during Nix derivation build (bun install +
+      vite build). No npm code executes in the runtime container — only
+      static JS/CSS assets are included in the image.
+
+  # --- markdown-it (1 GHSA × 1 version = 1 alert) ---
+
+  - vulnerability:
+      "@id": GHSA-38c4-r59v-3vqw
+      name: GHSA-38c4-r59v-3vqw
+      description: >-
+        markdown-it ReDoS vulnerability via crafted markdown input.
+    products:
+      - "@id": pkg:npm/markdown-it@14.1.0
+    status: not_affected
+    justification: vulnerable_code_not_in_execute_path
+    impact_statement: >-
+      Build-only dependency used during Nix derivation build (bun install +
+      vite build). No npm code executes in the runtime container — only
+      static JS/CSS assets are included in the image.
