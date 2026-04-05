@@ -165,10 +165,14 @@
           ];
         };
 
+        # Minimal busybox: only the applets our images actually need.
+        # See common/pkgs/minimal-busybox/default.nix for applet list.
+        minimalBusybox = import ./common/pkgs/minimal-busybox { inherit pkgs; };
+
         # OCI images — each returns { image; metadata; compliance; }
-        postgres = import ./common/images/postgres.nix { inherit pkgs; };
+        postgres = import ./common/images/postgres.nix { inherit pkgs minimalBusybox; };
         redis = import ./common/images/redis.nix { inherit pkgs; };
-        minio = import ./common/images/minio.nix { inherit pkgs; };
+        minio = import ./common/images/minio.nix { inherit pkgs minimalBusybox; };
 
         # uv2nix: Python virtualenv from sbomify's uv.lock
         sbomifyWorkspace = uv2nix.lib.workspace.loadWorkspace {
@@ -242,11 +246,11 @@
         );
 
         sbomifyAppSpec = import ./apps/sbomify/images/sbomify-app.nix {
-          inherit pkgs sbomifyPythonStack sbomifyFrontendStack sbomifyVersion sbomifyPythonDeps sbomifyBunDeps;
+          inherit pkgs minimalBusybox sbomifyPythonStack sbomifyFrontendStack sbomifyVersion sbomifyPythonDeps sbomifyBunDeps;
         };
 
         sbomifyKeycloakSpec = import ./apps/sbomify/images/sbomify-keycloak.nix {
-          inherit pkgs sbomifyKeycloakTheme;
+          inherit pkgs minimalBusybox sbomifyKeycloakTheme;
           sbomifySrc = sbomify-src;
         };
 
@@ -256,7 +260,7 @@
         };
 
         sbomifyMinioInitSpec = import ./apps/sbomify/images/sbomify-minio-init.nix {
-          inherit pkgs sbomifyVersion;
+          inherit pkgs minimalBusybox sbomifyVersion;
           sbomifySrc = sbomify-src;
         };
 

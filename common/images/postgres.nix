@@ -1,4 +1,4 @@
-{ pkgs }:
+{ pkgs, minimalBusybox }:
 
 let
   postgresUid = "999";
@@ -84,7 +84,7 @@ pkgs.buildCompliantImage {
     pkgs.postgresql_17
     pkgs.cacert
     pkgs.bash
-    pkgs.busybox
+    minimalBusybox
   ];
 
   # CVE-2026-4046: iconv assertion crash via IBM1390/IBM1399 charsets (no upstream fix)
