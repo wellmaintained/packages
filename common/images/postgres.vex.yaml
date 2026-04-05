@@ -177,7 +177,7 @@ statements:
       References:
       - https://security-tracker.debian.org/tracker/CVE-2016-2781 (Debian: low)
 
-  # ── glibc 2.42 (2025/2026 CVEs — fixed in 2.43, not yet in nixpkgs) ─
+  # ── glibc 2.42 (2025/2026 CVEs — some fixed in 2.43, some no fix yet) ─
 
   - vulnerability:
       "@id": CVE-2025-15281
@@ -238,7 +238,7 @@ statements:
     impact_statement: >-
       PostgreSQL uses UTF-8 encoding and does not convert to/from IBM1390
       or IBM1399 character sets. The vulnerable iconv conversion is not
-      invoked. Fixed in glibc 2.43.
+      invoked. No upstream fix yet (affects through glibc 2.43).
 
   - vulnerability:
       "@id": CVE-2026-4437
@@ -252,8 +252,8 @@ statements:
     justification: vulnerable_code_not_in_execute_path
     impact_statement: >-
       PostgreSQL uses getaddrinfo for name resolution, not the deprecated
-      gethostbyaddr. The vulnerable code path is not exercised. Fixed in
-      glibc 2.43.
+      gethostbyaddr. The vulnerable code path is not exercised. No upstream
+      fix yet (affects through glibc 2.43).
 
   - vulnerability:
       "@id": CVE-2026-4438
@@ -266,5 +266,5 @@ statements:
     justification: vulnerable_code_not_in_execute_path
     impact_statement: >-
       PostgreSQL uses getaddrinfo for name resolution, not the deprecated
-      gethostbyaddr. The vulnerable code path is not exercised. Fixed in
-      glibc 2.43.
+      gethostbyaddr. The vulnerable code path is not exercised. No upstream
+      fix yet (affects through glibc 2.43).

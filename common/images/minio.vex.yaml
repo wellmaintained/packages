@@ -164,7 +164,7 @@ statements:
       References:
       - https://security-tracker.debian.org/tracker/CVE-2016-2781 (Debian: low)
 
-  # ── glibc 2.42 (2025/2026 CVEs — fixed in 2.43, not yet in nixpkgs) ─
+  # ── glibc 2.42 (2025/2026 CVEs — some fixed in 2.43, some no fix yet) ─
 
   - vulnerability:
       "@id": CVE-2025-15281
@@ -214,8 +214,8 @@ statements:
     status: not_affected
     justification: vulnerable_code_not_in_execute_path
     impact_statement: >-
-      MinIO does not use iconv with IBM1390/IBM1399 charsets. Fixed in
-      glibc 2.43.
+      MinIO does not use iconv with IBM1390/IBM1399 charsets. No upstream
+      fix yet (affects through glibc 2.43).
 
   - vulnerability:
       "@id": CVE-2026-4437
@@ -229,7 +229,7 @@ statements:
     justification: vulnerable_code_not_in_execute_path
     impact_statement: >-
       MinIO (Go binary) uses Go's net package, not glibc's gethostbyaddr.
-      Fixed in glibc 2.43.
+      No upstream fix yet (affects through glibc 2.43).
 
   - vulnerability:
       "@id": CVE-2026-4438
@@ -242,4 +242,4 @@ statements:
     justification: vulnerable_code_not_in_execute_path
     impact_statement: >-
       MinIO (Go binary) uses Go's net package, not glibc's gethostbyaddr.
-      Fixed in glibc 2.43.
+      No upstream fix yet (affects through glibc 2.43).
