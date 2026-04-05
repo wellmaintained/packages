@@ -70,7 +70,10 @@ grype "sbom:${SBOM}" -o "$FORMAT" --file "$OUTPUT" "${VEX_ARGS[@]}"
 # See: https://github.com/anchore/grype/blob/main/grype/presenter/sarif/presenter.go
 if [[ "$FORMAT" == "sarif" && -f "$OUTPUT" ]]; then
   SBOM_BASENAME="$(basename "$SBOM")"
-  if jq --arg sbom_uri "$SBOM_BASENAME" '
+  # Derive image name from SBOM filename: "postgres.enriched.cdx.json" → "postgres"
+  IMAGE_NAME="${SBOM_BASENAME%.enriched.cdx.json}"
+  IMAGE_NAME="${IMAGE_NAME%.cdx.json}"
+  if jq --arg sbom_uri "$SBOM_BASENAME" --arg image_name "$IMAGE_NAME" '
     (.runs // [])[] |= (
       # Fix artifactLocation.uri: replace empty or "/" with SBOM filename
       (.results // [])[] |= (
@@ -79,6 +82,10 @@ if [[ "$FORMAT" == "sarif" && -f "$OUTPUT" ]]; then
              or .physicalLocation.artifactLocation.uri == "" then
             .physicalLocation.artifactLocation.uri = $sbom_uri
           else . end
+          # Fix empty environment image name
+          | if .physicalLocation.properties.environment.image == "" then
+              .physicalLocation.properties.environment.image = $image_name
+            else . end
         )
         # Clean message.text: remove trailing " at: " (with nothing after it)
         | if .message.text | endswith(" at: ") then .message.text |= .[:-5] else . end
