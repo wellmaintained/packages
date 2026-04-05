@@ -62,4 +62,35 @@ fi
 
 echo "==> Scanning ${SBOM} for vulnerabilities" >&2
 grype "sbom:${SBOM}" -o "$FORMAT" --file "$OUTPUT" "${VEX_ARGS[@]}"
+
+# grype's SARIF presenter doesn't handle SBOM inputs well:
+#  - artifactLocation.uri is "/" (SBOMFileMetadata not handled in presenter)
+#  - message.text has trailing "at: " (empty packagePath for SBOM-sourced packages)
+# Post-process the SARIF to fix these issues.
+# See: https://github.com/anchore/grype/blob/main/grype/presenter/sarif/presenter.go
+if [[ "$FORMAT" == "sarif" && -f "$OUTPUT" ]]; then
+  SBOM_BASENAME="$(basename "$SBOM")"
+  if jq --arg sbom_uri "$SBOM_BASENAME" '
+    (.runs // [])[] |= (
+      # Fix artifactLocation.uri: replace empty or "/" with SBOM filename
+      (.results // [])[] |= (
+        (.locations // [])[] |= (
+          if .physicalLocation.artifactLocation.uri == "/"
+             or .physicalLocation.artifactLocation.uri == "" then
+            .physicalLocation.artifactLocation.uri = $sbom_uri
+          else . end
+        )
+        # Clean message.text: remove trailing " at: " (with nothing after it)
+        | if .message.text | endswith(" at: ") then .message.text |= .[:-5] else . end
+      )
+    )
+  ' "$OUTPUT" > "${OUTPUT}.tmp"; then
+    mv "${OUTPUT}.tmp" "$OUTPUT"
+    echo "==> SARIF post-processed (fixed locations and messages)" >&2
+  else
+    echo "==> WARNING: SARIF post-processing failed, using raw grype output" >&2
+    rm -f "${OUTPUT}.tmp"
+  fi
+fi
+
 echo "==> ${FORMAT} written to ${OUTPUT}" >&2
