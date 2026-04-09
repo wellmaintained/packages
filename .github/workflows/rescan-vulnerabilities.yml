@@ -93,16 +93,15 @@ jobs:
       - name: Resolve per-image VEX file
         id: vex
         if: steps.extract-sbom.outcome == 'success'
+        shell: nix develop .#ci -c bash -e {0}
         run: |
-          IMAGE="${{ matrix.image.name }}"
-          for candidate in "common/images/${IMAGE}.vex.yaml" "apps/sbomify/images/${IMAGE}.vex.yaml"; do
-            if [ -f "$candidate" ]; then
-              echo "path=${candidate}" >> "$GITHUB_OUTPUT"
-              echo "==> Found VEX file: ${candidate}"
-              exit 0
-            fi
-          done
-          echo "==> No VEX file found for ${IMAGE}, scanning without suppression"
+          VEX_PATH=$(common/lib/scripts/resolve-vex-file --image "${{ matrix.image.name }}")
+          if [ -n "$VEX_PATH" ]; then
+            echo "path=${VEX_PATH}" >> "$GITHUB_OUTPUT"
+            echo "==> Found VEX file: ${VEX_PATH}"
+          else
+            echo "==> No VEX file found for ${{ matrix.image.name }}, scanning without suppression"
+          fi
 
       - name: Scan SBOM for vulnerabilities
         id: grype
