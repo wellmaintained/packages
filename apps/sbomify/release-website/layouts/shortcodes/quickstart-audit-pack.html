@@ -1,0 +1,18 @@
+{{- $data := hugo.Data.release -}}
+{{- if $data -}}
+{{- $tag := $data.tag -}}
+{{- $url := printf "https://github.com/wellmaintained/packages/releases/download/%s/%s-compliance.zip" $tag $tag -}}
+<p>Download the compliance bundle containing all audit artifacts for this release:</p>
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash">curl -LO {{ $url }}</code></pre></div>
+<p>The ZIP contains:</p>
+<ul>
+<li><strong>SBOMs</strong> — CycloneDX SBOMs for all {{ len $data.images }} images</li>
+<li><strong>Vulnerability scans</strong> — Grype results with VEX triage</li>
+<li><strong>VEX statements</strong> — OpenVEX assessment files</li>
+<li><strong>License data</strong> — Aggregated license and component information</li>
+<li><strong>Website</strong> — Static HTML of this release website</li>
+<li><strong>docker-compose.yml</strong> — Pinned deployment manifest</li>
+</ul>
+{{- else -}}
+<em>Release data not available. Run <code>just release-website-extract</code>.</em>
+{{- end -}}

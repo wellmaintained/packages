@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# common/lib/scripts/compile-docker-compose — Pin image tags in docker-compose.yml.
+#
+# Usage:
+#   common/lib/scripts/compile-docker-compose \
+#     --template PATH \
+#     --tag COLLECTION_TAG \
+#     --output PATH
+#
+# Replaces all `:-latest}` defaults with the collection tag so operators
+# can `docker compose up -d` without setting any env vars.
+
+set -euo pipefail
+
+usage() {
+  echo "Usage: $0 --template PATH --tag TAG --output PATH"
+  exit 1
+}
+
+TEMPLATE=""
+TAG=""
+OUTPUT=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --template) TEMPLATE="$2"; shift 2 ;;
+    --tag) TAG="$2"; shift 2 ;;
+    --output) OUTPUT="$2"; shift 2 ;;
+    *) echo "Unknown option: $1"; usage ;;
+  esac
+done
+
+[[ -z "$TEMPLATE" || -z "$TAG" || -z "$OUTPUT" ]] && usage
+
+if [[ ! -f "$TEMPLATE" ]]; then
+  echo "ERROR: Template not found: ${TEMPLATE}" >&2
+  exit 1
+fi
+
+sed "s/:-latest}/:-${TAG}}/g" "$TEMPLATE" > "$OUTPUT"
+
+echo "==> Compiled docker-compose.yml with tag ${TAG} → ${OUTPUT}" >&2

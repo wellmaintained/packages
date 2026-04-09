@@ -1,0 +1,15 @@
+{{- $data := hugo.Data.release -}}
+{{- if $data -}}
+{{- $tag := $data.tag -}}
+<p>{{ len $data.images }} container images · <a href="https://github.com/wellmaintained/packages/releases/tag/{{ $tag }}">{{ $tag }}</a></p>
+<p>Download the docker-compose.yml for this release and start the stack:</p>
+{{ $url := printf "https://github.com/wellmaintained/packages/releases/download/%s/docker-compose.yml" $tag -}}
+<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash">curl -LO {{ $url }}
+docker compose up -d</code></pre></div>
+<blockquote>
+<p>⚠️ Review and update <code>SECRET_KEY</code> and other credentials before production use.</p>
+</blockquote>
+<p>See <a href="../dependencies/">Dependencies</a> for full image list, digests, and SBOMs.</p>
+{{- else -}}
+<em>Release data not available. Run <code>just release-website-extract</code>.</em>
+{{- end -}}
