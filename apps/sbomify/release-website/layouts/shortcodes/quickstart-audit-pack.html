@@ -2,16 +2,19 @@
 {{- if $data -}}
 {{- $tag := $data.tag -}}
 {{- $url := printf "https://github.com/wellmaintained/packages/releases/download/%s/%s-compliance.zip" $tag $tag -}}
-<p>Download the compliance bundle containing all audit artifacts for this release:</p>
-<div class="highlight"><pre tabindex="0" class="chroma"><code class="language-bash" data-lang="bash">curl -LO {{ $url }}</code></pre></div>
-<p>The ZIP contains:</p>
+<p>
+  <a href="{{ $url }}" style="display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 600;">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    {{ $tag }}-compliance.zip
+  </a>
+</p>
+<p>Contains:</p>
 <ul>
 <li><strong>SBOMs</strong> — CycloneDX SBOMs for all {{ len $data.images }} images</li>
 <li><strong>Vulnerability scans</strong> — Grype results with VEX triage</li>
 <li><strong>VEX statements</strong> — OpenVEX assessment files</li>
-<li><strong>License data</strong> — Aggregated license and component information</li>
-<li><strong>Website</strong> — Static HTML of this release website</li>
 <li><strong>docker-compose.yml</strong> — Pinned deployment manifest</li>
+<li><strong>release.json</strong> — Release metadata</li>
 </ul>
 {{- else -}}
 <em>Release data not available. Run <code>just release-website-extract</code>.</em>
