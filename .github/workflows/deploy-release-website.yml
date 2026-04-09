@@ -10,13 +10,11 @@ on:
         required: true
 
 permissions:
-  contents: read
+  contents: write
   packages: write
-  pages: write
-  id-token: write
 
 concurrency:
-  group: pages
+  group: deploy-gh-pages
   cancel-in-progress: false
 
 env:
@@ -73,20 +71,28 @@ jobs:
 
           echo "==> Done tagging released images"
 
-  build:
-    runs-on: ubuntu-latest
+  build-and-deploy:
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Setup Nix
+        uses: ./.github/actions/setup-nix
+        with:
+          stickydisk-suffix: deploy-release-website
 
       - name: Resolve release tag
         id: tag
         env:
-          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          RELEASE_TAG_NAME: ${{ github.event.release.tag_name }}
+          INPUT_TAG: ${{ inputs.release_tag }}
         run: |
-          if [ "${{ github.event_name }}" = "release" ]; then
-            TAG="${{ github.event.release.tag_name }}"
+          if [ "$EVENT_NAME" = "release" ]; then
+            TAG="$RELEASE_TAG_NAME"
           else
-            TAG="${{ inputs.release_tag }}"
+            TAG="$INPUT_TAG"
           fi
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
           echo "==> Deploying release: ${TAG}"
@@ -94,27 +100,68 @@ jobs:
       - name: Download compliance bundle from release
         env:
           GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.tag.outputs.tag }}
         run: |
-          TAG="${{ steps.tag.outputs.tag }}"
           echo "==> Downloading ${TAG}-compliance.zip"
           gh release download "${TAG}" \
             --pattern "${TAG}-compliance.zip" \
-            --dir .
-          mkdir -p site
-          cd site && unzip "../${TAG}-compliance.zip"
+            --dir . || {
+            echo "::error::Failed to download ${TAG}-compliance.zip. Does the release exist and have the compliance bundle attached?"
+            exit 1
+          }
+          mkdir -p compliance-data
+          cd compliance-data && unzip "../${TAG}-compliance.zip"
 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3
-        with:
-          path: site/website
+      - name: Extract release data
+        shell: nix develop .#ci -c bash -e {0}
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          if [[ ! -f compliance-data/release.json ]]; then
+            echo "::error::release.json not found in compliance bundle"
+            exit 1
+          fi
+          VERSION=$(jq -r '.version' compliance-data/release.json)
+          DATE=$(jq -r '.date' compliance-data/release.json)
 
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
+          common/lib/scripts/extract-release-data \
+            --sbom-dir compliance-data/sboms \
+            --scan-dir compliance-data/scans \
+            --image-matrix .github/image-matrix.json \
+            --output-dir apps/sbomify/release-website \
+            --tag "$TAG" \
+            --version "$VERSION" \
+            --date "$DATE"
+
+      - name: Build Hugo site
+        shell: nix develop .#ci -c bash -e {0}
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          hugo --minify -s apps/sbomify/release-website \
+            --baseURL "https://wellmaintained.github.io/packages/releases/${TAG}/"
+
+      - name: Prepare gh-pages content
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          mkdir -p "gh-pages-staging/releases/${TAG}"
+          cp -r apps/sbomify/release-website/public/* "gh-pages-staging/releases/${TAG}/"
+
+          # Create root redirect to latest release
+          cat > gh-pages-staging/index.html <<EOF
+          <!DOCTYPE html>
+          <html>
+          <head><meta http-equiv="refresh" content="0; url=releases/${TAG}/"></head>
+          <body><a href="releases/${TAG}/">Redirect to latest release</a></body>
+          </html>
+          EOF
+
+          touch gh-pages-staging/.nojekyll
+
       - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
+        uses: peaceiris/actions-gh-pages@4f9cc6602d3f66b9c108549d475ec49e8ef4d45e # v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: gh-pages-staging
+          keep_files: true
