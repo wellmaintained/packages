@@ -6,6 +6,7 @@
 #     --sbom <path> \
 #     --output <output-path> \
 #     [--format sarif|json] \
+#     [--additional-output FORMAT=PATH] \
 #     [--vex <vex-yaml-path>]
 #
 # Exits 0 with no output file if the SBOM does not exist.
@@ -15,21 +16,23 @@
 set -euo pipefail
 
 usage() {
-  echo "Usage: $0 --sbom PATH --output PATH [--format sarif|json] [--vex PATH]"
+  echo "Usage: $0 --sbom PATH --output PATH [--format sarif|json] [--additional-output FORMAT=PATH] [--vex PATH]"
   exit 1
 }
 
 SBOM=""
 OUTPUT=""
 FORMAT="sarif"
+ADDITIONAL_OUTPUT=""
 VEX=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --sbom)   SBOM="$2";   shift 2 ;;
-    --output) OUTPUT="$2"; shift 2 ;;
-    --format) FORMAT="$2"; shift 2 ;;
-    --vex)    VEX="$2";    shift 2 ;;
+    --sbom)      SBOM="$2";      shift 2 ;;
+    --output)    OUTPUT="$2";    shift 2 ;;
+    --format)    FORMAT="$2";    shift 2 ;;
+    --additional-output) ADDITIONAL_OUTPUT="$2"; shift 2 ;;
+    --vex)       VEX="$2";       shift 2 ;;
     *) echo "Unknown option: $1"; usage ;;
   esac
 done
@@ -61,7 +64,12 @@ if [[ -n "$VEX" ]]; then
 fi
 
 echo "==> Scanning ${SBOM} for vulnerabilities" >&2
-grype "sbom:${SBOM}" -o "$FORMAT" --file "$OUTPUT" "${VEX_ARGS[@]}"
+
+GRYPE_OUTPUTS=(-o "${FORMAT}=${OUTPUT}")
+if [[ -n "$ADDITIONAL_OUTPUT" ]]; then
+  GRYPE_OUTPUTS+=(-o "${ADDITIONAL_OUTPUT}")
+fi
+grype "sbom:${SBOM}" "${GRYPE_OUTPUTS[@]}" "${VEX_ARGS[@]}"
 
 # grype's SARIF presenter doesn't handle SBOM inputs well:
 #  - artifactLocation.uri is "/" (SBOMFileMetadata not handled in presenter)
@@ -101,3 +109,6 @@ if [[ "$FORMAT" == "sarif" && -f "$OUTPUT" ]]; then
 fi
 
 echo "==> ${FORMAT} written to ${OUTPUT}" >&2
+if [[ -n "$ADDITIONAL_OUTPUT" ]]; then
+  echo "==> additional output: ${ADDITIONAL_OUTPUT}" >&2
+fi

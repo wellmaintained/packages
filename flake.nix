@@ -316,6 +316,8 @@
               pkgs.crane
               pkgs.grype
               pkgs.yq-go
+              pkgs.hugo
+              pkgs.go
               sbomqs
               sbomlyze
               sbomifyAction

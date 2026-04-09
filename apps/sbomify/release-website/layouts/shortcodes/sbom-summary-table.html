@@ -1,0 +1,20 @@
+{{ $release := hugo.Data.release }}
+{{ if $release }}
+<table>
+<thead>
+<tr><th>Image</th><th>Upstream Version</th><th>Format</th><th></th></tr>
+</thead>
+<tbody>
+{{ range $release.images }}
+<tr>
+  <td><strong>{{ .name }}</strong></td>
+  <td>{{ .upstream_version }}</td>
+  <td>CycloneDX 1.7</td>
+  <td><a href="{{ .name }}/">View SBOM</a></td>
+</tr>
+{{ end }}
+</tbody>
+</table>
+{{ else }}
+<p><em>Release data not available.</em></p>
+{{ end }}

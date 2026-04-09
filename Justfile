@@ -6,6 +6,43 @@ set dotenv-load
 default:
   @just --list
 
+# Guard: all recipes assume they run inside `nix develop` (or direnv).
+# Call this from any recipe that needs devShell tools.
+[private]
+_check-devshell:
+  #!/usr/bin/env bash
+  if [[ -z "${IN_NIX_SHELL:-}" ]]; then
+    echo "ERROR: Not running inside the nix devShell." >&2
+    echo "Run 'direnv allow' or 'nix develop' first." >&2
+    exit 1
+  fi
+
+# --- Release website ---
+
+# Serve the release website locally with live reload
+release-website-serve: _check-devshell
+  hugo server -s apps/sbomify/release-website --buildDrafts --disableFastRender --baseURL http://localhost:1313/packages/sbomify/ --appendPort=false
+
+# Build the release website (output in apps/sbomify/release-website/public/)
+release-website-build: _check-devshell
+  hugo --minify -s apps/sbomify/release-website
+
+# Populate release website with locally-built SBOMs and metadata
+release-website-extract: _check-devshell
+  #!/usr/bin/env bash
+  set -euo pipefail
+  APP_VERSION=$(jq -r '.metadata.component.version' .local/build/sboms/sbomify-app.enriched.cdx.json)
+  common/lib/scripts/extract-release-data \
+    --sbom-dir .local/build/sboms \
+    --scan-dir .local/build/sboms \
+    --image-matrix .github/image-matrix.json \
+    --output-dir apps/sbomify/release-website \
+    --tag local-dev \
+    --version "$APP_VERSION" \
+    --date "$(date -u +%Y-%m-%d)"
+
+# --- Images ---
+
 # Image matrix: name → nix package, sbomify component ID
 # Keep in sync with .github/image-matrix.json
 _image-package name:

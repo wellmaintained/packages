@@ -192,16 +192,15 @@ jobs:
       - name: Resolve per-image VEX file
         id: vex
         if: steps.extract-sbom.outcome == 'success'
+        shell: nix develop .#ci -c bash -e {0}
         run: |
-          IMAGE="${{ matrix.image.name }}"
-          for candidate in "common/images/${IMAGE}.vex.yaml" "apps/sbomify/images/${IMAGE}.vex.yaml"; do
-            if [ -f "$candidate" ]; then
-              echo "path=${candidate}" >> "$GITHUB_OUTPUT"
-              echo "==> Found VEX file: ${candidate}"
-              exit 0
-            fi
-          done
-          echo "==> No VEX file found for ${IMAGE}, scanning without suppression"
+          VEX_PATH=$(common/lib/scripts/resolve-vex-file --image "${{ matrix.image.name }}")
+          if [ -n "$VEX_PATH" ]; then
+            echo "path=${VEX_PATH}" >> "$GITHUB_OUTPUT"
+            echo "==> Found VEX file: ${VEX_PATH}"
+          else
+            echo "==> No VEX file found for ${{ matrix.image.name }}, scanning without suppression"
+          fi
 
       - name: Scan SBOM for vulnerabilities
         id: grype
@@ -215,6 +214,7 @@ jobs:
           common/lib/scripts/scan-sbom \
             --sbom "sbom/${{ matrix.image.name }}.enriched.cdx.json" \
             --output "sbom/${{ matrix.image.name }}.sarif" \
+            --additional-output "json=sbom/${{ matrix.image.name }}.scan.json" \
             $VEX_FLAG
 
       - name: Upload SARIF to GitHub Security
@@ -223,6 +223,16 @@ jobs:
         with:
           sarif_file: sbom/${{ matrix.image.name }}.sarif
           category: vulnerability-scan/sbomify/${{ matrix.image.name }}
+
+      - name: Upload release artifacts
+        if: steps.extract-sbom.outcome == 'success'
+        uses: actions/upload-artifact@ea165f8d65b6db9a6b7c67d0a148c4a5b4a9760a # v4
+        with:
+          name: sbom-${{ matrix.image.name }}
+          path: |
+            sbom/${{ matrix.image.name }}.enriched.cdx.json
+            sbom/${{ matrix.image.name }}.scan.json
+          retention-days: 7
 
       - name: Upload SBOM to sbomify.com
         if: ${{ !startsWith(matrix.image.sbomify_component_id, 'PLACEHOLDER') }}
@@ -238,8 +248,94 @@ jobs:
             --sbom-format cyclonedx \
             --upload
 
-  create-release:
+  build-release-website:
     needs: [resolve-pr, resolve-version, tag-and-scan, load-matrix]
+    if: needs.resolve-pr.outputs.skip != 'true'
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Setup Nix
+        uses: ./.github/actions/setup-nix
+        with:
+          stickydisk-suffix: build-release-website
+
+      - name: Download all per-image artifacts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: sbom-*
+          path: release-artifacts/sboms
+          merge-multiple: true
+
+      - name: Extract release data for Hugo
+        shell: nix develop .#ci -c bash -e {0}
+        env:
+          COLLECTION_VERSION: ${{ needs.resolve-version.outputs.collection_version }}
+          APP_VERSION: ${{ needs.resolve-version.outputs.app_version }}
+        run: |
+          DATE=$(echo "$COLLECTION_VERSION" | grep -oP '\d{8}' | head -1 | sed 's/\(....\)\(..\)\(..\)/\1-\2-\3/')
+          common/lib/scripts/extract-release-data \
+            --sbom-dir release-artifacts/sboms \
+            --scan-dir release-artifacts/sboms \
+            --image-matrix .github/image-matrix.json \
+            --output-dir apps/sbomify/release-website \
+            --tag "$COLLECTION_VERSION" \
+            --version "$APP_VERSION" \
+            --date "$DATE"
+
+      - name: Build site
+        shell: nix develop .#ci -c bash -e {0}
+        run: hugo --minify -s apps/sbomify/release-website
+
+      - name: Bundle compliance artifacts
+        shell: nix develop .#ci -c bash -e {0}
+        run: |
+          shopt -s nullglob
+          BUNDLE_DIR="compliance-bundle"
+          mkdir -p "${BUNDLE_DIR}/sboms" "${BUNDLE_DIR}/scans" "${BUNDLE_DIR}/vex"
+
+          # Copy SBOMs (required — fail if missing)
+          cp release-artifacts/sboms/*.enriched.cdx.json "${BUNDLE_DIR}/sboms/"
+
+          # Copy scans (optional — some images may not have scan results)
+          SCAN_FILES=(release-artifacts/sboms/*.scan.json)
+          if [ ${#SCAN_FILES[@]} -gt 0 ]; then
+            cp "${SCAN_FILES[@]}" "${BUNDLE_DIR}/scans/"
+          else
+            echo "WARNING: No scan files found" >&2
+          fi
+
+          # Copy VEX files for each image
+          for IMAGE in $(jq -r '.[].name' .github/image-matrix.json); do
+            VEX_PATH=$(common/lib/scripts/resolve-vex-file --image "$IMAGE")
+            if [ -n "$VEX_PATH" ]; then
+              cp "$VEX_PATH" "${BUNDLE_DIR}/vex/"
+            fi
+          done
+
+          # Copy Hugo data files
+          cp apps/sbomify/release-website/data/release.json "${BUNDLE_DIR}/"
+          cp apps/sbomify/release-website/data/vulnerabilities.json "${BUNDLE_DIR}/"
+          cp apps/sbomify/release-website/data/licenses.json "${BUNDLE_DIR}/"
+
+          # Copy static site
+          cp -r apps/sbomify/release-website/public "${BUNDLE_DIR}/website"
+
+          # Create ZIP
+          COLLECTION_VERSION="${{ needs.resolve-version.outputs.collection_version }}"
+          cd "${BUNDLE_DIR}"
+          zip -r "../${COLLECTION_VERSION}-compliance.zip" .
+
+      - name: Upload compliance bundle
+        uses: actions/upload-artifact@ea165f8d65b6db9a6b7c67d0a148c4a5b4a9760a # v4
+        with:
+          name: compliance-bundle
+          path: ${{ needs.resolve-version.outputs.collection_version }}-compliance.zip
+          retention-days: 7
+
+  create-release:
+    needs: [resolve-pr, resolve-version, tag-and-scan, build-release-website, load-matrix]
     if: needs.resolve-pr.outputs.skip != 'true'
     runs-on: blacksmith-2vcpu-ubuntu-2404
     steps:
@@ -272,6 +368,11 @@ jobs:
             --matrix-json '${{ needs.load-matrix.outputs.matrix }}' \
             --output release-notes.md
 
+      - name: Download compliance bundle
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: compliance-bundle
+
       - name: Create git tag and GitHub pre-release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -286,4 +387,5 @@ jobs:
             --target "${{ github.sha }}" \
             --title "${COLLECTION_VERSION}" \
             --notes-file release-notes.md \
-            --prerelease
+            --prerelease \
+            "${COLLECTION_VERSION}-compliance.zip"

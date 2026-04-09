@@ -1,0 +1,21 @@
+{{- $data := hugo.Data.licenses -}}
+{{- if $data -}}
+{{- range $image, $components := $data.images }}
+<h2>{{ $image }}</h2>
+<table>
+<thead><tr><th>Component</th><th>Version</th><th>License</th><th>Website</th></tr></thead>
+<tbody>
+{{- range $components }}
+<tr>
+  <td>{{ .component }}</td>
+  <td>{{ .version }}</td>
+  <td><a href="https://spdx.org/licenses/{{ .license }}.html">{{ .license }}</a></td>
+  <td>{{ with .website }}<a href="{{ . }}">link</a>{{ else }}—{{ end }}</td>
+</tr>
+{{- end }}
+</tbody>
+</table>
+{{ end -}}
+{{- else -}}
+<em>License data not available. Run <code>just release-website-extract</code>.</em>
+{{- end -}}

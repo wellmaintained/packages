@@ -1,0 +1,21 @@
+{{ $image := .Get "image" }}
+{{ $release := hugo.Data.release }}
+{{ if $release }}
+{{ $matches := where $release.images "name" $image }}
+{{ with index $matches 0 }}
+<div class="release-overview" style="margin-bottom: 1.5em;">
+  <table>
+    <tbody>
+      <tr><td><strong>Image</strong></td><td>{{ .name }}</td></tr>
+      <tr><td><strong>Upstream version</strong></td><td>{{ .upstream_version }}</td></tr>
+      <tr><td><strong>SBOM format</strong></td><td>CycloneDX 1.7</td></tr>
+      <tr><td><strong>Download</strong></td><td><a href="{{ printf "artifacts/sboms/%s.cdx.json" .name | relURL }}">{{ .name }}.cdx.json</a></td></tr>
+    </tbody>
+  </table>
+</div>
+{{ else }}
+<p><em>Image "{{ $image }}" not found in release data.</em></p>
+{{ end }}
+{{ else }}
+<p><em>Release data not available.</em></p>
+{{ end }}

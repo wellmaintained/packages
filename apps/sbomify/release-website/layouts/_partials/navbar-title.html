@@ -1,0 +1,13 @@
+<div class="hx:flex hx:items-center hx:hover:opacity-75 hx:ltr:mr-auto hx:rtl:ml-auto">
+  <a href="{{ .Site.Home.RelPermalink }}" class="hx:flex hx:items-center">
+    <img src="{{ "images/logo.svg" | relURL }}" alt="Logo" width="32" height="32" style="margin-right: 0.5rem;" />
+  </a>
+  <div class="hx:flex hx:flex-col" style="line-height: 1.2;">
+    <a href="{{ .Site.Home.RelPermalink }}" class="hx:font-extrabold hx:select-none" style="font-size: 1rem;">
+      {{- .Site.Title -}}
+    </a>
+    <a href="https://github.com/wellmaintained/packages" class="hx:select-none" style="font-size: 0.7rem; opacity: 0.6;">
+      by wellmaintained/packages
+    </a>
+  </div>
+</div>

@@ -1,7 +1,8 @@
-baseURL = 'https://wellmaintained.github.io/packages/'
+baseURL = 'https://wellmaintained.github.io/packages/sbomify/'
 languageCode = 'en-us'
-title = 'wellmaintained/packages'
+title = 'sbomify · v26.1.0'
 ignoreLogs = ['warning-goldmark-raw-html']
+enableGitInfo = true
 
 [markup.goldmark.renderer]
   unsafe = true
@@ -11,29 +12,59 @@ ignoreLogs = ['warning-goldmark-raw-html']
     path = "github.com/imfing/hextra"
 
 [params]
-  description = "Compliance-ready container images with SBOMs, quality scores, and audit evidence."
+  description = "A Software Bill of Materials (SBOM) and document management platform application."
+  externalLinkDecoration = true
+  displayUpdatedDate = true
+  displayUpdatedAuthor = true
 
   [params.navbar]
     displayTitle = true
     displayLogo = false
+    width = "full"
+
+  [params.theme]
+    displayToggle = false
 
   [params.footer]
     displayPoweredBy = false
+    width = "full"
 
   [params.page]
     width = "wide"
 
 [[menu.main]]
-  name = "Images"
-  pageRef = "/images"
+  name = "Quickstart"
+  pageRef = "/quickstart"
   weight = 1
 
 [[menu.main]]
-  name = "Compliance"
-  pageRef = "/compliance"
+  name = "Dependencies"
+  pageRef = "/dependencies"
   weight = 2
 
 [[menu.main]]
-  name = "Guides"
-  pageRef = "/guides"
+  name = "Vulnerabilities"
+  pageRef = "/vulnerabilities"
+  weight = 2
+
+[[menu.main]]
+  name = "Licenses"
+  pageRef = "/licenses"
   weight = 3
+
+[[menu.main]]
+  name = "Provenance"
+  pageRef = "/provenance"
+  weight = 4
+
+[[menu.main]]
+  name = "Search"
+  weight = 4
+  [menu.main.params]
+    type = "search"
+
+[[menu.main]]
+  name = "Theme"
+  weight = 5
+  [menu.main.params]
+    type = "theme-toggle"
