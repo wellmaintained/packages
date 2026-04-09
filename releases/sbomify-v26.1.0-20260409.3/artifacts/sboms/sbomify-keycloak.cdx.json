@@ -1,0 +1,4324 @@
+{
+  "$schema": "http://cyclonedx.org/schema/bom-1.6.schema.json",
+  "bomFormat": "CycloneDX",
+  "components": [
+    {
+      "bom-ref": "v8sa6r6q037ihghxfbwzjj4p59v2x0pv-bash-5.3p9",
+      "cpe": "cpe:2.3:a:gnu:bash:5.3:9:*:*:*:*:*:*",
+      "description": "GNU Bourne-Again Shell, the de facto standard shell on Linux",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "pkg:nix/bash@5.3p9",
+            "confidence": 1,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 1,
+                "technique": "manifest-analysis",
+                "value": "/nix/store/v8sa6r6q037ihghxfbwzjj4p59v2x0pv-bash-5.3p9"
+              }
+            ]
+          }
+        ]
+      },
+      "externalReferences": [
+        {
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "0d5cd86965f869a26cf64f4b71be7b96f90a3ba8b3d74e27e8e9d9d5550f31ba"
+            }
+          ],
+          "type": "distribution",
+          "url": "https://ftpmirror.gnu.org/bash/bash-5.3.tar.gz"
+        },
+        {
+          "type": "distribution",
+          "url": "https://search.nixos.org/packages?channel=unstable&query=bash"
+        },
+        {
+          "type": "website",
+          "url": "https://www.gnu.org/software/bash/"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-3.0-or-later"
+          }
+        }
+      ],
+      "name": "bash",
+      "pedigree": {
+        "patches": [
+          {
+            "diff": {
+              "url": "/nix/store/0j41vs0ajmjn81i1mwhgvi24rr5hi4aa-bash53-001"
+            },
+            "type": "unofficial"
+          },
+          {
+            "diff": {
+              "url": "/nix/store/4dxvym02alixyck61bdyz12clv6jl5sw-bash53-005"
+            },
+            "type": "unofficial"
+          },
+          {
+            "diff": {
+              "url": "/nix/store/505g8rabqm5p0swd7i6lj6b2ma8z1vl1-bash53-008"
+            },
+            "type": "unofficial"
+          },
+          {
+            "diff": {
+              "url": "/nix/store/6iygjlcf64ryrg6jryk6qrjfxxz2i6q8-bash53-002"
+            },
+            "type": "unofficial"
+          },
+          {
+            "diff": {
+              "url": "/nix/store/9qh7kf2m0i1kg45k3iwxz6q3pjv02yhr-bash53-009"
+            },
+            "type": "unofficial"
+          },
+          {
+            "diff": {
+              "url": "/nix/store/abrapa0s0rsqbqd9jg6kdc2d27gb7n2w-bash53-007"
+            },
+            "type": "unofficial"
+          },
+          {
+            "diff": {
+              "url": "/nix/store/bm2dknmrjbsd49idcliys6gyalnbd90i-bash53-003"
+            },
+            "type": "unofficial"
+          },
+          {
+            "diff": {
+              "url": "/nix/store/pvx3r9mw2ic9rqw0ghgf1ap9ahvwal48-bash53-006"
+            },
+            "type": "unofficial"
+          },
+          {
+            "diff": {
+              "url": "/nix/store/r5c3y73q0imsgrfpq9m6wxjcbxysgc0a-bash53-004"
+            },
+            "type": "unofficial"
+          },
+          {
+            "diff": {
+              "url": "/nix/store/x5k5bz6pf9scg6rjyi5s7ivvrxmfsdqw-source/pkgs/shells/bash/pgrp-pipe-5.patch"
+            },
+            "type": "unofficial"
+          }
+        ]
+      },
+      "properties": [
+        {
+          "name": "nix:maintainer:0:email",
+          "value": "contact@infinisil.com"
+        },
+        {
+          "name": "nix:maintainer:0:github",
+          "value": "infinisil"
+        },
+        {
+          "name": "nix:maintainer:0:name",
+          "value": "Silvan Mosberger"
+        },
+        {
+          "name": "nix:maintainer:1:email",
+          "value": "balsoft75@gmail.com"
+        },
+        {
+          "name": "nix:maintainer:1:github",
+          "value": "balsoft"
+        },
+        {
+          "name": "nix:maintainer:1:name",
+          "value": "Alexander Bantyev"
+        },
+        {
+          "name": "nix:maintainer:2:email",
+          "value": "pyrox@pyrox.dev"
+        },
+        {
+          "name": "nix:maintainer:2:github",
+          "value": "pyrox0"
+        },
+        {
+          "name": "nix:maintainer:2:name",
+          "value": "Pyrox"
+        },
+        {
+          "name": "nix:packaged",
+          "value": "true"
+        },
+        {
+          "name": "nix:storePath",
+          "value": "/nix/store/v8sa6r6q037ihghxfbwzjj4p59v2x0pv-bash-5.3p9"
+        },
+        {
+          "name": "sbomify:enrichment:source",
+          "value": "ecosyste.ms"
+        }
+      ],
+      "publisher": "Pyrox",
+      "purl": "pkg:nix/bash@5.3p9",
+      "scope": "required",
+      "type": "application",
+      "version": "5.3p9"
+    },
+    {
+      "bom-ref": "91nr5z1cwr1qch2wl58dppl02zrnlza3-brotli-1.2.0",
+      "cpe": "cpe:2.3:a:google:brotli:1.2.0:*:*:*:*:*:*:*",
+      "description": "General-purpose lossless compression library with CLI",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "pkg:nix/brotli@1.2.0",
+            "confidence": 1,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 1,
+                "technique": "manifest-analysis",
+                "value": "/nix/store/91nr5z1cwr1qch2wl58dppl02zrnlza3-brotli-1.2.0-lib"
+              }
+            ]
+          }
+        ]
+      },
+      "externalReferences": [
+        {
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "925f191edef5bf5ed04766c33fe69dff9ba2c5ff864ad10f2d0e68a05a02e62f"
+            }
+          ],
+          "type": "distribution",
+          "url": "https://github.com/google/brotli/archive/refs/tags/v1.2.0.tar.gz"
+        },
+        {
+          "type": "distribution",
+          "url": "https://search.nixos.org/packages?channel=unstable&query=brotli"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/google/brotli/issues"
+        },
+        {
+          "type": "release-notes",
+          "url": "https://github.com/google/brotli/blob/v1.2.0/CHANGELOG.md"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/google/brotli"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/google/brotli"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "brotli",
+      "pedigree": {
+        "patches": [
+          {
+            "diff": {
+              "url": "/nix/store/f32aydndzrxx1id1qxvp1dq29cl739wf-e230f474b87134e8c6c85b630084c612057f253e.patch"
+            },
+            "type": "unofficial"
+          }
+        ]
+      },
+      "properties": [
+        {
+          "name": "nix:maintainer:0:email",
+          "value": "nix@mdaniels.me"
+        },
+        {
+          "name": "nix:maintainer:0:github",
+          "value": "mdaniels5757"
+        },
+        {
+          "name": "nix:maintainer:0:name",
+          "value": "Michael Daniels"
+        },
+        {
+          "name": "nix:packaged",
+          "value": "true"
+        },
+        {
+          "name": "nix:storePath",
+          "value": "/nix/store/91nr5z1cwr1qch2wl58dppl02zrnlza3-brotli-1.2.0-lib"
+        },
+        {
+          "name": "sbomify:enrichment:source",
+          "value": "ecosyste.ms"
+        }
+      ],
+      "publisher": "Michael Daniels",
+      "purl": "pkg:nix/brotli@1.2.0",
+      "scope": "required",
+      "type": "application",
+      "version": "1.2.0"
+    },
+    {
+      "bom-ref": "f66zr7abfsx30wpkb5mhlpvbpaqlvqdr-busybox-1.37.0",
+      "cpe": "cpe:2.3:a:busybox:busybox:1.37.0:*:*:*:*:*:*:*",
+      "description": "Tiny versions of common UNIX utilities in a single small executable",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "pkg:nix/busybox@1.37.0",
+            "confidence": 1,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 1,
+                "technique": "manifest-analysis",
+                "value": "/nix/store/f66zr7abfsx30wpkb5mhlpvbpaqlvqdr-busybox-1.37.0"
+              }
+            ]
+          }
+        ]
+      },
+      "externalReferences": [
+        {
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "3311dff32e746499f4df0d5df04d7eb396382d7e108bb9250e7b519b837043a4"
+            }
+          ],
+          "type": "distribution",
+          "url": "https://busybox.net/downloads/busybox-1.37.0.tar.bz2"
+        },
+        {
+          "type": "distribution",
+          "url": "https://search.nixos.org/packages?channel=unstable&query=busybox"
+        },
+        {
+          "type": "website",
+          "url": "https://busybox.net/"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-only"
+          }
+        }
+      ],
+      "name": "busybox",
+      "pedigree": {
+        "patches": [
+          {
+            "diff": {
+              "url": "/nix/store/221bb8kxaxp50dprlgw4m9qll0x3djd4-CVE-2023-39810.patch"
+            },
+            "type": "unofficial"
+          },
+          {
+            "diff": {
+              "url": "/nix/store/7kidyfd8x0fn46y1610yqknjbh5rffib-CVE-2026-26157_CVE-2026-26158.patch"
+            },
+            "type": "unofficial"
+          },
+          {
+            "diff": {
+              "url": "/nix/store/x5k5bz6pf9scg6rjyi5s7ivvrxmfsdqw-source/pkgs/os-specific/linux/busybox/busybox-in-store.patch"
+            },
+            "type": "unofficial"
+          },
+          {
+            "diff": {
+              "url": "/nix/store/x5k5bz6pf9scg6rjyi5s7ivvrxmfsdqw-source/pkgs/os-specific/linux/busybox/fix-aarch64-sha1.patch"
+            },
+            "type": "unofficial"
+          }
+        ]
+      },
+      "properties": [
+        {
+          "name": "nix:maintainer:0:email",
+          "value": "freaken@freaken.dk"
+        },
+        {
+          "name": "nix:maintainer:0:github",
+          "value": "TethysSvensson"
+        },
+        {
+          "name": "nix:maintainer:0:name",
+          "value": "Tethys Svensson"
+        },
+        {
+          "name": "nix:maintainer:1:email",
+          "value": "hi@alyssa.is"
+        },
+        {
+          "name": "nix:maintainer:1:github",
+          "value": "alyssais"
+        },
+        {
+          "name": "nix:maintainer:1:name",
+          "value": "Alyssa Ross"
+        },
+        {
+          "name": "nix:maintainer:2:email",
+          "value": "balsoft75@gmail.com"
+        },
+        {
+          "name": "nix:maintainer:2:github",
+          "value": "balsoft"
+        },
+        {
+          "name": "nix:maintainer:2:name",
+          "value": "Alexander Bantyev"
+        },
+        {
+          "name": "nix:maintainer:3:email",
+          "value": "contact@infinisil.com"
+        },
+        {
+          "name": "nix:maintainer:3:github",
+          "value": "infinisil"
+        },
+        {
+          "name": "nix:maintainer:3:name",
+          "value": "Silvan Mosberger"
+        },
+        {
+          "name": "nix:maintainer:4:email",
+          "value": "pyrox@pyrox.dev"
+        },
+        {
+          "name": "nix:maintainer:4:github",
+          "value": "pyrox0"
+        },
+        {
+          "name": "nix:maintainer:4:name",
+          "value": "Pyrox"
+        },
+        {
+          "name": "nix:packaged",
+          "value": "true"
+        },
+        {
+          "name": "nix:storePath",
+          "value": "/nix/store/f66zr7abfsx30wpkb5mhlpvbpaqlvqdr-busybox-1.37.0"
+        },
+        {
+          "name": "sbomify:enrichment:source",
+          "value": "ecosyste.ms"
+        }
+      ],
+      "publisher": "Pyrox",
+      "purl": "pkg:nix/busybox@1.37.0",
+      "scope": "required",
+      "type": "application",
+      "version": "1.37.0"
+    },
+    {
+      "bom-ref": "6j3b51rypymg5inhr27rcc7in5cxbvjz-curl-8.18.0",
+      "cpe": "cpe:2.3:a:haxx:curl:8.18.0:*:*:*:*:*:*:*",
+      "description": "Command line tool for transferring files with URL syntax",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "pkg:nix/curl@8.18.0",
+            "confidence": 1,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 1,
+                "technique": "manifest-analysis",
+                "value": "/nix/store/6j3b51rypymg5inhr27rcc7in5cxbvjz-curl-8.18.0-bin"
+              }
+            ]
+          }
+        ]
+      },
+      "externalReferences": [
+        {
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "40df79166e74aa20149365e11ee4c798a46ad57c34e4f68fd13100e2c9a91946"
+            }
+          ],
+          "type": "distribution",
+          "url": "https://curl.haxx.se/download/curl-8.18.0.tar.xz"
+        },
+        {
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "40df79166e74aa20149365e11ee4c798a46ad57c34e4f68fd13100e2c9a91946"
+            }
+          ],
+          "type": "distribution",
+          "url": "https://github.com/curl/curl/releases/download/curl-8_18_0/curl-8.18.0.tar.xz"
+        },
+        {
+          "type": "distribution",
+          "url": "https://search.nixos.org/packages?channel=unstable&query=curl"
+        },
+        {
+          "type": "release-notes",
+          "url": "https://curl.se/ch/8.18.0.html"
+        },
+        {
+          "type": "website",
+          "url": "https://curl.se/"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "curl"
+          }
+        }
+      ],
+      "name": "curl",
+      "properties": [
+        {
+          "name": "nix:maintainer:0:email",
+          "value": "contact@scrumplex.net"
+        },
+        {
+          "name": "nix:maintainer:0:github",
+          "value": "Scrumplex"
+        },
+        {
+          "name": "nix:maintainer:0:name",
+          "value": "Sefa Eyeoglu"
+        },
+        {
+          "name": "nix:maintainer:1:email",
+          "value": "balsoft75@gmail.com"
+        },
+        {
+          "name": "nix:maintainer:1:github",
+          "value": "balsoft"
+        },
+        {
+          "name": "nix:maintainer:1:name",
+          "value": "Alexander Bantyev"
+        },
+        {
+          "name": "nix:maintainer:2:email",
+          "value": "contact@infinisil.com"
+        },
+        {
+          "name": "nix:maintainer:2:github",
+          "value": "infinisil"
+        },
+        {
+          "name": "nix:maintainer:2:name",
+          "value": "Silvan Mosberger"
+        },
+        {
+          "name": "nix:maintainer:3:email",
+          "value": "pyrox@pyrox.dev"
+        },
+        {
+          "name": "nix:maintainer:3:github",
+          "value": "pyrox0"
+        },
+        {
+          "name": "nix:maintainer:3:name",
+          "value": "Pyrox"
+        },
+        {
+          "name": "nix:packaged",
+          "value": "true"
+        },
+        {
+          "name": "nix:storePath",
+          "value": "/nix/store/6j3b51rypymg5inhr27rcc7in5cxbvjz-curl-8.18.0-bin"
+        },
+        {
+          "name": "sbomify:enrichment:source",
+          "value": "ecosyste.ms"
+        }
+      ],
+      "publisher": "Pyrox",
+      "purl": "pkg:nix/curl@8.18.0",
+      "scope": "required",
+      "type": "application",
+      "version": "8.18.0"
+    },
+    {
+      "bom-ref": "c89zz4vh8v9dbs8169wk8ahwxvrdxgm5-findutils-4.10.0",
+      "cpe": "cpe:2.3:a:gnu:findutils:4.10.0:*:*:*:*:*:*:*",
+      "description": "GNU Find Utilities, the basic directory searching utilities of the GNU operating system",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "pkg:nix/findutils@4.10.0",
+            "confidence": 1,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 1,
+                "technique": "manifest-analysis",
+                "value": "/nix/store/c89zz4vh8v9dbs8169wk8ahwxvrdxgm5-findutils-4.10.0"
+              }
+            ]
+          }
+        ]
+      },
+      "externalReferences": [
+        {
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "1387e0b67ff247d2abde998f90dfbf70c1491391a59ddfecb8ae698789f0a4f5"
+            }
+          ],
+          "type": "distribution",
+          "url": "https://ftpmirror.gnu.org/findutils/findutils-4.10.0.tar.xz"
+        },
+        {
+          "type": "distribution",
+          "url": "https://search.nixos.org/packages?channel=unstable&query=findutils"
+        },
+        {
+          "type": "website",
+          "url": "https://www.gnu.org/software/findutils/"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-3.0-or-later"
+          }
+        }
+      ],
+      "name": "findutils",
+      "pedigree": {
+        "patches": [
+          {
+            "diff": {
+              "url": "/nix/store/x5k5bz6pf9scg6rjyi5s7ivvrxmfsdqw-source/pkgs/tools/misc/findutils/gnulib-float-h-tests-port-to-C23-PowerPC-GCC.patch"
+            },
+            "type": "unofficial"
+          },
+          {
+            "diff": {
+              "url": "/nix/store/x5k5bz6pf9scg6rjyi5s7ivvrxmfsdqw-source/pkgs/tools/misc/findutils/no-install-statedir.patch"
+            },
+            "type": "unofficial"
+          }
+        ]
+      },
+      "properties": [
+        {
+          "name": "nix:maintainer:0:email",
+          "value": "nix@mdaniels.me"
+        },
+        {
+          "name": "nix:maintainer:0:github",
+          "value": "mdaniels5757"
+        },
+        {
+          "name": "nix:maintainer:0:name",
+          "value": "Michael Daniels"
+        },
+        {
+          "name": "nix:maintainer:1:email",
+          "value": "balsoft75@gmail.com"
+        },
+        {
+          "name": "nix:maintainer:1:github",
+          "value": "balsoft"
+        },
+        {
+          "name": "nix:maintainer:1:name",
+          "value": "Alexander Bantyev"
+        },
+        {
+          "name": "nix:maintainer:2:email",
+          "value": "contact@infinisil.com"
+        },
+        {
+          "name": "nix:maintainer:2:github",
+          "value": "infinisil"
+        },
+        {
+          "name": "nix:maintainer:2:name",
+          "value": "Silvan Mosberger"
+        },
+        {
+          "name": "nix:maintainer:3:email",
+          "value": "pyrox@pyrox.dev"
+        },
+        {
+          "name": "nix:maintainer:3:github",
+          "value": "pyrox0"
+        },
+        {
+          "name": "nix:maintainer:3:name",
+          "value": "Pyrox"
+        },
+        {
+          "name": "nix:packaged",
+          "value": "true"
+        },
+        {
+          "name": "nix:storePath",
+          "value": "/nix/store/c89zz4vh8v9dbs8169wk8ahwxvrdxgm5-findutils-4.10.0"
+        },
+        {
+          "name": "sbomify:enrichment:source",
+          "value": "ecosyste.ms"
+        }
+      ],
+      "publisher": "Pyrox",
+      "purl": "pkg:nix/findutils@4.10.0",
+      "scope": "required",
+      "type": "application",
+      "version": "4.10.0"
+    },
+    {
+      "bom-ref": "ab3753m6i7isgvzphlar0a8xb84gl96i-gcc-15.2.0",
+      "cpe": "cpe:2.3:a:gnu:gcc:15.2.0:*:*:*:*:*:*:*",
+      "description": "GNU Compiler Collection, version 15.2.0",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "pkg:nix/gcc@15.2.0",
+            "confidence": 1,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 1,
+                "technique": "manifest-analysis",
+                "value": "/nix/store/ab3753m6i7isgvzphlar0a8xb84gl96i-gcc-15.2.0-lib"
+              }
+            ]
+          }
+        ]
+      },
+      "externalReferences": [
+        {
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "438fd996826b0c82485a29da03a72d71d6e3541a83ec702df4271f6fe025d24e"
+            }
+          ],
+          "type": "distribution",
+          "url": "https://mirror.koddos.net/gcc/releases/gcc-15.2.0/gcc-15.2.0.tar.xz"
+        },
+        {
+          "type": "distribution",
+          "url": "https://search.nixos.org/packages?channel=unstable&query=gcc"
+        },
+        {
+          "type": "website",
+          "url": "https://gcc.gnu.org/"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-3.0-or-later"
+          }
+        }
+      ],
+      "name": "gcc",
+      "pedigree": {
+        "patches": [
+          {
+            "diff": {
+              "url": "/nix/store/x5k5bz6pf9scg6rjyi5s7ivvrxmfsdqw-source/pkgs/development/compilers/gcc/patches/13/mangle-NIX_STORE-in-__FILE__.patch"
+            },
+            "type": "unofficial"
+          },
+          {
+            "diff": {
+              "url": "/nix/store/x5k5bz6pf9scg6rjyi5s7ivvrxmfsdqw-source/pkgs/development/compilers/gcc/patches/13/no-sys-dirs-riscv.patch"
+            },
+            "type": "unofficial"
+          },
+          {
+            "diff": {
+              "url": "/nix/store/x5k5bz6pf9scg6rjyi5s7ivvrxmfsdqw-source/pkgs/development/compilers/gcc/patches/15/aarch64-sve-rtx.patch"
+            },
+            "type": "unofficial"
+          },
+          {
+            "diff": {
+              "url": "/nix/store/x5k5bz6pf9scg6rjyi5s7ivvrxmfsdqw-source/pkgs/development/compilers/gcc/patches/c++tools-dont-check-enable-default-pie.patch"
+            },
+            "type": "unofficial"
+          },
+          {
+            "diff": {
+              "url": "/nix/store/x5k5bz6pf9scg6rjyi5s7ivvrxmfsdqw-source/pkgs/development/compilers/gcc/patches/cfi_startproc-reorder-label-14-1.diff"
+            },
+            "type": "unofficial"
+          },
+          {
+            "diff": {
+              "url": "/nix/store/x5k5bz6pf9scg6rjyi5s7ivvrxmfsdqw-source/pkgs/development/compilers/gcc/patches/gcc-12-no-sys-dirs.patch"
+            },
+            "type": "unofficial"
+          },
+          {
+            "diff": {
+              "url": "/nix/store/x5k5bz6pf9scg6rjyi5s7ivvrxmfsdqw-source/pkgs/development/compilers/gcc/patches/ppc-musl.patch"
+            },
+            "type": "unofficial"
+          }
+        ]
+      },
+      "properties": [
+        {
+          "name": "nix:maintainer:0:email",
+          "value": "v@cunat.cz"
+        },
+        {
+          "name": "nix:maintainer:0:github",
+          "value": "vcunat"
+        },
+        {
+          "name": "nix:maintainer:0:name",
+          "value": "Vladimír Čunát"
+        },
+        {
+          "name": "nix:maintainer:1:email",
+          "value": "John.Ericson@Obsidian.Systems"
+        },
+        {
+          "name": "nix:maintainer:1:github",
+          "value": "Ericson2314"
+        },
+        {
+          "name": "nix:maintainer:1:name",
+          "value": "John Ericson"
+        },
+        {
+          "name": "nix:maintainer:2:email",
+          "value": "balsoft75@gmail.com"
+        },
+        {
+          "name": "nix:maintainer:2:github",
+          "value": "balsoft"
+        },
+        {
+          "name": "nix:maintainer:2:name",
+          "value": "Alexander Bantyev"
+        },
+        {
+          "name": "nix:maintainer:3:email",
+          "value": "contact@infinisil.com"
+        },
+        {
+          "name": "nix:maintainer:3:github",
+          "value": "infinisil"
+        },
+        {
+          "name": "nix:maintainer:3:name",
+          "value": "Silvan Mosberger"
+        },
+        {
+          "name": "nix:maintainer:4:email",
+          "value": "pyrox@pyrox.dev"
+        },
+        {
+          "name": "nix:maintainer:4:github",
+          "value": "pyrox0"
+        },
+        {
+          "name": "nix:maintainer:4:name",
+          "value": "Pyrox"
+        },
+        {
+          "name": "nix:packaged",
+          "value": "true"
+        },
+        {
+          "name": "nix:storePath",
+          "value": "/nix/store/ab3753m6i7isgvzphlar0a8xb84gl96i-gcc-15.2.0-lib"
+        },
+        {
+          "name": "sbomify:enrichment:source",
+          "value": "ecosyste.ms"
+        }
+      ],
+      "publisher": "Pyrox",
+      "purl": "pkg:nix/gcc@15.2.0",
+      "scope": "required",
+      "type": "application",
+      "version": "15.2.0"
+    },
+    {
+      "bom-ref": "h6hdbgkfh59np7bi7h8qa76pq27ixz8r-gnugrep-3.12",
+      "cpe": "cpe:2.3:a:gnu:grep:3.12:*:*:*:*:*:*:*",
+      "description": "GNU implementation of the Unix grep command",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "pkg:nix/gnugrep@3.12",
+            "confidence": 1,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 1,
+                "technique": "manifest-analysis",
+                "value": "/nix/store/h6hdbgkfh59np7bi7h8qa76pq27ixz8r-gnugrep-3.12"
+              }
+            ]
+          }
+        ]
+      },
+      "externalReferences": [
+        {
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "2649b27c0e90e632eadcd757be06c6e9a4f48d941de51e7c0f83ff76408a07b9"
+            }
+          ],
+          "type": "distribution",
+          "url": "https://ftpmirror.gnu.org/grep/grep-3.12.tar.xz"
+        },
+        {
+          "type": "distribution",
+          "url": "https://search.nixos.org/packages?channel=unstable&query=gnugrep"
+        },
+        {
+          "type": "website",
+          "url": "https://www.gnu.org/software/grep/"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-3.0-or-later"
+          }
+        }
+      ],
+      "name": "gnugrep",
+      "pedigree": {
+        "patches": [
+          {
+            "diff": {
+              "url": "/nix/store/x5k5bz6pf9scg6rjyi5s7ivvrxmfsdqw-source/pkgs/tools/text/gnugrep/gnulib-float-h-tests-port-to-C23-PowerPC-GCC.patch"
+            },
+            "type": "unofficial"
+          }
+        ]
+      },
+      "properties": [
+        {
+          "name": "nix:maintainer:0:email",
+          "value": "janne@hess.ooo"
+        },
+        {
+          "name": "nix:maintainer:0:github",
+          "value": "dasJ"
+        },
+        {
+          "name": "nix:maintainer:0:name",
+          "value": "Janne Heß"
+        },
+        {
+          "name": "nix:maintainer:1:email",
+          "value": "moritz.lumme@gmail.com"
+        },
+        {
+          "name": "nix:maintainer:1:github",
+          "value": "m00wl"
+        },
+        {
+          "name": "nix:maintainer:1:name",
+          "value": "Moritz Lumme"
+        },
+        {
+          "name": "nix:maintainer:2:email",
+          "value": "balsoft75@gmail.com"
+        },
+        {
+          "name": "nix:maintainer:2:github",
+          "value": "balsoft"
+        },
+        {
+          "name": "nix:maintainer:2:name",
+          "value": "Alexander Bantyev"
+        },
+        {
+          "name": "nix:maintainer:3:email",
+          "value": "contact@infinisil.com"
+        },
+        {
+          "name": "nix:maintainer:3:github",
+          "value": "infinisil"
+        },
+        {
+          "name": "nix:maintainer:3:name",
+          "value": "Silvan Mosberger"
+        },
+        {
+          "name": "nix:maintainer:4:email",
+          "value": "pyrox@pyrox.dev"
+        },
+        {
+          "name": "nix:maintainer:4:github",
+          "value": "pyrox0"
+        },
+        {
+          "name": "nix:maintainer:4:name",
+          "value": "Pyrox"
+        },
+        {
+          "name": "nix:packaged",
+          "value": "true"
+        },
+        {
+          "name": "nix:storePath",
+          "value": "/nix/store/h6hdbgkfh59np7bi7h8qa76pq27ixz8r-gnugrep-3.12"
+        },
+        {
+          "name": "sbomify:enrichment:source",
+          "value": "ecosyste.ms"
+        }
+      ],
+      "publisher": "Janne Heß",
+      "purl": "pkg:nix/gnugrep@3.12",
+      "scope": "required",
+      "type": "application",
+      "version": "3.12"
+    },
+    {
+      "bom-ref": "jpsqy47rdl0j0dvyyzb4kw8gqajw8nx0-gnused-4.9",
+      "cpe": "cpe:2.3:a:gnused:gnused:4.9:*:*:*:*:*:*:*",
+      "description": "GNU sed, a batch stream editor",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "pkg:nix/gnused@4.9",
+            "confidence": 1,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 1,
+                "technique": "manifest-analysis",
+                "value": "/nix/store/jpsqy47rdl0j0dvyyzb4kw8gqajw8nx0-gnused-4.9"
+              }
+            ]
+          }
+        ]
+      },
+      "externalReferences": [
+        {
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "6e226b732e1cd739464ad6862bd1a1aba42d7982922da7a53519631d24975181"
+            }
+          ],
+          "type": "distribution",
+          "url": "https://ftpmirror.gnu.org/sed/sed-4.9.tar.xz"
+        },
+        {
+          "type": "distribution",
+          "url": "https://search.nixos.org/packages?channel=unstable&query=gnused"
+        },
+        {
+          "type": "website",
+          "url": "https://www.gnu.org/software/sed/"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-3.0-or-later"
+          }
+        }
+      ],
+      "name": "gnused",
+      "properties": [
+        {
+          "name": "nix:maintainer:0:email",
+          "value": "joerg@thalheim.io"
+        },
+        {
+          "name": "nix:maintainer:0:github",
+          "value": "Mic92"
+        },
+        {
+          "name": "nix:maintainer:0:name",
+          "value": "Jörg Thalheim"
+        },
+        {
+          "name": "nix:packaged",
+          "value": "true"
+        },
+        {
+          "name": "nix:storePath",
+          "value": "/nix/store/jpsqy47rdl0j0dvyyzb4kw8gqajw8nx0-gnused-4.9"
+        },
+        {
+          "name": "sbomify:enrichment:source",
+          "value": "ecosyste.ms"
+        }
+      ],
+      "publisher": "Jörg Thalheim",
+      "purl": "pkg:nix/gnused@4.9",
+      "scope": "required",
+      "type": "application",
+      "version": "4.9"
+    },
+    {
+      "bom-ref": "fc13hvlj7541i1xmwdka7f61qicdzr5a-jq-1.8.1",
+      "cpe": "cpe:2.3:a:jq:jq:1.8.1:*:*:*:*:*:*:*",
+      "description": "Lightweight and flexible command-line JSON processor",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "pkg:nix/jq@1.8.1",
+            "confidence": 1,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 1,
+                "technique": "manifest-analysis",
+                "value": "/nix/store/fc13hvlj7541i1xmwdka7f61qicdzr5a-jq-1.8.1-bin"
+              }
+            ]
+          }
+        ]
+      },
+      "externalReferences": [
+        {
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "2be64e7129cecb11d5906290eba10af694fb9e3e7f9fc208a311dc33ca837eb0"
+            }
+          ],
+          "type": "distribution",
+          "url": "https://github.com/jqlang/jq/releases/download/jq-1.8.1/jq-1.8.1.tar.gz"
+        },
+        {
+          "type": "distribution",
+          "url": "https://search.nixos.org/packages?channel=unstable&query=jq"
+        },
+        {
+          "type": "release-notes",
+          "url": "https://github.com/jqlang/jq/releases/tag/jq-1.8.1"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/jqlang/jq"
+        },
+        {
+          "type": "website",
+          "url": "https://jqlang.github.io/jq/"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "jq",
+      "pedigree": {
+        "patches": [
+          {
+            "diff": {
+              "url": "/nix/store/x5k5bz6pf9scg6rjyi5s7ivvrxmfsdqw-source/pkgs/by-name/jq/jq/musl.patch"
+            },
+            "type": "unofficial"
+          }
+        ]
+      },
+      "properties": [
+        {
+          "name": "nix:maintainer:0:email",
+          "value": "7c6f434c@mail.ru"
+        },
+        {
+          "name": "nix:maintainer:0:github",
+          "value": "7c6f434c"
+        },
+        {
+          "name": "nix:maintainer:0:name",
+          "value": "Michael Raskin"
+        },
+        {
+          "name": "nix:maintainer:1:email",
+          "value": "artturin@artturin.com"
+        },
+        {
+          "name": "nix:maintainer:1:github",
+          "value": "Artturin"
+        },
+        {
+          "name": "nix:maintainer:1:name",
+          "value": "Artturi N"
+        },
+        {
+          "name": "nix:maintainer:2:email",
+          "value": "n@monade.li"
+        },
+        {
+          "name": "nix:maintainer:2:github",
+          "value": "ncfavier"
+        },
+        {
+          "name": "nix:maintainer:2:name",
+          "value": "Naïm Favier"
+        },
+        {
+          "name": "nix:maintainer:3:email",
+          "value": "hello+nixpkgs@j-k.io"
+        },
+        {
+          "name": "nix:maintainer:3:github",
+          "value": "06kellyjac"
+        },
+        {
+          "name": "nix:maintainer:3:name",
+          "value": "Jack"
+        },
+        {
+          "name": "nix:packaged",
+          "value": "true"
+        },
+        {
+          "name": "nix:storePath",
+          "value": "/nix/store/fc13hvlj7541i1xmwdka7f61qicdzr5a-jq-1.8.1-bin"
+        },
+        {
+          "name": "sbomify:enrichment:source",
+          "value": "ecosyste.ms"
+        }
+      ],
+      "publisher": "Michael Raskin",
+      "purl": "pkg:nix/jq@1.8.1",
+      "scope": "required",
+      "type": "application",
+      "version": "1.8.1"
+    },
+    {
+      "bom-ref": "1ga782ml07vy0h503ac4cin0h8d7q6yh-libidn2-2.3.8",
+      "cpe": "cpe:2.3:a:gnu:libidn2:2.3.8:*:*:*:*:*:*:*",
+      "description": "Free software implementation of IDNA2008 and TR46",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "pkg:nix/libidn2@2.3.8",
+            "confidence": 1,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 1,
+                "technique": "manifest-analysis",
+                "value": "/nix/store/1ga782ml07vy0h503ac4cin0h8d7q6yh-libidn2-2.3.8"
+              }
+            ]
+          }
+        ]
+      },
+      "externalReferences": [
+        {
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "f557911bf6171621e1f72ff35f5b1825bb35b52ed45325dcdee931e5d3c0787a"
+            }
+          ],
+          "type": "distribution",
+          "url": "https://ftp.gnu.org/gnu/libidn/libidn2-2.3.8.tar.gz"
+        },
+        {
+          "type": "distribution",
+          "url": "https://search.nixos.org/packages?channel=unstable&query=libidn2"
+        },
+        {
+          "type": "website",
+          "url": "https://www.gnu.org/software/libidn/#libidn2"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-or-later"
+          }
+        },
+        {
+          "license": {
+            "id": "GPL-3.0-or-later"
+          }
+        },
+        {
+          "license": {
+            "id": "LGPL-3.0-or-later"
+          }
+        }
+      ],
+      "name": "libidn2",
+      "properties": [
+        {
+          "name": "nix:maintainer:0:email",
+          "value": "fpletz@fnordicwalking.de"
+        },
+        {
+          "name": "nix:maintainer:0:github",
+          "value": "fpletz"
+        },
+        {
+          "name": "nix:maintainer:0:name",
+          "value": "Franz Pletz"
+        },
+        {
+          "name": "nix:packaged",
+          "value": "true"
+        },
+        {
+          "name": "nix:storePath",
+          "value": "/nix/store/1ga782ml07vy0h503ac4cin0h8d7q6yh-libidn2-2.3.8"
+        },
+        {
+          "name": "sbomify:enrichment:source",
+          "value": "ecosyste.ms"
+        }
+      ],
+      "publisher": "Franz Pletz",
+      "purl": "pkg:nix/libidn2@2.3.8",
+      "scope": "required",
+      "type": "application",
+      "version": "2.3.8"
+    },
+    {
+      "bom-ref": "bmjrwa35lpkc6b63ih8jfkdmyx6lpxy4-libpsl-0.21.5",
+      "cpe": "cpe:2.3:a:libpsl:libpsl:0.21.5:*:*:*:*:*:*:*",
+      "description": "C library for the Publix Suffix List",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "pkg:nix/libpsl@0.21.5",
+            "confidence": 1,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 1,
+                "technique": "manifest-analysis",
+                "value": "/nix/store/bmjrwa35lpkc6b63ih8jfkdmyx6lpxy4-libpsl-0.21.5"
+              }
+            ]
+          }
+        ]
+      },
+      "externalReferences": [
+        {
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "9a9f6a8c6edba650cf9ea55475cd172dd28487316804e9c73202d97572cd3a2d"
+            }
+          ],
+          "type": "distribution",
+          "url": "https://github.com/rockdaboot/libpsl/releases/download/0.21.5/libpsl-0.21.5.tar.lz"
+        },
+        {
+          "type": "distribution",
+          "url": "https://search.nixos.org/packages?channel=unstable&query=libpsl"
+        },
+        {
+          "type": "release-notes",
+          "url": "https://raw.githubusercontent.com/rockdaboot/libpsl/libpsl-0.21.5/NEWS"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/rockdaboot/libpsl"
+        },
+        {
+          "type": "website",
+          "url": "https://rockdaboot.github.io/libpsl/"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "libpsl",
+      "pedigree": {
+        "patches": [
+          {
+            "diff": {
+              "url": "/nix/store/4y4zb4vkp98syizhwyx9fwz0svgfbarp-static.patch"
+            },
+            "type": "unofficial"
+          }
+        ]
+      },
+      "properties": [
+        {
+          "name": "nix:packaged",
+          "value": "true"
+        },
+        {
+          "name": "nix:storePath",
+          "value": "/nix/store/bmjrwa35lpkc6b63ih8jfkdmyx6lpxy4-libpsl-0.21.5"
+        },
+        {
+          "name": "sbomify:enrichment:source",
+          "value": "ecosyste.ms"
+        }
+      ],
+      "purl": "pkg:nix/libpsl@0.21.5",
+      "scope": "required",
+      "type": "application",
+      "version": "0.21.5"
+    },
+    {
+      "bom-ref": "m5sybb5r3yml6lfgvgdsw4rd3r6bq5h2-oniguruma-6.9.10",
+      "cpe": "cpe:2.3:a:oniguruma:oniguruma:6.9.10:*:*:*:*:*:*:*",
+      "description": "Regular expressions library",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "pkg:nix/oniguruma@6.9.10",
+            "confidence": 1,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 1,
+                "technique": "manifest-analysis",
+                "value": "/nix/store/m5sybb5r3yml6lfgvgdsw4rd3r6bq5h2-oniguruma-6.9.10-lib"
+              }
+            ]
+          }
+        ]
+      },
+      "externalReferences": [
+        {
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "2a5cfc5ae259e4e97f86b68dfffc152cdaffe94e2060b770cb827238d769fc05"
+            }
+          ],
+          "type": "distribution",
+          "url": "https://github.com/kkos/oniguruma/releases/download/v6.9.10/onig-6.9.10.tar.gz"
+        },
+        {
+          "type": "distribution",
+          "url": "https://search.nixos.org/packages?channel=unstable&query=oniguruma"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/kkos/oniguruma"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/kkos/oniguruma"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-2-Clause"
+          }
+        }
+      ],
+      "name": "oniguruma",
+      "properties": [
+        {
+          "name": "nix:maintainer:0:email",
+          "value": "artturin@artturin.com"
+        },
+        {
+          "name": "nix:maintainer:0:github",
+          "value": "Artturin"
+        },
+        {
+          "name": "nix:maintainer:0:name",
+          "value": "Artturi N"
+        },
+        {
+          "name": "nix:packaged",
+          "value": "true"
+        },
+        {
+          "name": "nix:storePath",
+          "value": "/nix/store/m5sybb5r3yml6lfgvgdsw4rd3r6bq5h2-oniguruma-6.9.10-lib"
+        },
+        {
+          "name": "sbomify:enrichment:source",
+          "value": "ecosyste.ms"
+        }
+      ],
+      "publisher": "Artturi N",
+      "purl": "pkg:nix/oniguruma@6.9.10",
+      "scope": "required",
+      "type": "application",
+      "version": "6.9.10"
+    },
+    {
+      "bom-ref": "jb6l0rdrpy0rk4kivja5hf3nvdyb3nzq-openjdk-headless-21.0.10+7",
+      "cpe": "cpe:2.3:a:openjdk-headless:openjdk-headless:21.0.10+7:*:*:*:*:*:*:*",
+      "description": "Open-source Java Development Kit",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "pkg:nix/openjdk-headless@21.0.10%2B7",
+            "confidence": 1,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 1,
+                "technique": "manifest-analysis",
+                "value": "/nix/store/jb6l0rdrpy0rk4kivja5hf3nvdyb3nzq-openjdk-headless-21.0.10+7"
+              }
+            ]
+          }
+        ]
+      },
+      "externalReferences": [
+        {
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "c5a698b7adeebe8079cdfc14c478cd4771e204fcc54cd738c7241fb930bfed55"
+            }
+          ],
+          "type": "distribution",
+          "url": "https://github.com/openjdk/jdk21u/archive/refs/tags/jdk-21.0.10+7.tar.gz"
+        },
+        {
+          "type": "website",
+          "url": "https://openjdk.java.net/"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-only"
+          }
+        }
+      ],
+      "name": "openjdk-headless",
+      "pedigree": {
+        "patches": [
+          {
+            "diff": {
+              "url": "/nix/store/7wg0iflfgfgx79aafqz7kd6maxc8nhgk-gnumake-4.4.1"
+            },
+            "type": "unofficial"
+          },
+          {
+            "diff": {
+              "url": "/nix/store/hq4y9kq66c7h6dhi7nb5vx2ibn6fcbd3-rh1673833-remove_removal_of_wformat_during_test_compilation.patch"
+            },
+            "type": "unofficial"
+          },
+          {
+            "diff": {
+              "url": "/nix/store/x5k5bz6pf9scg6rjyi5s7ivvrxmfsdqw-source/pkgs/development/compilers/openjdk/11/patches/currency-date-range-jdk10.patch"
+            },
+            "type": "unofficial"
+          },
+          {
+            "diff": {
+              "url": "/nix/store/x5k5bz6pf9scg6rjyi5s7ivvrxmfsdqw-source/pkgs/development/compilers/openjdk/11/patches/read-truststore-from-env-jdk10.patch"
+            },
+            "type": "unofficial"
+          },
+          {
+            "diff": {
+              "url": "/nix/store/x5k5bz6pf9scg6rjyi5s7ivvrxmfsdqw-source/pkgs/development/compilers/openjdk/17/patches/increase-javadoc-heap-jdk13.patch"
+            },
+            "type": "unofficial"
+          },
+          {
+            "diff": {
+              "url": "/nix/store/x5k5bz6pf9scg6rjyi5s7ivvrxmfsdqw-source/pkgs/development/compilers/openjdk/21/patches/fix-java-home-jdk21.patch"
+            },
+            "type": "unofficial"
+          },
+          {
+            "diff": {
+              "url": "/nix/store/x5k5bz6pf9scg6rjyi5s7ivvrxmfsdqw-source/pkgs/development/compilers/openjdk/21/patches/ignore-LegalNoticeFilePlugin-jdk18.patch"
+            },
+            "type": "unofficial"
+          }
+        ]
+      },
+      "properties": [
+        {
+          "name": "nix:maintainer:0:email",
+          "value": "infinidoge@inx.moe"
+        },
+        {
+          "name": "nix:maintainer:0:github",
+          "value": "Infinidoge"
+        },
+        {
+          "name": "nix:maintainer:0:name",
+          "value": "Infinidoge"
+        },
+        {
+          "name": "nix:maintainer:1:email",
+          "value": "arne.keller@posteo.de"
+        },
+        {
+          "name": "nix:maintainer:1:github",
+          "value": "FliegendeWurst"
+        },
+        {
+          "name": "nix:maintainer:1:name",
+          "value": "Arne Keller"
+        },
+        {
+          "name": "nix:maintainer:2:email",
+          "value": "chayleaf-nix@pavluk.org"
+        },
+        {
+          "name": "nix:maintainer:2:github",
+          "value": "chayleaf"
+        },
+        {
+          "name": "nix:maintainer:2:name",
+          "value": "Anna Pavlyuk"
+        },
+        {
+          "name": "nix:maintainer:3:email",
+          "value": "tomodachi94@protonmail.com"
+        },
+        {
+          "name": "nix:maintainer:3:github",
+          "value": "tomodachi94"
+        },
+        {
+          "name": "nix:maintainer:3:name",
+          "value": "Tomodachi94"
+        },
+        {
+          "name": "nix:maintainer:4:email",
+          "value": "sean@msgilligan.com"
+        },
+        {
+          "name": "nix:maintainer:4:github",
+          "value": "msgilligan"
+        },
+        {
+          "name": "nix:maintainer:4:name",
+          "value": "Sean Gilligan"
+        },
+        {
+          "name": "nix:packaged",
+          "value": "true"
+        },
+        {
+          "name": "nix:storePath",
+          "value": "/nix/store/jb6l0rdrpy0rk4kivja5hf3nvdyb3nzq-openjdk-headless-21.0.10+7"
+        }
+      ],
+      "purl": "pkg:nix/openjdk-headless@21.0.10%2B7",
+      "scope": "required",
+      "type": "application",
+      "version": "21.0.10+7"
+    },
+    {
+      "bom-ref": "bga5xf95jaypy385hvxm4h3yxl3m1566-openssl-3.6.1",
+      "cpe": "cpe:2.3:a:openssl:openssl:3.6.1:*:*:*:*:*:*:*",
+      "description": "Cryptographic library that implements the SSL and TLS protocols",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "pkg:nix/openssl@3.6.1",
+            "confidence": 1,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 1,
+                "technique": "manifest-analysis",
+                "value": "/nix/store/bga5xf95jaypy385hvxm4h3yxl3m1566-openssl-3.6.1"
+              }
+            ]
+          }
+        ]
+      },
+      "externalReferences": [
+        {
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "b1bfedcd5b289ff22aee87c9d600f515767ebf45f77168cb6d64f231f518a82e"
+            }
+          ],
+          "type": "distribution",
+          "url": "https://github.com/openssl/openssl/releases/download/openssl-3.6.1/openssl-3.6.1.tar.gz"
+        },
+        {
+          "type": "distribution",
+          "url": "https://search.nixos.org/packages?channel=unstable&query=openssl"
+        },
+        {
+          "type": "release-notes",
+          "url": "https://github.com/openssl/openssl/blob/openssl-3.6.1/CHANGES.md"
+        },
+        {
+          "type": "website",
+          "url": "https://www.openssl.org/"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "name": "openssl",
+      "pedigree": {
+        "patches": [
+          {
+            "diff": {
+              "url": "/nix/store/x5k5bz6pf9scg6rjyi5s7ivvrxmfsdqw-source/pkgs/development/libraries/openssl/3.0/nix-ssl-cert-file.patch"
+            },
+            "type": "unofficial"
+          },
+          {
+            "diff": {
+              "url": "/nix/store/x5k5bz6pf9scg6rjyi5s7ivvrxmfsdqw-source/pkgs/development/libraries/openssl/3.0/openssl-disable-kernel-detection.patch"
+            },
+            "type": "unofficial"
+          },
+          {
+            "diff": {
+              "url": "/nix/store/x5k5bz6pf9scg6rjyi5s7ivvrxmfsdqw-source/pkgs/development/libraries/openssl/3.5/use-etc-ssl-certs.patch"
+            },
+            "type": "unofficial"
+          }
+        ]
+      },
+      "properties": [
+        {
+          "name": "nix:maintainer:0:email",
+          "value": "theil.markus@gmail.com"
+        },
+        {
+          "name": "nix:maintainer:0:github",
+          "value": "thillux"
+        },
+        {
+          "name": "nix:maintainer:0:name",
+          "value": "Markus Theil"
+        },
+        {
+          "name": "nix:maintainer:1:email",
+          "value": "balsoft75@gmail.com"
+        },
+        {
+          "name": "nix:maintainer:1:github",
+          "value": "balsoft"
+        },
+        {
+          "name": "nix:maintainer:1:name",
+          "value": "Alexander Bantyev"
+        },
+        {
+          "name": "nix:maintainer:2:email",
+          "value": "contact@infinisil.com"
+        },
+        {
+          "name": "nix:maintainer:2:github",
+          "value": "infinisil"
+        },
+        {
+          "name": "nix:maintainer:2:name",
+          "value": "Silvan Mosberger"
+        },
+        {
+          "name": "nix:maintainer:3:email",
+          "value": "pyrox@pyrox.dev"
+        },
+        {
+          "name": "nix:maintainer:3:github",
+          "value": "pyrox0"
+        },
+        {
+          "name": "nix:maintainer:3:name",
+          "value": "Pyrox"
+        },
+        {
+          "name": "nix:packaged",
+          "value": "true"
+        },
+        {
+          "name": "nix:storePath",
+          "value": "/nix/store/bga5xf95jaypy385hvxm4h3yxl3m1566-openssl-3.6.1"
+        },
+        {
+          "name": "sbomify:enrichment:source",
+          "value": "ecosyste.ms"
+        }
+      ],
+      "publisher": "Markus Theil",
+      "purl": "pkg:nix/openssl@3.6.1",
+      "scope": "required",
+      "type": "application",
+      "version": "3.6.1"
+    },
+    {
+      "bom-ref": "vpxblivamvic1p5r5zny934jvg33m50r-xgcc-15.2.0",
+      "cpe": "cpe:2.3:a:gnu:xgcc:15.2.0:*:*:*:*:*:*:*",
+      "description": "GNU Compiler Collection, version 15.2.0",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "pkg:nix/xgcc@15.2.0",
+            "confidence": 1,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 1,
+                "technique": "manifest-analysis",
+                "value": "/nix/store/vpxblivamvic1p5r5zny934jvg33m50r-xgcc-15.2.0-libgcc"
+              }
+            ]
+          }
+        ]
+      },
+      "externalReferences": [
+        {
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "438fd996826b0c82485a29da03a72d71d6e3541a83ec702df4271f6fe025d24e"
+            }
+          ],
+          "type": "distribution",
+          "url": "https://mirror.koddos.net/gcc/releases/gcc-15.2.0/gcc-15.2.0.tar.xz"
+        },
+        {
+          "type": "website",
+          "url": "https://gcc.gnu.org/"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-3.0-or-later"
+          }
+        }
+      ],
+      "name": "xgcc",
+      "pedigree": {
+        "patches": [
+          {
+            "diff": {
+              "url": "/nix/store/x5k5bz6pf9scg6rjyi5s7ivvrxmfsdqw-source/pkgs/development/compilers/gcc/patches/13/mangle-NIX_STORE-in-__FILE__.patch"
+            },
+            "type": "unofficial"
+          },
+          {
+            "diff": {
+              "url": "/nix/store/x5k5bz6pf9scg6rjyi5s7ivvrxmfsdqw-source/pkgs/development/compilers/gcc/patches/13/no-sys-dirs-riscv.patch"
+            },
+            "type": "unofficial"
+          },
+          {
+            "diff": {
+              "url": "/nix/store/x5k5bz6pf9scg6rjyi5s7ivvrxmfsdqw-source/pkgs/development/compilers/gcc/patches/15/aarch64-sve-rtx.patch"
+            },
+            "type": "unofficial"
+          },
+          {
+            "diff": {
+              "url": "/nix/store/x5k5bz6pf9scg6rjyi5s7ivvrxmfsdqw-source/pkgs/development/compilers/gcc/patches/c++tools-dont-check-enable-default-pie.patch"
+            },
+            "type": "unofficial"
+          },
+          {
+            "diff": {
+              "url": "/nix/store/x5k5bz6pf9scg6rjyi5s7ivvrxmfsdqw-source/pkgs/development/compilers/gcc/patches/cfi_startproc-reorder-label-14-1.diff"
+            },
+            "type": "unofficial"
+          },
+          {
+            "diff": {
+              "url": "/nix/store/x5k5bz6pf9scg6rjyi5s7ivvrxmfsdqw-source/pkgs/development/compilers/gcc/patches/gcc-12-no-sys-dirs.patch"
+            },
+            "type": "unofficial"
+          },
+          {
+            "diff": {
+              "url": "/nix/store/x5k5bz6pf9scg6rjyi5s7ivvrxmfsdqw-source/pkgs/development/compilers/gcc/patches/ppc-musl.patch"
+            },
+            "type": "unofficial"
+          }
+        ]
+      },
+      "properties": [
+        {
+          "name": "nix:maintainer:0:email",
+          "value": "v@cunat.cz"
+        },
+        {
+          "name": "nix:maintainer:0:github",
+          "value": "vcunat"
+        },
+        {
+          "name": "nix:maintainer:0:name",
+          "value": "Vladimír Čunát"
+        },
+        {
+          "name": "nix:maintainer:1:email",
+          "value": "John.Ericson@Obsidian.Systems"
+        },
+        {
+          "name": "nix:maintainer:1:github",
+          "value": "Ericson2314"
+        },
+        {
+          "name": "nix:maintainer:1:name",
+          "value": "John Ericson"
+        },
+        {
+          "name": "nix:maintainer:2:email",
+          "value": "balsoft75@gmail.com"
+        },
+        {
+          "name": "nix:maintainer:2:github",
+          "value": "balsoft"
+        },
+        {
+          "name": "nix:maintainer:2:name",
+          "value": "Alexander Bantyev"
+        },
+        {
+          "name": "nix:maintainer:3:email",
+          "value": "contact@infinisil.com"
+        },
+        {
+          "name": "nix:maintainer:3:github",
+          "value": "infinisil"
+        },
+        {
+          "name": "nix:maintainer:3:name",
+          "value": "Silvan Mosberger"
+        },
+        {
+          "name": "nix:maintainer:4:email",
+          "value": "pyrox@pyrox.dev"
+        },
+        {
+          "name": "nix:maintainer:4:github",
+          "value": "pyrox0"
+        },
+        {
+          "name": "nix:maintainer:4:name",
+          "value": "Pyrox"
+        },
+        {
+          "name": "nix:packaged",
+          "value": "true"
+        },
+        {
+          "name": "nix:storePath",
+          "value": "/nix/store/vpxblivamvic1p5r5zny934jvg33m50r-xgcc-15.2.0-libgcc"
+        }
+      ],
+      "purl": "pkg:nix/xgcc@15.2.0",
+      "scope": "required",
+      "type": "application",
+      "version": "15.2.0"
+    },
+    {
+      "bom-ref": "29mmnqpc1p3iv8wj0lpvicajy3jsbx87-zstd-1.5.7",
+      "cpe": "cpe:2.3:a:zstd:zstd:1.5.7:*:*:*:*:*:*:*",
+      "description": "Zstandard real-time compression algorithm",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "pkg:nix/zstd@1.5.7",
+            "confidence": 1,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 1,
+                "technique": "manifest-analysis",
+                "value": "/nix/store/29mmnqpc1p3iv8wj0lpvicajy3jsbx87-zstd-1.5.7"
+              }
+            ]
+          }
+        ]
+      },
+      "externalReferences": [
+        {
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "b4d156213f7275fa3307c7567264ccb992c242642e7531492244abd1a1bb4b8e"
+            }
+          ],
+          "type": "distribution",
+          "url": "https://github.com/facebook/zstd/archive/v1.5.7.tar.gz"
+        },
+        {
+          "type": "distribution",
+          "url": "https://search.nixos.org/packages?channel=unstable&query=zstd"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/facebook/zstd/issues"
+        },
+        {
+          "type": "release-notes",
+          "url": "https://github.com/facebook/zstd/blob/v1.5.7/CHANGELOG"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/facebook/zstd"
+        },
+        {
+          "type": "website",
+          "url": "https://facebook.github.io/zstd/"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
+      "name": "zstd",
+      "pedigree": {
+        "patches": [
+          {
+            "diff": {
+              "url": "/nix/store/d3gh8y8k0y5kq8pxd8hmjsall6rzympc-man-fix.patch"
+            },
+            "type": "unofficial"
+          },
+          {
+            "diff": {
+              "url": "/nix/store/x5k5bz6pf9scg6rjyi5s7ivvrxmfsdqw-source/pkgs/tools/compression/zstd/playtests-darwin.patch"
+            },
+            "type": "unofficial"
+          }
+        ]
+      },
+      "properties": [
+        {
+          "name": "nix:packaged",
+          "value": "true"
+        },
+        {
+          "name": "nix:storePath",
+          "value": "/nix/store/29mmnqpc1p3iv8wj0lpvicajy3jsbx87-zstd-1.5.7"
+        },
+        {
+          "name": "sbomify:enrichment:source",
+          "value": "ecosyste.ms"
+        }
+      ],
+      "purl": "pkg:nix/zstd@1.5.7",
+      "scope": "required",
+      "type": "application",
+      "version": "1.5.7"
+    },
+    {
+      "bom-ref": "4sabfgpxkbv6w3mvk0wil50vdi37m9r8-acl-2.3.2",
+      "cpe": "cpe:2.3:a:acl_project:acl:2.3.2:*:*:*:*:*:*:*",
+      "description": "Library and tools for manipulating access control lists",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "pkg:nix/acl@2.3.2",
+            "confidence": 1,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 1,
+                "technique": "manifest-analysis",
+                "value": "/nix/store/4sabfgpxkbv6w3mvk0wil50vdi37m9r8-acl-2.3.2"
+              }
+            ]
+          }
+        ]
+      },
+      "externalReferences": [
+        {
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "5f2bdbad629707aa7d85c623f994aa8a1d2dec55a73de5205bac0bf6058a2f7c"
+            }
+          ],
+          "type": "distribution",
+          "url": "https://download.savannah.gnu.org/releases/acl/acl-2.3.2.tar.gz"
+        },
+        {
+          "type": "distribution",
+          "url": "https://search.nixos.org/packages?channel=unstable&query=acl"
+        },
+        {
+          "type": "website",
+          "url": "https://savannah.nongnu.org/projects/acl"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-or-later"
+          }
+        }
+      ],
+      "name": "acl",
+      "properties": [
+        {
+          "name": "nix:maintainer:0:email",
+          "value": "balsoft75@gmail.com"
+        },
+        {
+          "name": "nix:maintainer:0:github",
+          "value": "balsoft"
+        },
+        {
+          "name": "nix:maintainer:0:name",
+          "value": "Alexander Bantyev"
+        },
+        {
+          "name": "nix:maintainer:1:email",
+          "value": "contact@infinisil.com"
+        },
+        {
+          "name": "nix:maintainer:1:github",
+          "value": "infinisil"
+        },
+        {
+          "name": "nix:maintainer:1:name",
+          "value": "Silvan Mosberger"
+        },
+        {
+          "name": "nix:maintainer:2:email",
+          "value": "pyrox@pyrox.dev"
+        },
+        {
+          "name": "nix:maintainer:2:github",
+          "value": "pyrox0"
+        },
+        {
+          "name": "nix:maintainer:2:name",
+          "value": "Pyrox"
+        },
+        {
+          "name": "nix:packaged",
+          "value": "true"
+        },
+        {
+          "name": "nix:storePath",
+          "value": "/nix/store/4sabfgpxkbv6w3mvk0wil50vdi37m9r8-acl-2.3.2"
+        },
+        {
+          "name": "sbomify:enrichment:source",
+          "value": "ecosyste.ms"
+        }
+      ],
+      "publisher": "Pyrox",
+      "purl": "pkg:nix/acl@2.3.2",
+      "scope": "required",
+      "type": "library",
+      "version": "2.3.2"
+    },
+    {
+      "bom-ref": "p2yk6q3bhcz1d0wlmk907ysj4l95ak7y-attr-2.5.2",
+      "cpe": "cpe:2.3:a:attr_project:attr:2.5.2:*:*:*:*:*:*:*",
+      "description": "Library and tools for manipulating extended attributes",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "pkg:nix/attr@2.5.2",
+            "confidence": 1,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 1,
+                "technique": "manifest-analysis",
+                "value": "/nix/store/p2yk6q3bhcz1d0wlmk907ysj4l95ak7y-attr-2.5.2"
+              }
+            ]
+          }
+        ]
+      },
+      "externalReferences": [
+        {
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "39bf67452fa41d0948c2197601053f48b3d78a029389734332a6309a680c6c87"
+            }
+          ],
+          "type": "distribution",
+          "url": "https://download.savannah.gnu.org/releases/attr/attr-2.5.2.tar.gz"
+        },
+        {
+          "type": "distribution",
+          "url": "https://search.nixos.org/packages?channel=unstable&query=attr"
+        },
+        {
+          "type": "website",
+          "url": "https://savannah.nongnu.org/projects/attr/"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-or-later"
+          }
+        }
+      ],
+      "name": "attr",
+      "pedigree": {
+        "patches": [
+          {
+            "diff": {
+              "url": "/nix/store/x5k5bz6pf9scg6rjyi5s7ivvrxmfsdqw-source/pkgs/development/libraries/attr/musl.patch"
+            },
+            "type": "unofficial"
+          }
+        ]
+      },
+      "properties": [
+        {
+          "name": "nix:maintainer:0:email",
+          "value": "balsoft75@gmail.com"
+        },
+        {
+          "name": "nix:maintainer:0:github",
+          "value": "balsoft"
+        },
+        {
+          "name": "nix:maintainer:0:name",
+          "value": "Alexander Bantyev"
+        },
+        {
+          "name": "nix:maintainer:1:email",
+          "value": "contact@infinisil.com"
+        },
+        {
+          "name": "nix:maintainer:1:github",
+          "value": "infinisil"
+        },
+        {
+          "name": "nix:maintainer:1:name",
+          "value": "Silvan Mosberger"
+        },
+        {
+          "name": "nix:maintainer:2:email",
+          "value": "pyrox@pyrox.dev"
+        },
+        {
+          "name": "nix:maintainer:2:github",
+          "value": "pyrox0"
+        },
+        {
+          "name": "nix:maintainer:2:name",
+          "value": "Pyrox"
+        },
+        {
+          "name": "nix:packaged",
+          "value": "true"
+        },
+        {
+          "name": "nix:storePath",
+          "value": "/nix/store/p2yk6q3bhcz1d0wlmk907ysj4l95ak7y-attr-2.5.2"
+        },
+        {
+          "name": "sbomify:enrichment:source",
+          "value": "ecosyste.ms"
+        }
+      ],
+      "publisher": "Pyrox",
+      "purl": "pkg:nix/attr@2.5.2",
+      "scope": "required",
+      "type": "library",
+      "version": "2.5.2"
+    },
+    {
+      "bom-ref": "74sind1d6vf2bfwd7yklg8chsvzqxmmq-coreutils-9.10",
+      "cpe": "cpe:2.3:a:gnu:coreutils:9.10:*:*:*:*:*:*:*",
+      "description": "GNU Core Utilities",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "pkg:nix/coreutils@9.10",
+            "confidence": 1,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 1,
+                "technique": "manifest-analysis",
+                "value": "/nix/store/74sind1d6vf2bfwd7yklg8chsvzqxmmq-coreutils-9.10"
+              }
+            ]
+          }
+        ]
+      },
+      "externalReferences": [
+        {
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "16535a9adf0b10037364e2d612aad3d9f4eca3a344949ced74d12faf4bd51d25"
+            }
+          ],
+          "type": "distribution",
+          "url": "https://ftpmirror.gnu.org/coreutils/coreutils-9.10.tar.xz"
+        },
+        {
+          "type": "distribution",
+          "url": "https://search.nixos.org/packages?channel=unstable&query=coreutils"
+        },
+        {
+          "type": "website",
+          "url": "https://www.gnu.org/software/coreutils/"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-3.0-or-later"
+          }
+        }
+      ],
+      "name": "coreutils",
+      "pedigree": {
+        "patches": [
+          {
+            "diff": {
+              "url": "/nix/store/x5k5bz6pf9scg6rjyi5s7ivvrxmfsdqw-source/pkgs/tools/misc/coreutils/fix-kill-doctest.patch"
+            },
+            "type": "unofficial"
+          },
+          {
+            "diff": {
+              "url": "/nix/store/x5k5bz6pf9scg6rjyi5s7ivvrxmfsdqw-source/pkgs/tools/misc/coreutils/tests-notty-sighup.patch"
+            },
+            "type": "unofficial"
+          }
+        ]
+      },
+      "properties": [
+        {
+          "name": "nix:maintainer:0:email",
+          "value": "janne@hess.ooo"
+        },
+        {
+          "name": "nix:maintainer:0:github",
+          "value": "dasJ"
+        },
+        {
+          "name": "nix:maintainer:0:name",
+          "value": "Janne Heß"
+        },
+        {
+          "name": "nix:maintainer:1:email",
+          "value": "nix@mdaniels.me"
+        },
+        {
+          "name": "nix:maintainer:1:github",
+          "value": "mdaniels5757"
+        },
+        {
+          "name": "nix:maintainer:1:name",
+          "value": "Michael Daniels"
+        },
+        {
+          "name": "nix:maintainer:2:email",
+          "value": "balsoft75@gmail.com"
+        },
+        {
+          "name": "nix:maintainer:2:github",
+          "value": "balsoft"
+        },
+        {
+          "name": "nix:maintainer:2:name",
+          "value": "Alexander Bantyev"
+        },
+        {
+          "name": "nix:maintainer:3:email",
+          "value": "contact@infinisil.com"
+        },
+        {
+          "name": "nix:maintainer:3:github",
+          "value": "infinisil"
+        },
+        {
+          "name": "nix:maintainer:3:name",
+          "value": "Silvan Mosberger"
+        },
+        {
+          "name": "nix:maintainer:4:email",
+          "value": "pyrox@pyrox.dev"
+        },
+        {
+          "name": "nix:maintainer:4:github",
+          "value": "pyrox0"
+        },
+        {
+          "name": "nix:maintainer:4:name",
+          "value": "Pyrox"
+        },
+        {
+          "name": "nix:packaged",
+          "value": "true"
+        },
+        {
+          "name": "nix:storePath",
+          "value": "/nix/store/74sind1d6vf2bfwd7yklg8chsvzqxmmq-coreutils-9.10"
+        },
+        {
+          "name": "sbomify:enrichment:source",
+          "value": "ecosyste.ms"
+        }
+      ],
+      "publisher": "Pyrox",
+      "purl": "pkg:nix/coreutils@9.10",
+      "scope": "required",
+      "type": "library",
+      "version": "9.10"
+    },
+    {
+      "bom-ref": "jms7zxzm7w1whczwny5m3gkgdjghmi2r-glibc-2.42",
+      "cpe": "cpe:2.3:a:gnu:glibc:2.42:*:*:*:*:*:*:*",
+      "description": "GNU C Library",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "pkg:nix/glibc@2.42",
+            "confidence": 1,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 1,
+                "technique": "manifest-analysis",
+                "value": "/nix/store/jms7zxzm7w1whczwny5m3gkgdjghmi2r-glibc-2.42-51"
+              }
+            ]
+          }
+        ]
+      },
+      "externalReferences": [
+        {
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "d1775e32e4628e64ef930f435b67bb63af7599acb6be2b335b9f19f16509f17f"
+            }
+          ],
+          "type": "distribution",
+          "url": "https://ftpmirror.gnu.org/glibc/glibc-2.42.tar.xz"
+        },
+        {
+          "type": "distribution",
+          "url": "https://search.nixos.org/packages?channel=unstable&query=glibc"
+        },
+        {
+          "type": "website",
+          "url": "https://www.gnu.org/software/libc/"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "LGPL-2.0-or-later"
+          }
+        }
+      ],
+      "name": "glibc",
+      "pedigree": {
+        "patches": [
+          {
+            "diff": {
+              "url": "/nix/store/x5k5bz6pf9scg6rjyi5s7ivvrxmfsdqw-source/pkgs/development/libraries/glibc/0001-Revert-Remove-all-usage-of-BASH-or-BASH-in-installed.patch"
+            },
+            "type": "unofficial"
+          },
+          {
+            "diff": {
+              "url": "/nix/store/x5k5bz6pf9scg6rjyi5s7ivvrxmfsdqw-source/pkgs/development/libraries/glibc/0001-localedata-allow-reproducible-parallel-install-of-lo.patch"
+            },
+            "type": "unofficial"
+          },
+          {
+            "diff": {
+              "url": "/nix/store/x5k5bz6pf9scg6rjyi5s7ivvrxmfsdqw-source/pkgs/development/libraries/glibc/0002-Makeconfig-make-inst_complocaledir-overridable.patch"
+            },
+            "type": "unofficial"
+          },
+          {
+            "diff": {
+              "url": "/nix/store/x5k5bz6pf9scg6rjyi5s7ivvrxmfsdqw-source/pkgs/development/libraries/glibc/2.42-master.patch"
+            },
+            "type": "unofficial"
+          },
+          {
+            "diff": {
+              "url": "/nix/store/x5k5bz6pf9scg6rjyi5s7ivvrxmfsdqw-source/pkgs/development/libraries/glibc/dont-use-system-ld-so-cache.patch"
+            },
+            "type": "unofficial"
+          },
+          {
+            "diff": {
+              "url": "/nix/store/x5k5bz6pf9scg6rjyi5s7ivvrxmfsdqw-source/pkgs/development/libraries/glibc/dont-use-system-ld-so-preload.patch"
+            },
+            "type": "unofficial"
+          },
+          {
+            "diff": {
+              "url": "/nix/store/x5k5bz6pf9scg6rjyi5s7ivvrxmfsdqw-source/pkgs/development/libraries/glibc/fix-x64-abi.patch"
+            },
+            "type": "unofficial"
+          },
+          {
+            "diff": {
+              "url": "/nix/store/x5k5bz6pf9scg6rjyi5s7ivvrxmfsdqw-source/pkgs/development/libraries/glibc/fix_path_attribute_in_getconf.patch"
+            },
+            "type": "unofficial"
+          },
+          {
+            "diff": {
+              "url": "/nix/store/x5k5bz6pf9scg6rjyi5s7ivvrxmfsdqw-source/pkgs/development/libraries/glibc/nix-locale-archive.patch"
+            },
+            "type": "unofficial"
+          },
+          {
+            "diff": {
+              "url": "/nix/store/x5k5bz6pf9scg6rjyi5s7ivvrxmfsdqw-source/pkgs/development/libraries/glibc/nix-nss-open-files.patch"
+            },
+            "type": "unofficial"
+          },
+          {
+            "diff": {
+              "url": "/nix/store/x5k5bz6pf9scg6rjyi5s7ivvrxmfsdqw-source/pkgs/development/libraries/glibc/reenable_DT_HASH.patch"
+            },
+            "type": "unofficial"
+          }
+        ]
+      },
+      "properties": [
+        {
+          "name": "nix:maintainer:0:email",
+          "value": "maximilian@mbosch.me"
+        },
+        {
+          "name": "nix:maintainer:0:github",
+          "value": "Ma27"
+        },
+        {
+          "name": "nix:maintainer:0:name",
+          "value": "Maximilian Bosch"
+        },
+        {
+          "name": "nix:maintainer:1:email",
+          "value": "ConnorBaker01@gmail.com"
+        },
+        {
+          "name": "nix:maintainer:1:github",
+          "value": "ConnorBaker"
+        },
+        {
+          "name": "nix:maintainer:1:name",
+          "value": "Connor Baker"
+        },
+        {
+          "name": "nix:maintainer:2:email",
+          "value": "balsoft75@gmail.com"
+        },
+        {
+          "name": "nix:maintainer:2:github",
+          "value": "balsoft"
+        },
+        {
+          "name": "nix:maintainer:2:name",
+          "value": "Alexander Bantyev"
+        },
+        {
+          "name": "nix:maintainer:3:email",
+          "value": "contact@infinisil.com"
+        },
+        {
+          "name": "nix:maintainer:3:github",
+          "value": "infinisil"
+        },
+        {
+          "name": "nix:maintainer:3:name",
+          "value": "Silvan Mosberger"
+        },
+        {
+          "name": "nix:maintainer:4:email",
+          "value": "pyrox@pyrox.dev"
+        },
+        {
+          "name": "nix:maintainer:4:github",
+          "value": "pyrox0"
+        },
+        {
+          "name": "nix:maintainer:4:name",
+          "value": "Pyrox"
+        },
+        {
+          "name": "nix:packaged",
+          "value": "true"
+        },
+        {
+          "name": "nix:storePath",
+          "value": "/nix/store/jms7zxzm7w1whczwny5m3gkgdjghmi2r-glibc-2.42-51"
+        },
+        {
+          "name": "sbomify:enrichment:source",
+          "value": "ecosyste.ms"
+        }
+      ],
+      "publisher": "Maximilian Bosch",
+      "purl": "pkg:nix/glibc@2.42",
+      "scope": "required",
+      "type": "library",
+      "version": "2.42"
+    },
+    {
+      "bom-ref": "dlr3cc27i1mjkqcm9jlp5bjmb0n57q01-gmp-with-cxx-6.3.0",
+      "cpe": "cpe:2.3:a:gmp-with-cxx:gmp-with-cxx:6.3.0:*:*:*:*:*:*:*",
+      "description": "GNU multiple precision arithmetic library",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "pkg:nix/gmp-with-cxx@6.3.0",
+            "confidence": 1,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 1,
+                "technique": "manifest-analysis",
+                "value": "/nix/store/dlr3cc27i1mjkqcm9jlp5bjmb0n57q01-gmp-with-cxx-6.3.0"
+              }
+            ]
+          }
+        ]
+      },
+      "externalReferences": [
+        {
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "ac28211a7cfb609bae2e2c8d6058d66c8fe96434f740cf6fe2e47b000d1c20cb"
+            }
+          ],
+          "type": "distribution",
+          "url": "https://ftpmirror.gnu.org/gmp/gmp-6.3.0.tar.bz2"
+        },
+        {
+          "type": "website",
+          "url": "https://gmplib.org/"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-only"
+          }
+        },
+        {
+          "license": {
+            "id": "LGPL-3.0-only"
+          }
+        }
+      ],
+      "name": "gmp-with-cxx",
+      "properties": [
+        {
+          "name": "nix:packaged",
+          "value": "true"
+        },
+        {
+          "name": "nix:storePath",
+          "value": "/nix/store/dlr3cc27i1mjkqcm9jlp5bjmb0n57q01-gmp-with-cxx-6.3.0"
+        }
+      ],
+      "purl": "pkg:nix/gmp-with-cxx@6.3.0",
+      "scope": "required",
+      "type": "library",
+      "version": "6.3.0"
+    },
+    {
+      "bom-ref": "571wa2r944pl91550rcb5c9aymihg0a7-keycloak-26.5.6",
+      "cpe": "cpe:2.3:a:keycloak:keycloak:26.5.6:*:*:*:*:*:*:*",
+      "description": "Identity and access management for modern applications and services",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "pkg:nix/keycloak@26.5.6",
+            "confidence": 1,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 1,
+                "technique": "manifest-analysis",
+                "value": "/nix/store/571wa2r944pl91550rcb5c9aymihg0a7-keycloak-26.5.6"
+              }
+            ]
+          }
+        ]
+      },
+      "externalReferences": [
+        {
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "964052cccd243d87b7df4d4426463f35285a2a9073fbb36e00afcc3cd2f0317e"
+            }
+          ],
+          "type": "distribution",
+          "url": "https://github.com/keycloak/keycloak/releases/download/26.5.6/keycloak-26.5.6.zip"
+        },
+        {
+          "type": "distribution",
+          "url": "https://search.nixos.org/packages?channel=unstable&query=keycloak"
+        },
+        {
+          "type": "website",
+          "url": "https://www.keycloak.org/"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "name": "keycloak",
+      "pedigree": {
+        "patches": [
+          {
+            "diff": {
+              "url": "/nix/store/x5k5bz6pf9scg6rjyi5s7ivvrxmfsdqw-source/pkgs/by-name/ke/keycloak/config_vars.patch"
+            },
+            "type": "unofficial"
+          }
+        ]
+      },
+      "properties": [
+        {
+          "name": "nix:maintainer:0:email",
+          "value": "ngerstle@gmail.com"
+        },
+        {
+          "name": "nix:maintainer:0:github",
+          "value": "ngerstle"
+        },
+        {
+          "name": "nix:maintainer:0:name",
+          "value": "Nicholas Gerstle"
+        },
+        {
+          "name": "nix:maintainer:1:email",
+          "value": "kim.lindberger@gmail.com"
+        },
+        {
+          "name": "nix:maintainer:1:github",
+          "value": "talyz"
+        },
+        {
+          "name": "nix:maintainer:1:name",
+          "value": "Kim Lindberger"
+        },
+        {
+          "name": "nix:maintainer:2:email",
+          "value": "nickcao@nichi.co"
+        },
+        {
+          "name": "nix:maintainer:2:github",
+          "value": "NickCao"
+        },
+        {
+          "name": "nix:maintainer:2:name",
+          "value": "Nick Cao"
+        },
+        {
+          "name": "nix:maintainer:3:email",
+          "value": "nix@leona.is"
+        },
+        {
+          "name": "nix:maintainer:3:github",
+          "value": "leona-ya"
+        },
+        {
+          "name": "nix:maintainer:3:name",
+          "value": "Leona Maroni"
+        },
+        {
+          "name": "nix:maintainer:4:email",
+          "value": "i@anish.land"
+        },
+        {
+          "name": "nix:maintainer:4:github",
+          "value": "ap-1"
+        },
+        {
+          "name": "nix:maintainer:4:name",
+          "value": "Anish Pallati"
+        },
+        {
+          "name": "nix:maintainer:5:email",
+          "value": "dasskrit@gmail.com"
+        },
+        {
+          "name": "nix:maintainer:5:github",
+          "value": "kritdass"
+        },
+        {
+          "name": "nix:maintainer:5:name",
+          "value": "Krit Dass"
+        },
+        {
+          "name": "nix:maintainer:6:email",
+          "value": "oojefferywm@proton.me"
+        },
+        {
+          "name": "nix:maintainer:6:github",
+          "value": "jefferyoo"
+        },
+        {
+          "name": "nix:maintainer:6:name",
+          "value": "Jeffery Oo"
+        },
+        {
+          "name": "nix:packaged",
+          "value": "true"
+        },
+        {
+          "name": "nix:storePath",
+          "value": "/nix/store/571wa2r944pl91550rcb5c9aymihg0a7-keycloak-26.5.6"
+        },
+        {
+          "name": "sbomify:enrichment:source",
+          "value": "ecosyste.ms"
+        }
+      ],
+      "publisher": "Nick Cao",
+      "purl": "pkg:nix/keycloak@26.5.6",
+      "scope": "required",
+      "type": "library",
+      "version": "26.5.6"
+    },
+    {
+      "bom-ref": "vy4nwn1qa5cm5nzfvn4zxqkrqwpm2by5-keyutils-1.6.3",
+      "cpe": "cpe:2.3:a:keyutils:keyutils:1.6.3:*:*:*:*:*:*:*",
+      "description": "Tools used to control the Linux kernel key management system",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "pkg:nix/keyutils@1.6.3",
+            "confidence": 1,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 1,
+                "technique": "manifest-analysis",
+                "value": "/nix/store/vy4nwn1qa5cm5nzfvn4zxqkrqwpm2by5-keyutils-1.6.3-lib"
+              }
+            ]
+          }
+        ]
+      },
+      "externalReferences": [
+        {
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "a61d5706136ae4c05bd48f86186bcfdbd88dd8bd5107e3e195c924cfc1b39bb4"
+            }
+          ],
+          "type": "distribution",
+          "url": "https://git.kernel.org/pub/scm/linux/kernel/git/dhowells/keyutils.git/snapshot/keyutils-1.6.3.tar.gz"
+        },
+        {
+          "type": "distribution",
+          "url": "https://search.nixos.org/packages?channel=unstable&query=keyutils"
+        },
+        {
+          "type": "website",
+          "url": "https://people.redhat.com/dhowells/keyutils/"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-or-later"
+          }
+        }
+      ],
+      "name": "keyutils",
+      "pedigree": {
+        "patches": [
+          {
+            "diff": {
+              "url": "/nix/store/d1xybymfx4ad0hy6zv97walg9v1dyzn6-raw"
+            },
+            "type": "unofficial"
+          },
+          {
+            "diff": {
+              "url": "/nix/store/x5k5bz6pf9scg6rjyi5s7ivvrxmfsdqw-source/pkgs/by-name/ke/keyutils/0001-Remove-unused-function-after_eq.patch"
+            },
+            "type": "unofficial"
+          },
+          {
+            "diff": {
+              "url": "/nix/store/x5k5bz6pf9scg6rjyi5s7ivvrxmfsdqw-source/pkgs/by-name/ke/keyutils/conf-symlink.patch"
+            },
+            "type": "unofficial"
+          },
+          {
+            "diff": {
+              "url": "/nix/store/x5k5bz6pf9scg6rjyi5s7ivvrxmfsdqw-source/pkgs/by-name/ke/keyutils/pkg-config-static.patch"
+            },
+            "type": "unofficial"
+          }
+        ]
+      },
+      "properties": [
+        {
+          "name": "nix:packaged",
+          "value": "true"
+        },
+        {
+          "name": "nix:storePath",
+          "value": "/nix/store/vy4nwn1qa5cm5nzfvn4zxqkrqwpm2by5-keyutils-1.6.3-lib"
+        },
+        {
+          "name": "sbomify:enrichment:source",
+          "value": "ecosyste.ms"
+        }
+      ],
+      "purl": "pkg:nix/keyutils@1.6.3",
+      "scope": "required",
+      "type": "library",
+      "version": "1.6.3"
+    },
+    {
+      "bom-ref": "g2g1jvyldykkq49hhgvvkndbj731c676-krb5-1.22.1",
+      "cpe": "cpe:2.3:a:krb5:krb5:1.22.1:*:*:*:*:*:*:*",
+      "description": "MIT Kerberos 5",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "pkg:nix/krb5@1.22.1",
+            "confidence": 1,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 1,
+                "technique": "manifest-analysis",
+                "value": "/nix/store/g2g1jvyldykkq49hhgvvkndbj731c676-krb5-1.22.1-lib"
+              }
+            ]
+          }
+        ]
+      },
+      "externalReferences": [
+        {
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "1a8832b8cad923ebbf1394f67e2efcf41e3a49f460285a66e35adec8fa0053af"
+            }
+          ],
+          "type": "distribution",
+          "url": "https://kerberos.org/dist/krb5/1.22/krb5-1.22.1.tar.gz"
+        },
+        {
+          "type": "distribution",
+          "url": "https://search.nixos.org/packages?channel=unstable&query=krb5"
+        },
+        {
+          "type": "website",
+          "url": "http://web.mit.edu/kerberos/"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "krb5",
+      "properties": [
+        {
+          "name": "nix:packaged",
+          "value": "true"
+        },
+        {
+          "name": "nix:storePath",
+          "value": "/nix/store/g2g1jvyldykkq49hhgvvkndbj731c676-krb5-1.22.1-lib"
+        },
+        {
+          "name": "sbomify:enrichment:source",
+          "value": "ecosyste.ms"
+        }
+      ],
+      "purl": "pkg:nix/krb5@1.22.1",
+      "scope": "required",
+      "type": "library",
+      "version": "1.22.1"
+    },
+    {
+      "bom-ref": "0mkbf0061mvyizfj16zgh4xa6qjq6pvi-lcms2-2.18",
+      "cpe": "cpe:2.3:a:lcms2:lcms2:2.18:*:*:*:*:*:*:*",
+      "description": "Color management engine",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "pkg:nix/lcms2@2.18",
+            "confidence": 1,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 1,
+                "technique": "manifest-analysis",
+                "value": "/nix/store/0mkbf0061mvyizfj16zgh4xa6qjq6pvi-lcms2-2.18"
+              }
+            ]
+          }
+        ]
+      },
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://search.nixos.org/packages?channel=unstable&query=lcms2"
+        },
+        {
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "ee67be3566f459362c1ee094fde2c159d33fa0390aa4ed5f5af676f9e5004347"
+            }
+          ],
+          "type": "distribution",
+          "url": "mirror://sourceforge/lcms/lcms2-2.18.tar.gz"
+        },
+        {
+          "type": "website",
+          "url": "http://www.littlecms.com/"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "lcms2",
+      "properties": [
+        {
+          "name": "nix:packaged",
+          "value": "true"
+        },
+        {
+          "name": "nix:storePath",
+          "value": "/nix/store/0mkbf0061mvyizfj16zgh4xa6qjq6pvi-lcms2-2.18"
+        },
+        {
+          "name": "sbomify:enrichment:source",
+          "value": "ecosyste.ms"
+        }
+      ],
+      "purl": "pkg:nix/lcms2@2.18",
+      "scope": "required",
+      "type": "library",
+      "version": "2.18"
+    },
+    {
+      "bom-ref": "xp28zc157vrm8ij4d5ib6n9ilz6nqpgi-libjpeg-turbo-3.1.3",
+      "cpe": "cpe:2.3:a:libjpeg-turbo:libjpeg-turbo:3.1.3:*:*:*:*:*:*:*",
+      "description": "Faster (using SIMD) libjpeg implementation",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "pkg:nix/libjpeg-turbo@3.1.3",
+            "confidence": 1,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 1,
+                "technique": "manifest-analysis",
+                "value": "/nix/store/xp28zc157vrm8ij4d5ib6n9ilz6nqpgi-libjpeg-turbo-3.1.3"
+              }
+            ]
+          }
+        ]
+      },
+      "externalReferences": [
+        {
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "8dc76808996c0c4afcee2e4c37823acc0459554c507f374cd0bb60dc8cab3518"
+            }
+          ],
+          "type": "distribution",
+          "url": "https://github.com/libjpeg-turbo/libjpeg-turbo/archive/refs/tags/3.1.3.tar.gz"
+        },
+        {
+          "type": "release-notes",
+          "url": "https://github.com/libjpeg-turbo/libjpeg-turbo/releases/tag/3.1.3"
+        },
+        {
+          "type": "website",
+          "url": "https://libjpeg-turbo.org/"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "IJG"
+          }
+        }
+      ],
+      "name": "libjpeg-turbo",
+      "properties": [
+        {
+          "name": "nix:maintainer:0:email",
+          "value": "v@cunat.cz"
+        },
+        {
+          "name": "nix:maintainer:0:github",
+          "value": "vcunat"
+        },
+        {
+          "name": "nix:maintainer:0:name",
+          "value": "Vladimír Čunát"
+        },
+        {
+          "name": "nix:maintainer:1:email",
+          "value": "kamadorueda@gmail.com"
+        },
+        {
+          "name": "nix:maintainer:1:github",
+          "value": "kamadorueda"
+        },
+        {
+          "name": "nix:maintainer:1:name",
+          "value": "Kevin Amado"
+        },
+        {
+          "name": "nix:packaged",
+          "value": "true"
+        },
+        {
+          "name": "nix:storePath",
+          "value": "/nix/store/xp28zc157vrm8ij4d5ib6n9ilz6nqpgi-libjpeg-turbo-3.1.3"
+        }
+      ],
+      "purl": "pkg:nix/libjpeg-turbo@3.1.3",
+      "scope": "required",
+      "type": "library",
+      "version": "3.1.3"
+    },
+    {
+      "bom-ref": "lq3xr8iiayj65lpwazxpqfywm98n9lsh-libssh2-1.11.1",
+      "cpe": "cpe:2.3:a:libssh2:libssh2:1.11.1:*:*:*:*:*:*:*",
+      "description": "Client-side C library implementing the SSH2 protocol",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "pkg:nix/libssh2@1.11.1",
+            "confidence": 1,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 1,
+                "technique": "manifest-analysis",
+                "value": "/nix/store/lq3xr8iiayj65lpwazxpqfywm98n9lsh-libssh2-1.11.1"
+              }
+            ]
+          }
+        ]
+      },
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://search.nixos.org/packages?channel=unstable&query=libssh2"
+        },
+        {
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "d9ec76cbe34db98eec3539fe2c899d26b0c837cb3eb466a56b0f109cabf658f7"
+            }
+          ],
+          "type": "distribution",
+          "url": "https://www.libssh2.org/download/libssh2-1.11.1.tar.gz"
+        },
+        {
+          "type": "website",
+          "url": "https://www.libssh2.org"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
+      "name": "libssh2",
+      "properties": [
+        {
+          "name": "nix:maintainer:0:email",
+          "value": "sandro.jaeckel@gmail.com"
+        },
+        {
+          "name": "nix:maintainer:0:github",
+          "value": "SuperSandro2000"
+        },
+        {
+          "name": "nix:maintainer:0:name",
+          "value": "Sandro Jäckel"
+        },
+        {
+          "name": "nix:packaged",
+          "value": "true"
+        },
+        {
+          "name": "nix:storePath",
+          "value": "/nix/store/lq3xr8iiayj65lpwazxpqfywm98n9lsh-libssh2-1.11.1"
+        },
+        {
+          "name": "sbomify:enrichment:source",
+          "value": "ecosyste.ms"
+        }
+      ],
+      "publisher": "Sandro Jäckel",
+      "purl": "pkg:nix/libssh2@1.11.1",
+      "scope": "required",
+      "type": "library",
+      "version": "1.11.1"
+    },
+    {
+      "bom-ref": "p7jg95rzvfalb95k3mskk0jqxc9d724n-libunistring-1.4.1",
+      "cpe": "cpe:2.3:a:libunistring:libunistring:1.4.1:*:*:*:*:*:*:*",
+      "description": "Unicode string library",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "pkg:nix/libunistring@1.4.1",
+            "confidence": 1,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 1,
+                "technique": "manifest-analysis",
+                "value": "/nix/store/p7jg95rzvfalb95k3mskk0jqxc9d724n-libunistring-1.4.1"
+              }
+            ]
+          }
+        ]
+      },
+      "externalReferences": [
+        {
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "12542ad7619470efd95a623174dcd4b364f2483caf708c6bee837cb53a54cb9d"
+            }
+          ],
+          "type": "distribution",
+          "url": "https://ftpmirror.gnu.org/libunistring/libunistring-1.4.1.tar.gz"
+        },
+        {
+          "type": "distribution",
+          "url": "https://search.nixos.org/packages?channel=unstable&query=libunistring"
+        },
+        {
+          "type": "website",
+          "url": "https://www.gnu.org/software/libunistring/"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "LGPL-3.0-or-later"
+          }
+        }
+      ],
+      "name": "libunistring",
+      "properties": [
+        {
+          "name": "nix:packaged",
+          "value": "true"
+        },
+        {
+          "name": "nix:storePath",
+          "value": "/nix/store/p7jg95rzvfalb95k3mskk0jqxc9d724n-libunistring-1.4.1"
+        },
+        {
+          "name": "sbomify:enrichment:source",
+          "value": "ecosyste.ms"
+        }
+      ],
+      "purl": "pkg:nix/libunistring@1.4.1",
+      "scope": "required",
+      "type": "library",
+      "version": "1.4.1"
+    },
+    {
+      "bom-ref": "jv35gdc4dfr0h8idwicn6h1h3r7pa13v-nghttp2-1.67.1",
+      "cpe": "cpe:2.3:a:nghttp2:nghttp2:1.67.1:*:*:*:*:*:*:*",
+      "description": "HTTP/2 C library and tools",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "pkg:nix/nghttp2@1.67.1",
+            "confidence": 1,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 1,
+                "technique": "manifest-analysis",
+                "value": "/nix/store/jv35gdc4dfr0h8idwicn6h1h3r7pa13v-nghttp2-1.67.1-lib"
+              }
+            ]
+          }
+        ]
+      },
+      "externalReferences": [
+        {
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "dfb720d4243a7950589fa2632378beb5ee9ad442e94b794b3b8e2ca28c1d7e2a"
+            }
+          ],
+          "type": "distribution",
+          "url": "https://github.com/nghttp2/nghttp2/releases/download/v1.67.1/nghttp2-1.67.1.tar.bz2"
+        },
+        {
+          "type": "distribution",
+          "url": "https://search.nixos.org/packages?channel=unstable&query=nghttp2"
+        },
+        {
+          "type": "release-notes",
+          "url": "https://github.com/nghttp2/nghttp2/releases/tag/v1.67.1"
+        },
+        {
+          "type": "website",
+          "url": "https://nghttp2.org/"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "nghttp2",
+      "properties": [
+        {
+          "name": "nix:packaged",
+          "value": "true"
+        },
+        {
+          "name": "nix:storePath",
+          "value": "/nix/store/jv35gdc4dfr0h8idwicn6h1h3r7pa13v-nghttp2-1.67.1-lib"
+        },
+        {
+          "name": "sbomify:enrichment:source",
+          "value": "ecosyste.ms"
+        }
+      ],
+      "purl": "pkg:nix/nghttp2@1.67.1",
+      "scope": "required",
+      "type": "library",
+      "version": "1.67.1"
+    },
+    {
+      "bom-ref": "wp4km4x6x2h98i412lr9mwgsr82r56j3-nghttp3-1.14.0",
+      "cpe": "cpe:2.3:a:nghttp3:nghttp3:1.14.0:*:*:*:*:*:*:*",
+      "description": "Implementation of HTTP/3 mapping over QUIC and QPACK in C",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "pkg:nix/nghttp3@1.14.0",
+            "confidence": 1,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 1,
+                "technique": "manifest-analysis",
+                "value": "/nix/store/wp4km4x6x2h98i412lr9mwgsr82r56j3-nghttp3-1.14.0"
+              }
+            ]
+          }
+        ]
+      },
+      "externalReferences": [
+        {
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "2548b4cf3dc197a841df4feb06fd637d1971e1d6a1bbe112dca2ec618ab3e945"
+            }
+          ],
+          "type": "distribution",
+          "url": "https://github.com/ngtcp2/nghttp3/releases/download/v1.14.0/nghttp3-1.14.0.tar.bz2"
+        },
+        {
+          "type": "distribution",
+          "url": "https://search.nixos.org/packages?channel=unstable&query=nghttp3"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/ngtcp2/nghttp3/issues"
+        },
+        {
+          "type": "release-notes",
+          "url": "https://github.com/ngtcp2/nghttp3/releases/tag/v1.14.0"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/ngtcp2/nghttp3"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/ngtcp2/nghttp3"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "nghttp3",
+      "properties": [
+        {
+          "name": "nix:maintainer:0:email",
+          "value": "Izorkin@gmail.com"
+        },
+        {
+          "name": "nix:maintainer:0:github",
+          "value": "Izorkin"
+        },
+        {
+          "name": "nix:maintainer:0:name",
+          "value": "Yurii Izorkin"
+        },
+        {
+          "name": "nix:packaged",
+          "value": "true"
+        },
+        {
+          "name": "nix:storePath",
+          "value": "/nix/store/wp4km4x6x2h98i412lr9mwgsr82r56j3-nghttp3-1.14.0"
+        },
+        {
+          "name": "sbomify:enrichment:source",
+          "value": "ecosyste.ms"
+        }
+      ],
+      "publisher": "Yurii Izorkin",
+      "purl": "pkg:nix/nghttp3@1.14.0",
+      "scope": "required",
+      "type": "library",
+      "version": "1.14.0"
+    },
+    {
+      "bom-ref": "afhc4clmmfc8p62k9h7bh7kb7ayl72c4-ngtcp2-1.19.0",
+      "cpe": "cpe:2.3:a:ngtcp2:ngtcp2:1.19.0:*:*:*:*:*:*:*",
+      "description": "Implementation of the QUIC protocol (RFC9000)",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "pkg:nix/ngtcp2@1.19.0",
+            "confidence": 1,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 1,
+                "technique": "manifest-analysis",
+                "value": "/nix/store/afhc4clmmfc8p62k9h7bh7kb7ayl72c4-ngtcp2-1.19.0"
+              }
+            ]
+          }
+        ]
+      },
+      "externalReferences": [
+        {
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "b276416d3d5c0a1578127fbc436a972d10f4bcaeba83a6a3dae91b41cc51a932"
+            }
+          ],
+          "type": "distribution",
+          "url": "https://github.com/ngtcp2/ngtcp2/releases/download/v1.19.0/ngtcp2-1.19.0.tar.bz2"
+        },
+        {
+          "type": "distribution",
+          "url": "https://search.nixos.org/packages?channel=unstable&query=ngtcp2"
+        },
+        {
+          "type": "issue-tracker",
+          "url": "https://github.com/ngtcp2/ngtcp2/issues"
+        },
+        {
+          "type": "release-notes",
+          "url": "https://github.com/ngtcp2/ngtcp2/releases/tag/v1.19.0"
+        },
+        {
+          "type": "vcs",
+          "url": "git+https://github.com/ngtcp2/ngtcp2"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/ngtcp2/ngtcp2"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "name": "ngtcp2",
+      "properties": [
+        {
+          "name": "nix:maintainer:0:email",
+          "value": "Izorkin@gmail.com"
+        },
+        {
+          "name": "nix:maintainer:0:github",
+          "value": "Izorkin"
+        },
+        {
+          "name": "nix:maintainer:0:name",
+          "value": "Yurii Izorkin"
+        },
+        {
+          "name": "nix:packaged",
+          "value": "true"
+        },
+        {
+          "name": "nix:storePath",
+          "value": "/nix/store/afhc4clmmfc8p62k9h7bh7kb7ayl72c4-ngtcp2-1.19.0"
+        },
+        {
+          "name": "sbomify:enrichment:source",
+          "value": "ecosyste.ms"
+        }
+      ],
+      "publisher": "Yurii Izorkin",
+      "purl": "pkg:nix/ngtcp2@1.19.0",
+      "scope": "required",
+      "type": "library",
+      "version": "1.19.0"
+    },
+    {
+      "bom-ref": "mg063aj0crwhchqayf2qbyf28k6mlrxm-nss-cacert-3.121",
+      "cpe": "cpe:2.3:a:mozilla:nss:3.121:*:*:*:*:*:*:*",
+      "description": "Bundle of X.509 certificates of public Certificate Authorities (CA)",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "pkg:nix/nss-cacert@3.121",
+            "confidence": 1,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 1,
+                "technique": "manifest-analysis",
+                "value": "/nix/store/mg063aj0crwhchqayf2qbyf28k6mlrxm-nss-cacert-3.121"
+              }
+            ]
+          }
+        ]
+      },
+      "externalReferences": [
+        {
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "3b98d4e3ff57a326d9587c33633039c8c3a9cf0b55f7ca581d7598ff329eb1f3"
+            }
+          ],
+          "type": "distribution",
+          "url": "https://hg-edge.mozilla.org/projects/nss/raw-file/NSS_3_121_RTM/lib/ckfw/builtins/certdata.txt"
+        },
+        {
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "3b98d4e3ff57a326d9587c33633039c8c3a9cf0b55f7ca581d7598ff329eb1f3"
+            }
+          ],
+          "type": "distribution",
+          "url": "https://raw.githubusercontent.com/nss-dev/nss/refs/tags/NSS_3_121_RTM/lib/ckfw/builtins/certdata.txt"
+        },
+        {
+          "type": "website",
+          "url": "https://firefox-source-docs.mozilla.org/security/nss/runbooks/rootstore.html#root-store-consumers"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MPL-2.0"
+          }
+        }
+      ],
+      "name": "nss-cacert",
+      "properties": [
+        {
+          "name": "nix:maintainer:0:email",
+          "value": "fpletz@fnordicwalking.de"
+        },
+        {
+          "name": "nix:maintainer:0:github",
+          "value": "fpletz"
+        },
+        {
+          "name": "nix:maintainer:0:name",
+          "value": "Franz Pletz"
+        },
+        {
+          "name": "nix:maintainer:1:email",
+          "value": "nix@lukegb.com"
+        },
+        {
+          "name": "nix:maintainer:1:github",
+          "value": "lukegb"
+        },
+        {
+          "name": "nix:maintainer:1:name",
+          "value": "Luke Granger-Brown"
+        },
+        {
+          "name": "nix:maintainer:2:email",
+          "value": "balsoft75@gmail.com"
+        },
+        {
+          "name": "nix:maintainer:2:github",
+          "value": "balsoft"
+        },
+        {
+          "name": "nix:maintainer:2:name",
+          "value": "Alexander Bantyev"
+        },
+        {
+          "name": "nix:maintainer:3:email",
+          "value": "contact@infinisil.com"
+        },
+        {
+          "name": "nix:maintainer:3:github",
+          "value": "infinisil"
+        },
+        {
+          "name": "nix:maintainer:3:name",
+          "value": "Silvan Mosberger"
+        },
+        {
+          "name": "nix:maintainer:4:email",
+          "value": "pyrox@pyrox.dev"
+        },
+        {
+          "name": "nix:maintainer:4:github",
+          "value": "pyrox0"
+        },
+        {
+          "name": "nix:maintainer:4:name",
+          "value": "Pyrox"
+        },
+        {
+          "name": "nix:packaged",
+          "value": "true"
+        },
+        {
+          "name": "nix:storePath",
+          "value": "/nix/store/mg063aj0crwhchqayf2qbyf28k6mlrxm-nss-cacert-3.121"
+        }
+      ],
+      "purl": "pkg:nix/nss-cacert@3.121",
+      "scope": "required",
+      "type": "library",
+      "version": "3.121"
+    },
+    {
+      "bom-ref": "ygdgqjzw03k8d05zq3pigzf67b62j7vs-pcre2-10.46",
+      "cpe": "cpe:2.3:a:pcre:pcre2:10.46:*:*:*:*:*:*:*",
+      "description": "Perl Compatible Regular Expressions",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "pkg:nix/pcre2@10.46",
+            "confidence": 1,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 1,
+                "technique": "manifest-analysis",
+                "value": "/nix/store/ygdgqjzw03k8d05zq3pigzf67b62j7vs-pcre2-10.46"
+              }
+            ]
+          }
+        ]
+      },
+      "externalReferences": [
+        {
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "15fbc5aba6beee0b17aecb04602ae39432393aba1ebd8e39b7cabf7db883299f"
+            }
+          ],
+          "type": "distribution",
+          "url": "https://github.com/PhilipHazel/pcre2/releases/download/pcre2-10.46/pcre2-10.46.tar.bz2"
+        },
+        {
+          "type": "distribution",
+          "url": "https://search.nixos.org/packages?channel=unstable&query=pcre2"
+        },
+        {
+          "type": "website",
+          "url": "https://www.pcre.org/"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        }
+      ],
+      "name": "pcre2",
+      "properties": [
+        {
+          "name": "nix:maintainer:0:email",
+          "value": "ttuegel@mailbox.org"
+        },
+        {
+          "name": "nix:maintainer:0:github",
+          "value": "ttuegel"
+        },
+        {
+          "name": "nix:maintainer:0:name",
+          "value": "Thomas Tuegel"
+        },
+        {
+          "name": "nix:packaged",
+          "value": "true"
+        },
+        {
+          "name": "nix:storePath",
+          "value": "/nix/store/ygdgqjzw03k8d05zq3pigzf67b62j7vs-pcre2-10.46"
+        },
+        {
+          "name": "sbomify:enrichment:source",
+          "value": "ecosyste.ms"
+        }
+      ],
+      "publisher": "Thomas Tuegel",
+      "purl": "pkg:nix/pcre2@10.46",
+      "scope": "required",
+      "type": "library",
+      "version": "10.46"
+    },
+    {
+      "bom-ref": "d89jdm44kd24yn0yaz7aishw1cyzi396-publicsuffix-list-0-unstable-2026-03-02",
+      "cpe": "cpe:2.3:a:publicsuffix-list:publicsuffix-list:0-unstable-2026-03-02:*:*:*:*:*:*:*",
+      "description": "Cross-vendor public domain suffix database",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "pkg:nix/publicsuffix-list@0-unstable-2026-03-02",
+            "confidence": 1,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 1,
+                "technique": "manifest-analysis",
+                "value": "/nix/store/d89jdm44kd24yn0yaz7aishw1cyzi396-publicsuffix-list-0-unstable-2026-03-02"
+              }
+            ]
+          }
+        ]
+      },
+      "externalReferences": [
+        {
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "0155515b7ef7782d98a6ca1eb9e7d2bfccbe30ca7b51f1eb7746972c488ba6c6"
+            }
+          ],
+          "type": "distribution",
+          "url": "https://github.com/publicsuffix/list/archive/7ef6384612e1b48bb8b6023716cc9a493ac25d8a.tar.gz"
+        },
+        {
+          "type": "distribution",
+          "url": "https://search.nixos.org/packages?channel=unstable&query=publicsuffix-list"
+        },
+        {
+          "type": "website",
+          "url": "https://publicsuffix.org/"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "MPL-2.0"
+          }
+        }
+      ],
+      "name": "publicsuffix-list",
+      "properties": [
+        {
+          "name": "nix:packaged",
+          "value": "true"
+        },
+        {
+          "name": "nix:storePath",
+          "value": "/nix/store/d89jdm44kd24yn0yaz7aishw1cyzi396-publicsuffix-list-0-unstable-2026-03-02"
+        },
+        {
+          "name": "sbomify:enrichment:source",
+          "value": "ecosyste.ms"
+        }
+      ],
+      "purl": "pkg:nix/publicsuffix-list@0-unstable-2026-03-02",
+      "scope": "required",
+      "type": "library",
+      "version": "0-unstable-2026-03-02"
+    },
+    {
+      "bom-ref": "cqcf2nyajjhwi69b3ib5wqz9dq2lf1l2-set-java-classpath-hook-26.05pre-git",
+      "cpe": "cpe:2.3:a:set-java-classpath-hook:set-java-classpath-hook:26.05pre-git:*:*:*:*:*:*:*",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "pkg:nix/set-java-classpath-hook@26.05pre-git",
+            "confidence": 1,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 1,
+                "technique": "manifest-analysis",
+                "value": "/nix/store/cqcf2nyajjhwi69b3ib5wqz9dq2lf1l2-set-java-classpath-hook"
+              }
+            ]
+          }
+        ]
+      },
+      "name": "set-java-classpath-hook",
+      "properties": [
+        {
+          "name": "nix:packaged",
+          "value": "true"
+        },
+        {
+          "name": "nix:storePath",
+          "value": "/nix/store/cqcf2nyajjhwi69b3ib5wqz9dq2lf1l2-set-java-classpath-hook"
+        }
+      ],
+      "purl": "pkg:nix/set-java-classpath-hook@26.05pre-git",
+      "scope": "required",
+      "type": "library",
+      "version": "26.05pre-git"
+    },
+    {
+      "bom-ref": "2kdz3m7ic8w226pcvkz1dlg169v91p6a-zlib-1.3.2",
+      "cpe": "cpe:2.3:a:zlib:zlib:1.3.2:*:*:*:*:*:*:*",
+      "description": "Lossless data-compression library",
+      "evidence": {
+        "identity": [
+          {
+            "concludedValue": "pkg:nix/zlib@1.3.2",
+            "confidence": 1,
+            "field": "purl",
+            "methods": [
+              {
+                "confidence": 1,
+                "technique": "manifest-analysis",
+                "value": "/nix/store/2kdz3m7ic8w226pcvkz1dlg169v91p6a-zlib-1.3.2"
+              }
+            ]
+          }
+        ]
+      },
+      "externalReferences": [
+        {
+          "hashes": [
+            {
+              "alg": "SHA-256",
+              "content": "bb329a0a2cd0274d05519d61c667c062e06990d72e125ee2dfa8de64f0119d16"
+            }
+          ],
+          "type": "distribution",
+          "url": "https://github.com/madler/zlib/releases/download/v1.3.2/zlib-1.3.2.tar.gz"
+        },
+        {
+          "type": "distribution",
+          "url": "https://search.nixos.org/packages?channel=unstable&query=zlib"
+        },
+        {
+          "type": "website",
+          "url": "https://zlib.net"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Zlib"
+          }
+        }
+      ],
+      "name": "zlib",
+      "properties": [
+        {
+          "name": "nix:maintainer:0:email",
+          "value": "balsoft75@gmail.com"
+        },
+        {
+          "name": "nix:maintainer:0:github",
+          "value": "balsoft"
+        },
+        {
+          "name": "nix:maintainer:0:name",
+          "value": "Alexander Bantyev"
+        },
+        {
+          "name": "nix:maintainer:1:email",
+          "value": "contact@infinisil.com"
+        },
+        {
+          "name": "nix:maintainer:1:github",
+          "value": "infinisil"
+        },
+        {
+          "name": "nix:maintainer:1:name",
+          "value": "Silvan Mosberger"
+        },
+        {
+          "name": "nix:maintainer:2:email",
+          "value": "pyrox@pyrox.dev"
+        },
+        {
+          "name": "nix:maintainer:2:github",
+          "value": "pyrox0"
+        },
+        {
+          "name": "nix:maintainer:2:name",
+          "value": "Pyrox"
+        },
+        {
+          "name": "nix:packaged",
+          "value": "true"
+        },
+        {
+          "name": "nix:storePath",
+          "value": "/nix/store/2kdz3m7ic8w226pcvkz1dlg169v91p6a-zlib-1.3.2"
+        },
+        {
+          "name": "sbomify:enrichment:source",
+          "value": "ecosyste.ms"
+        }
+      ],
+      "purl": "pkg:nix/zlib@1.3.2",
+      "scope": "required",
+      "type": "library",
+      "version": "1.3.2"
+    }
+  ],
+  "dependencies": [
+    {
+      "dependsOn": [
+        "jms7zxzm7w1whczwny5m3gkgdjghmi2r-glibc-2.42"
+      ],
+      "ref": "0mkbf0061mvyizfj16zgh4xa6qjq6pvi-lcms2-2.18"
+    },
+    {
+      "dependsOn": [
+        "p7jg95rzvfalb95k3mskk0jqxc9d724n-libunistring-1.4.1"
+      ],
+      "ref": "1ga782ml07vy0h503ac4cin0h8d7q6yh-libidn2-2.3.8"
+    },
+    {
+      "dependsOn": [
+        "ab3753m6i7isgvzphlar0a8xb84gl96i-gcc-15.2.0",
+        "jms7zxzm7w1whczwny5m3gkgdjghmi2r-glibc-2.42"
+      ],
+      "ref": "29mmnqpc1p3iv8wj0lpvicajy3jsbx87-zstd-1.5.7"
+    },
+    {
+      "dependsOn": [
+        "jms7zxzm7w1whczwny5m3gkgdjghmi2r-glibc-2.42"
+      ],
+      "ref": "2kdz3m7ic8w226pcvkz1dlg169v91p6a-zlib-1.3.2"
+    },
+    {
+      "dependsOn": [
+        "jms7zxzm7w1whczwny5m3gkgdjghmi2r-glibc-2.42",
+        "p2yk6q3bhcz1d0wlmk907ysj4l95ak7y-attr-2.5.2"
+      ],
+      "ref": "4sabfgpxkbv6w3mvk0wil50vdi37m9r8-acl-2.3.2"
+    },
+    {
+      "dependsOn": [
+        "ab3753m6i7isgvzphlar0a8xb84gl96i-gcc-15.2.0",
+        "jb6l0rdrpy0rk4kivja5hf3nvdyb3nzq-openjdk-headless-21.0.10+7",
+        "jms7zxzm7w1whczwny5m3gkgdjghmi2r-glibc-2.42",
+        "v8sa6r6q037ihghxfbwzjj4p59v2x0pv-bash-5.3p9"
+      ],
+      "ref": "571wa2r944pl91550rcb5c9aymihg0a7-keycloak-26.5.6"
+    },
+    {
+      "dependsOn": [
+        "1ga782ml07vy0h503ac4cin0h8d7q6yh-libidn2-2.3.8",
+        "29mmnqpc1p3iv8wj0lpvicajy3jsbx87-zstd-1.5.7",
+        "91nr5z1cwr1qch2wl58dppl02zrnlza3-brotli-1.2.0",
+        "afhc4clmmfc8p62k9h7bh7kb7ayl72c4-ngtcp2-1.19.0",
+        "bga5xf95jaypy385hvxm4h3yxl3m1566-openssl-3.6.1",
+        "bmjrwa35lpkc6b63ih8jfkdmyx6lpxy4-libpsl-0.21.5",
+        "g2g1jvyldykkq49hhgvvkndbj731c676-krb5-1.22.1",
+        "jms7zxzm7w1whczwny5m3gkgdjghmi2r-glibc-2.42",
+        "jv35gdc4dfr0h8idwicn6h1h3r7pa13v-nghttp2-1.67.1",
+        "lq3xr8iiayj65lpwazxpqfywm98n9lsh-libssh2-1.11.1",
+        "v8sa6r6q037ihghxfbwzjj4p59v2x0pv-bash-5.3p9",
+        "wp4km4x6x2h98i412lr9mwgsr82r56j3-nghttp3-1.14.0"
+      ],
+      "ref": "6j3b51rypymg5inhr27rcc7in5cxbvjz-curl-8.18.0"
+    },
+    {
+      "dependsOn": [
+        "4sabfgpxkbv6w3mvk0wil50vdi37m9r8-acl-2.3.2",
+        "dlr3cc27i1mjkqcm9jlp5bjmb0n57q01-gmp-with-cxx-6.3.0",
+        "jms7zxzm7w1whczwny5m3gkgdjghmi2r-glibc-2.42",
+        "p2yk6q3bhcz1d0wlmk907ysj4l95ak7y-attr-2.5.2"
+      ],
+      "ref": "74sind1d6vf2bfwd7yklg8chsvzqxmmq-coreutils-9.10"
+    },
+    {
+      "dependsOn": [
+        "jms7zxzm7w1whczwny5m3gkgdjghmi2r-glibc-2.42"
+      ],
+      "ref": "91nr5z1cwr1qch2wl58dppl02zrnlza3-brotli-1.2.0"
+    },
+    {
+      "dependsOn": [
+        "0mkbf0061mvyizfj16zgh4xa6qjq6pvi-lcms2-2.18",
+        "1ga782ml07vy0h503ac4cin0h8d7q6yh-libidn2-2.3.8",
+        "29mmnqpc1p3iv8wj0lpvicajy3jsbx87-zstd-1.5.7",
+        "2kdz3m7ic8w226pcvkz1dlg169v91p6a-zlib-1.3.2",
+        "4sabfgpxkbv6w3mvk0wil50vdi37m9r8-acl-2.3.2",
+        "571wa2r944pl91550rcb5c9aymihg0a7-keycloak-26.5.6",
+        "6j3b51rypymg5inhr27rcc7in5cxbvjz-curl-8.18.0",
+        "74sind1d6vf2bfwd7yklg8chsvzqxmmq-coreutils-9.10",
+        "91nr5z1cwr1qch2wl58dppl02zrnlza3-brotli-1.2.0",
+        "ab3753m6i7isgvzphlar0a8xb84gl96i-gcc-15.2.0",
+        "afhc4clmmfc8p62k9h7bh7kb7ayl72c4-ngtcp2-1.19.0",
+        "bga5xf95jaypy385hvxm4h3yxl3m1566-openssl-3.6.1",
+        "bmjrwa35lpkc6b63ih8jfkdmyx6lpxy4-libpsl-0.21.5",
+        "c89zz4vh8v9dbs8169wk8ahwxvrdxgm5-findutils-4.10.0",
+        "cqcf2nyajjhwi69b3ib5wqz9dq2lf1l2-set-java-classpath-hook-26.05pre-git",
+        "d89jdm44kd24yn0yaz7aishw1cyzi396-publicsuffix-list-0-unstable-2026-03-02",
+        "dlr3cc27i1mjkqcm9jlp5bjmb0n57q01-gmp-with-cxx-6.3.0",
+        "f66zr7abfsx30wpkb5mhlpvbpaqlvqdr-busybox-1.37.0",
+        "fc13hvlj7541i1xmwdka7f61qicdzr5a-jq-1.8.1",
+        "g2g1jvyldykkq49hhgvvkndbj731c676-krb5-1.22.1",
+        "h6hdbgkfh59np7bi7h8qa76pq27ixz8r-gnugrep-3.12",
+        "jb6l0rdrpy0rk4kivja5hf3nvdyb3nzq-openjdk-headless-21.0.10+7",
+        "jms7zxzm7w1whczwny5m3gkgdjghmi2r-glibc-2.42",
+        "jpsqy47rdl0j0dvyyzb4kw8gqajw8nx0-gnused-4.9",
+        "jv35gdc4dfr0h8idwicn6h1h3r7pa13v-nghttp2-1.67.1",
+        "lq3xr8iiayj65lpwazxpqfywm98n9lsh-libssh2-1.11.1",
+        "m5sybb5r3yml6lfgvgdsw4rd3r6bq5h2-oniguruma-6.9.10",
+        "mg063aj0crwhchqayf2qbyf28k6mlrxm-nss-cacert-3.121",
+        "p2yk6q3bhcz1d0wlmk907ysj4l95ak7y-attr-2.5.2",
+        "p7jg95rzvfalb95k3mskk0jqxc9d724n-libunistring-1.4.1",
+        "v8sa6r6q037ihghxfbwzjj4p59v2x0pv-bash-5.3p9",
+        "vpxblivamvic1p5r5zny934jvg33m50r-xgcc-15.2.0",
+        "vy4nwn1qa5cm5nzfvn4zxqkrqwpm2by5-keyutils-1.6.3",
+        "wp4km4x6x2h98i412lr9mwgsr82r56j3-nghttp3-1.14.0",
+        "xp28zc157vrm8ij4d5ib6n9ilz6nqpgi-libjpeg-turbo-3.1.3",
+        "ygdgqjzw03k8d05zq3pigzf67b62j7vs-pcre2-10.46"
+      ],
+      "ref": "BomRef.04831435869892553.9237497245925014"
+    },
+    {
+      "dependsOn": [
+        "jms7zxzm7w1whczwny5m3gkgdjghmi2r-glibc-2.42"
+      ],
+      "ref": "ab3753m6i7isgvzphlar0a8xb84gl96i-gcc-15.2.0"
+    },
+    {
+      "dependsOn": [
+        "bga5xf95jaypy385hvxm4h3yxl3m1566-openssl-3.6.1",
+        "jms7zxzm7w1whczwny5m3gkgdjghmi2r-glibc-2.42"
+      ],
+      "ref": "afhc4clmmfc8p62k9h7bh7kb7ayl72c4-ngtcp2-1.19.0"
+    },
+    {
+      "dependsOn": [
+        "jms7zxzm7w1whczwny5m3gkgdjghmi2r-glibc-2.42"
+      ],
+      "ref": "bga5xf95jaypy385hvxm4h3yxl3m1566-openssl-3.6.1"
+    },
+    {
+      "dependsOn": [
+        "1ga782ml07vy0h503ac4cin0h8d7q6yh-libidn2-2.3.8",
+        "d89jdm44kd24yn0yaz7aishw1cyzi396-publicsuffix-list-0-unstable-2026-03-02",
+        "jms7zxzm7w1whczwny5m3gkgdjghmi2r-glibc-2.42",
+        "p7jg95rzvfalb95k3mskk0jqxc9d724n-libunistring-1.4.1"
+      ],
+      "ref": "bmjrwa35lpkc6b63ih8jfkdmyx6lpxy4-libpsl-0.21.5"
+    },
+    {
+      "dependsOn": [
+        "74sind1d6vf2bfwd7yklg8chsvzqxmmq-coreutils-9.10",
+        "jms7zxzm7w1whczwny5m3gkgdjghmi2r-glibc-2.42"
+      ],
+      "ref": "c89zz4vh8v9dbs8169wk8ahwxvrdxgm5-findutils-4.10.0"
+    },
+    {
+      "ref": "cqcf2nyajjhwi69b3ib5wqz9dq2lf1l2-set-java-classpath-hook-26.05pre-git"
+    },
+    {
+      "ref": "d89jdm44kd24yn0yaz7aishw1cyzi396-publicsuffix-list-0-unstable-2026-03-02"
+    },
+    {
+      "dependsOn": [
+        "ab3753m6i7isgvzphlar0a8xb84gl96i-gcc-15.2.0",
+        "jms7zxzm7w1whczwny5m3gkgdjghmi2r-glibc-2.42"
+      ],
+      "ref": "dlr3cc27i1mjkqcm9jlp5bjmb0n57q01-gmp-with-cxx-6.3.0"
+    },
+    {
+      "dependsOn": [
+        "jms7zxzm7w1whczwny5m3gkgdjghmi2r-glibc-2.42"
+      ],
+      "ref": "f66zr7abfsx30wpkb5mhlpvbpaqlvqdr-busybox-1.37.0"
+    },
+    {
+      "dependsOn": [
+        "jms7zxzm7w1whczwny5m3gkgdjghmi2r-glibc-2.42",
+        "m5sybb5r3yml6lfgvgdsw4rd3r6bq5h2-oniguruma-6.9.10"
+      ],
+      "ref": "fc13hvlj7541i1xmwdka7f61qicdzr5a-jq-1.8.1"
+    },
+    {
+      "dependsOn": [
+        "bga5xf95jaypy385hvxm4h3yxl3m1566-openssl-3.6.1",
+        "jms7zxzm7w1whczwny5m3gkgdjghmi2r-glibc-2.42",
+        "vy4nwn1qa5cm5nzfvn4zxqkrqwpm2by5-keyutils-1.6.3"
+      ],
+      "ref": "g2g1jvyldykkq49hhgvvkndbj731c676-krb5-1.22.1"
+    },
+    {
+      "dependsOn": [
+        "jms7zxzm7w1whczwny5m3gkgdjghmi2r-glibc-2.42",
+        "ygdgqjzw03k8d05zq3pigzf67b62j7vs-pcre2-10.46"
+      ],
+      "ref": "h6hdbgkfh59np7bi7h8qa76pq27ixz8r-gnugrep-3.12"
+    },
+    {
+      "dependsOn": [
+        "0mkbf0061mvyizfj16zgh4xa6qjq6pvi-lcms2-2.18",
+        "2kdz3m7ic8w226pcvkz1dlg169v91p6a-zlib-1.3.2",
+        "ab3753m6i7isgvzphlar0a8xb84gl96i-gcc-15.2.0",
+        "cqcf2nyajjhwi69b3ib5wqz9dq2lf1l2-set-java-classpath-hook-26.05pre-git",
+        "jms7zxzm7w1whczwny5m3gkgdjghmi2r-glibc-2.42",
+        "xp28zc157vrm8ij4d5ib6n9ilz6nqpgi-libjpeg-turbo-3.1.3"
+      ],
+      "ref": "jb6l0rdrpy0rk4kivja5hf3nvdyb3nzq-openjdk-headless-21.0.10+7"
+    },
+    {
+      "dependsOn": [
+        "1ga782ml07vy0h503ac4cin0h8d7q6yh-libidn2-2.3.8",
+        "vpxblivamvic1p5r5zny934jvg33m50r-xgcc-15.2.0"
+      ],
+      "ref": "jms7zxzm7w1whczwny5m3gkgdjghmi2r-glibc-2.42"
+    },
+    {
+      "dependsOn": [
+        "jms7zxzm7w1whczwny5m3gkgdjghmi2r-glibc-2.42"
+      ],
+      "ref": "jpsqy47rdl0j0dvyyzb4kw8gqajw8nx0-gnused-4.9"
+    },
+    {
+      "dependsOn": [
+        "jms7zxzm7w1whczwny5m3gkgdjghmi2r-glibc-2.42"
+      ],
+      "ref": "jv35gdc4dfr0h8idwicn6h1h3r7pa13v-nghttp2-1.67.1"
+    },
+    {
+      "dependsOn": [
+        "2kdz3m7ic8w226pcvkz1dlg169v91p6a-zlib-1.3.2",
+        "bga5xf95jaypy385hvxm4h3yxl3m1566-openssl-3.6.1",
+        "jms7zxzm7w1whczwny5m3gkgdjghmi2r-glibc-2.42"
+      ],
+      "ref": "lq3xr8iiayj65lpwazxpqfywm98n9lsh-libssh2-1.11.1"
+    },
+    {
+      "dependsOn": [
+        "jms7zxzm7w1whczwny5m3gkgdjghmi2r-glibc-2.42"
+      ],
+      "ref": "m5sybb5r3yml6lfgvgdsw4rd3r6bq5h2-oniguruma-6.9.10"
+    },
+    {
+      "ref": "mg063aj0crwhchqayf2qbyf28k6mlrxm-nss-cacert-3.121"
+    },
+    {
+      "dependsOn": [
+        "jms7zxzm7w1whczwny5m3gkgdjghmi2r-glibc-2.42"
+      ],
+      "ref": "p2yk6q3bhcz1d0wlmk907ysj4l95ak7y-attr-2.5.2"
+    },
+    {
+      "ref": "p7jg95rzvfalb95k3mskk0jqxc9d724n-libunistring-1.4.1"
+    },
+    {
+      "dependsOn": [
+        "jms7zxzm7w1whczwny5m3gkgdjghmi2r-glibc-2.42"
+      ],
+      "ref": "v8sa6r6q037ihghxfbwzjj4p59v2x0pv-bash-5.3p9"
+    },
+    {
+      "ref": "vpxblivamvic1p5r5zny934jvg33m50r-xgcc-15.2.0"
+    },
+    {
+      "dependsOn": [
+        "jms7zxzm7w1whczwny5m3gkgdjghmi2r-glibc-2.42"
+      ],
+      "ref": "vy4nwn1qa5cm5nzfvn4zxqkrqwpm2by5-keyutils-1.6.3"
+    },
+    {
+      "dependsOn": [
+        "jms7zxzm7w1whczwny5m3gkgdjghmi2r-glibc-2.42"
+      ],
+      "ref": "wp4km4x6x2h98i412lr9mwgsr82r56j3-nghttp3-1.14.0"
+    },
+    {
+      "dependsOn": [
+        "jms7zxzm7w1whczwny5m3gkgdjghmi2r-glibc-2.42"
+      ],
+      "ref": "xp28zc157vrm8ij4d5ib6n9ilz6nqpgi-libjpeg-turbo-3.1.3"
+    },
+    {
+      "dependsOn": [
+        "jms7zxzm7w1whczwny5m3gkgdjghmi2r-glibc-2.42"
+      ],
+      "ref": "ygdgqjzw03k8d05zq3pigzf67b62j7vs-pcre2-10.46"
+    }
+  ],
+  "metadata": {
+    "authors": [
+      {
+        "email": "mrdavidlaing@gmail.com",
+        "name": "David Laing"
+      }
+    ],
+    "component": {
+      "bom-ref": "BomRef.04831435869892553.9237497245925014",
+      "externalReferences": [
+        {
+          "comment": "Branch/ref: 71/merge",
+          "type": "vcs",
+          "url": "git+https://github.com/wellmaintained/packages@51163f9faf85fe3f2626755b1db4fa03404e3643"
+        }
+      ],
+      "licenses": [
+        {
+          "license": {
+            "id": "Apache-2.0"
+          }
+        }
+      ],
+      "manufacturer": {
+        "contact": [
+          {
+            "email": "mrdavidlaing@gmail.com",
+            "name": "David Laing"
+          }
+        ],
+        "name": "Well Maintained"
+      },
+      "name": "sbomify-keycloak",
+      "purl": "pkg:docker/wellmaintained/packages/sbomify-keycloak@26.5.6",
+      "supplier": {
+        "name": "Well Maintained"
+      },
+      "type": "container",
+      "version": "26.5.6"
+    },
+    "supplier": {
+      "name": "Well Maintained"
+    },
+    "timestamp": "2026-04-09T11:21:11.827333+00:00",
+    "tools": {
+      "components": [
+        {
+          "description": "Nix CycloneDX SBOM generator",
+          "name": "nix-compliance-inator",
+          "type": "application",
+          "version": "0.2.0"
+        }
+      ],
+      "services": [
+        {
+          "externalReferences": [
+            {
+              "type": "issue-tracker",
+              "url": "https://github.com/sbomify/sbomify-action/issues"
+            },
+            {
+              "type": "vcs",
+              "url": "https://github.com/sbomify/sbomify-action"
+            },
+            {
+              "type": "website",
+              "url": "https://sbomify.com"
+            }
+          ],
+          "group": "sbomify",
+          "name": "sbomify action",
+          "version": "26.1.0"
+        }
+      ]
+    }
+  },
+  "serialNumber": "urn:uuid:a5be44ce-a520-4825-9422-80890cfc6dab",
+  "specVersion": "1.6",
+  "version": 1
+}
