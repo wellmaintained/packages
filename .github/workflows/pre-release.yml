@@ -248,7 +248,7 @@ jobs:
             --sbom-format cyclonedx \
             --upload
 
-  build-release-website:
+  build-compliance-bundle:
     needs: [resolve-pr, resolve-version, tag-and-scan, load-matrix]
     if: needs.resolve-pr.outputs.skip != 'true'
     runs-on: blacksmith-2vcpu-ubuntu-2404
@@ -259,7 +259,7 @@ jobs:
       - name: Setup Nix
         uses: ./.github/actions/setup-nix
         with:
-          stickydisk-suffix: build-release-website
+          stickydisk-suffix: build-compliance-bundle
 
       - name: Download all per-image artifacts
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
@@ -268,7 +268,7 @@ jobs:
           path: release-artifacts/sboms
           merge-multiple: true
 
-      - name: Extract release data for Hugo
+      - name: Extract release metadata
         shell: nix develop .#ci -c bash -e {0}
         env:
           COLLECTION_VERSION: ${{ needs.resolve-version.outputs.collection_version }}
@@ -283,10 +283,6 @@ jobs:
             --tag "$COLLECTION_VERSION" \
             --version "$APP_VERSION" \
             --date "$DATE"
-
-      - name: Build site
-        shell: nix develop .#ci -c bash -e {0}
-        run: hugo --minify -s apps/sbomify/release-website
 
       - name: Compile docker-compose.yml with pinned tags
         run: |
@@ -322,16 +318,11 @@ jobs:
             fi
           done
 
-          # Copy Hugo data files
+          # Copy release metadata
           cp apps/sbomify/release-website/data/release.json "${BUNDLE_DIR}/"
-          cp apps/sbomify/release-website/data/vulnerabilities.json "${BUNDLE_DIR}/"
-          cp apps/sbomify/release-website/data/licenses.json "${BUNDLE_DIR}/"
 
           # Copy docker-compose.yml
           cp docker-compose.yml "${BUNDLE_DIR}/"
-
-          # Copy static site
-          cp -r apps/sbomify/release-website/public "${BUNDLE_DIR}/website"
 
           # Create ZIP
           COLLECTION_VERSION="${{ needs.resolve-version.outputs.collection_version }}"
@@ -346,7 +337,7 @@ jobs:
           retention-days: 7
 
   create-release:
-    needs: [resolve-pr, resolve-version, tag-and-scan, build-release-website, load-matrix]
+    needs: [resolve-pr, resolve-version, tag-and-scan, build-compliance-bundle, load-matrix]
     if: needs.resolve-pr.outputs.skip != 'true'
     runs-on: blacksmith-2vcpu-ubuntu-2404
     steps:
