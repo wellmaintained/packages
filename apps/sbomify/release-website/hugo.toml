@@ -1,4 +1,4 @@
-baseURL = 'https://wellmaintained.github.io/packages/sbomify/'
+baseURL = 'https://wellmaintained.github.io/packages/'
 languageCode = 'en-us'
 title = 'sbomify · v26.1.0'
 ignoreLogs = ['warning-goldmark-raw-html']
