@@ -1,0 +1,14 @@
+{{ $release := hugo.Data.release }}
+{{ if $release }}
+<div class="release-overview" style="margin-top: 1em; margin-bottom: 1.5em;">
+  <table>
+    <tbody>
+      <tr><td><strong>Release tag</strong></td><td><a href="https://github.com/wellmaintained/packages/releases/tag/{{ $release.tag }}">{{ $release.tag }}</a></td></tr>
+      <tr><td><strong>App version</strong></td><td><a href="https://github.com/sbomify/sbomify/releases/tag/v{{ $release.version }}">v{{ $release.version }}</a></td></tr>
+      <tr><td><strong>Date</strong></td><td>{{ $release.date }}</td></tr>
+    </tbody>
+  </table>
+</div>
+{{ else }}
+<p><em>Release data not available. This site was built without release context.</em></p>
+{{ end }}

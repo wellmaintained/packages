@@ -1,0 +1,32 @@
+{{- $data := hugo.Data.vulnerabilities -}}
+{{- if $data -}}
+{{- $not_affected := 0 -}}
+{{- $affected := 0 -}}
+{{- range $data.vex_statements -}}
+  {{- if eq .status "not_affected" -}}{{- $not_affected = add $not_affected 1 -}}{{- end -}}
+  {{- if eq .status "affected" -}}{{- $affected = add $affected 1 -}}{{- end -}}
+{{- end -}}
+{{- if gt (len $data.vex_statements) 0 -}}
+<p><strong>{{ len $data.vex_statements }}</strong> VEX assessments: <strong>{{ $not_affected }}</strong> not affected (suppressed from scan), <strong>{{ $affected }}</strong> affected (shown in findings with context).</p>
+<details>
+<summary>All VEX assessments ({{ len $data.vex_statements }})</summary>
+<table>
+<thead><tr><th>CVE</th><th>Image</th><th>Status</th><th>Justification / Action</th></tr></thead>
+<tbody>
+{{- range $data.vex_statements }}
+<tr>
+  <td><a href="https://euvd.enisa.europa.eu/vulnerability/{{ .cve }}">{{ .cve }}</a></td>
+  <td>{{ .image }}</td>
+  <td>{{ .status }}</td>
+  <td>{{ with .justification }}{{ . }}{{ end }}{{ with .impact }}<br><small>{{ . | truncate 200 }}</small>{{ end }}</td>
+</tr>
+{{- end }}
+</tbody>
+</table>
+</details>
+{{- else }}
+<p>No VEX assessments for this release.</p>
+{{- end -}}
+{{- else -}}
+<em>Vulnerability data not available.</em>
+{{- end -}}

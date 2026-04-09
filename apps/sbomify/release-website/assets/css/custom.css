@@ -1,0 +1,125 @@
+/* Allow long lines in code blocks to wrap instead of scrolling */
+.hextra-code-block pre,
+.content pre {
+  white-space: pre-wrap !important;
+  word-break: break-all !important;
+  overflow-x: visible !important;
+}
+
+/* Prevent external link icon from wrapping to a new line */
+td a[target="_blank"] {
+  white-space: nowrap;
+}
+
+/* SBOM Tree Viewer — theme-aware colors */
+:root {
+  --sbom-muted: #6b7280;
+  --sbom-border: #d1d5db;
+  --sbom-name: #2563eb;
+  --sbom-license-bg: #e5e7eb;
+  --sbom-license-fg: #166534;
+  --sbom-hover-bg: rgba(0, 0, 0, 0.03);
+  --sbom-btn-hover: #f3f4f6;
+  --sbom-dimmed: #9ca3af;
+}
+
+.dark {
+  --sbom-muted: #888;
+  --sbom-border: #333;
+  --sbom-name: #60a5fa;
+  --sbom-license-bg: #1e293b;
+  --sbom-license-fg: #4ade80;
+  --sbom-hover-bg: rgba(255, 255, 255, 0.03);
+  --sbom-btn-hover: #1e293b;
+  --sbom-dimmed: #555;
+}
+
+.sbom-stats {
+  margin-bottom: 0.5em;
+  color: var(--sbom-muted);
+}
+
+.sbom-controls {
+  margin-bottom: 1em;
+  display: flex;
+  gap: 0.5em;
+  align-items: center;
+}
+
+.sbom-controls button {
+  padding: 4px 12px;
+  border: 1px solid var(--sbom-border);
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 0.85em;
+}
+
+.sbom-controls button:hover {
+  background: var(--sbom-btn-hover);
+}
+
+.sbom-search {
+  padding: 4px 10px;
+  border: 1px solid var(--sbom-border);
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font-size: 0.85em;
+  flex: 1;
+  max-width: 300px;
+}
+
+.sbom-tree-root {
+  font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+  font-size: 0.85em;
+  line-height: 1.8;
+}
+
+.sbom-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
+.sbom-row:hover {
+  background: var(--sbom-hover-bg);
+}
+
+.sbom-toggle {
+  width: 1em;
+  text-align: center;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.sbom-name {
+  color: var(--sbom-name);
+  font-weight: 500;
+}
+
+.sbom-version {
+  color: var(--sbom-muted);
+}
+
+.sbom-license {
+  background: var(--sbom-license-bg);
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 0.85em;
+  color: var(--sbom-license-fg);
+}
+
+.sbom-license:empty {
+  display: none;
+}
+
+.sbom-childcount {
+  color: var(--sbom-dimmed);
+  font-size: 0.85em;
+}
+
+.sbom-dimmed {
+  color: var(--sbom-dimmed);
+}

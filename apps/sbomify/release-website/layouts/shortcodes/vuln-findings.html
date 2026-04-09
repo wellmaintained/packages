@@ -1,0 +1,29 @@
+{{- $severity := .Get "severity" -}}
+{{- $data := hugo.Data.vulnerabilities -}}
+{{- if $data -}}
+{{- $count := 0 -}}
+{{- range $data.findings -}}{{- if eq .severity $severity -}}{{- $count = add $count 1 -}}{{- end -}}{{- end -}}
+{{- if gt $count 0 -}}
+<table>
+<thead><tr><th>CVE</th><th>Image</th><th>Package</th><th>Installed</th><th>Fixed In</th><th>VEX Status</th></tr></thead>
+<tbody>
+{{- range $data.findings }}
+{{- if eq .severity $severity }}
+<tr>
+  <td><a href="https://euvd.enisa.europa.eu/vulnerability/{{ .cve }}">{{ .cve }}</a></td>
+  <td>{{ .image }}</td>
+  <td>{{ .package }}</td>
+  <td>{{ .installed }}</td>
+  <td>{{ if .fixed_in }}{{ .fixed_in }}{{ else }}—{{ end }}</td>
+  <td>{{ with .vex_status }}{{ . }}{{ end }}</td>
+</tr>
+{{- end }}
+{{- end }}
+</tbody>
+</table>
+{{- else }}
+<p>No {{ lower $severity }} severity vulnerabilities found.</p>
+{{- end -}}
+{{- else -}}
+<em>Vulnerability data not available.</em>
+{{- end -}}

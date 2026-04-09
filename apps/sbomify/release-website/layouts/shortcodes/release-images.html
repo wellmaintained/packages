@@ -1,0 +1,20 @@
+{{ $release := hugo.Data.release }}
+{{ if $release }}
+<p>{{ len $release.images }} container images from <code>ghcr.io/wellmaintained/packages/</code></p>
+<table>
+<thead>
+<tr><th>Image</th><th>Upstream Version</th><th></th></tr>
+</thead>
+<tbody>
+{{ range $release.images }}
+<tr>
+  <td><strong><a href="https://github.com/wellmaintained/packages/pkgs/container/packages%2F{{ .name }}">{{ .name }}</a></strong></td>
+  <td>{{ .upstream_version }}</td>
+  <td><a href="{{ "compliance/" | relURL }}">compliance</a> · <a href="{{ "provenance/" | relURL }}">provenance</a></td>
+</tr>
+{{ end }}
+</tbody>
+</table>
+{{ else }}
+<p><em>Release data not available.</em></p>
+{{ end }}

@@ -1,0 +1,8 @@
+{{ $image := .Get "image" }}
+{{ $sbomUrl := printf "artifacts/sboms/%s.cdx.json" $image | relURL }}
+<div id="sbom-tree" data-sbom-url="{{ $sbomUrl }}"></div>
+{{ $js := resources.Get "js/sbom-tree.js" }}
+{{ if $js }}
+<script src="{{ $js.RelPermalink }}"></script>
+<script>SBOMTree.init('sbom-tree');</script>
+{{ end }}

@@ -1,0 +1,16 @@
+{{- $data := hugo.Data.vulnerabilities -}}
+{{- if $data -}}
+<table>
+<thead><tr><th>Severity</th><th>Count</th></tr></thead>
+<tbody>
+<tr><td><a href="critical/">Critical</a></td><td>{{ index $data.summary "Critical" | default 0 }}</td></tr>
+<tr><td><a href="high/">High</a></td><td>{{ index $data.summary "High" | default 0 }}</td></tr>
+<tr><td><a href="medium/">Medium</a></td><td>{{ index $data.summary "Medium" | default 0 }}</td></tr>
+<tr><td><a href="low/">Low</a></td><td>{{ index $data.summary "Low" | default 0 }}</td></tr>
+<tr><td><a href="negligible/">Negligible</a></td><td>{{ index $data.summary "Negligible" | default 0 }}</td></tr>
+</tbody>
+</table>
+<small>Scanned {{ len $data.scanned_images }} of {{ add (len $data.scanned_images) (len $data.missing_images) }} images.{{ if gt (len $data.missing_images) 0 }} Missing: {{ delimit $data.missing_images ", " }}.{{ end }}</small>
+{{- else -}}
+<em>Vulnerability data not available. Run <code>just scan-sbom &lt;image&gt;</code> then <code>just release-website-extract</code>.</em>
+{{- end -}}
