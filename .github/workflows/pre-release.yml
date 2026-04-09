@@ -226,7 +226,7 @@ jobs:
 
       - name: Upload release artifacts
         if: steps.extract-sbom.outcome == 'success'
-        uses: actions/upload-artifact@ea165f8d65b6db9a6b7c67d0a148c4a5b4a9760a # v4
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: sbom-${{ matrix.image.name }}
           path: |
@@ -328,7 +328,7 @@ jobs:
           zip -r "../${COLLECTION_VERSION}-compliance.zip" .
 
       - name: Upload compliance bundle
-        uses: actions/upload-artifact@ea165f8d65b6db9a6b7c67d0a148c4a5b4a9760a # v4
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: compliance-bundle
           path: ${{ needs.resolve-version.outputs.collection_version }}-compliance.zip

@@ -330,6 +330,8 @@
               cosign
               crane
               grype
+              hugo
+              go
               sbomqs
               sbomlyze
               sbomifyAction
