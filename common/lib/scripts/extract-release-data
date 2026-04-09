@@ -1,0 +1,217 @@
+#!/usr/bin/env bash
+# common/lib/scripts/extract-release-data — Populate Hugo site data from built SBOMs.
+#
+# Usage:
+#   common/lib/scripts/extract-release-data \
+#     --sbom-dir DIR \
+#     --scan-dir DIR \
+#     --image-matrix FILE \
+#     --output-dir DIR \
+#     --tag TAG \
+#     --version VERSION \
+#     --date DATE
+#
+# Reads enriched CycloneDX SBOMs from --sbom-dir, Grype scan results from
+# --scan-dir, extracts per-image metadata, and writes into --output-dir:
+#   data/release.json          — release metadata
+#   data/vulnerabilities.json  — aggregated Grype findings
+#   data/licenses.json         — per-image license/component data
+#   static/artifacts/sboms/    — one SBOM per image
+#
+# Requires: jq, yq
+
+set -euo pipefail
+
+usage() {
+  echo "Usage: $0 --sbom-dir DIR --scan-dir DIR --image-matrix FILE --output-dir DIR --tag TAG --version VERSION --date DATE"
+  exit 1
+}
+
+SBOM_DIR=""
+SCAN_DIR=""
+IMAGE_MATRIX=""
+OUTPUT_DIR=""
+TAG=""
+VERSION=""
+DATE=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --sbom-dir) SBOM_DIR="$2"; shift 2 ;;
+    --scan-dir) SCAN_DIR="$2"; shift 2 ;;
+    --image-matrix) IMAGE_MATRIX="$2"; shift 2 ;;
+    --output-dir) OUTPUT_DIR="$2"; shift 2 ;;
+    --tag) TAG="$2"; shift 2 ;;
+    --version) VERSION="$2"; shift 2 ;;
+    --date) DATE="$2"; shift 2 ;;
+    *) echo "Unknown option: $1"; usage ;;
+  esac
+done
+
+[[ -z "$SBOM_DIR" || -z "$SCAN_DIR" || -z "$IMAGE_MATRIX" || -z "$OUTPUT_DIR" || -z "$TAG" || -z "$VERSION" || -z "$DATE" ]] && usage
+
+# Read image names from the matrix
+IMAGES=$(jq -r '.[].name' "$IMAGE_MATRIX")
+
+# Prepare output directories
+ARTIFACTS_DIR="${OUTPUT_DIR}/static/artifacts/sboms"
+DATA_DIR="${OUTPUT_DIR}/data"
+mkdir -p "$ARTIFACTS_DIR" "$DATA_DIR"
+
+# Build the images JSON array
+IMAGES_JSON="[]"
+
+for IMAGE in $IMAGES; do
+  SBOM_FILE="${SBOM_DIR}/${IMAGE}.enriched.cdx.json"
+
+  if [[ ! -f "$SBOM_FILE" ]]; then
+    echo "ERROR: SBOM not found for ${IMAGE}: ${SBOM_FILE}" >&2
+    echo "Run 'just build-image --all' first." >&2
+    exit 1
+  fi
+
+  # Extract upstream version from SBOM metadata
+  UPSTREAM_VERSION=$(jq -r '.metadata.component.version // empty' "$SBOM_FILE")
+  if [[ -z "$UPSTREAM_VERSION" ]]; then
+    echo "WARNING: No version found in SBOM metadata for ${IMAGE}, using 'unknown'" >&2
+    UPSTREAM_VERSION="unknown"
+  fi
+
+  echo "==> ${IMAGE}: upstream_version=${UPSTREAM_VERSION}" >&2
+
+  # Copy SBOM to Hugo static directory
+  cp "$SBOM_FILE" "${ARTIFACTS_DIR}/${IMAGE}.cdx.json"
+
+  # Append to images array
+  IMAGES_JSON=$(echo "$IMAGES_JSON" | jq \
+    --arg name "$IMAGE" \
+    --arg upstream_version "$UPSTREAM_VERSION" \
+    --arg tag "local-build" \
+    --arg digest "sha256:local" \
+    '. + [{ name: $name, upstream_version: $upstream_version, tag: $tag, digest: $digest }]')
+done
+
+# Write release.json
+jq -n \
+  --arg tag "$TAG" \
+  --arg version "$VERSION" \
+  --arg date "$DATE" \
+  --argjson images "$IMAGES_JSON" \
+  '{ tag: $tag, version: $version, date: $date, images: $images }' \
+  > "${DATA_DIR}/release.json"
+
+echo "==> Wrote ${DATA_DIR}/release.json (${TAG}, ${VERSION}, $(echo "$IMAGES" | wc -w) images)" >&2
+echo "==> SBOMs copied to ${ARTIFACTS_DIR}/" >&2
+
+# --- Vulnerability data ---
+VULN_FINDINGS="[]"
+VEX_STATEMENTS="[]"
+SCANNED_IMAGES="[]"
+MISSING_IMAGES="[]"
+
+for IMAGE in $IMAGES; do
+  SCAN_FILE="${SCAN_DIR}/${IMAGE}.scan.json"
+  if [[ ! -f "$SCAN_FILE" ]]; then
+    echo "==> ${IMAGE}: no scan results (run 'just scan-sbom ${IMAGE}' to generate)" >&2
+    MISSING_IMAGES=$(echo "$MISSING_IMAGES" | jq --arg i "$IMAGE" '. + [$i]')
+    continue
+  fi
+
+  SCANNED_IMAGES=$(echo "$SCANNED_IMAGES" | jq --arg i "$IMAGE" '. + [$i]')
+
+  # Extract findings from Grype output
+  IMAGE_FINDINGS=$(jq --arg image "$IMAGE" '
+    [.matches[] | {
+      cve: .vulnerability.id,
+      severity: .vulnerability.severity,
+      image: $image,
+      package: .artifact.name,
+      installed: .artifact.version,
+      fixed_in: (if .vulnerability.fix.versions | length > 0 then .vulnerability.fix.versions[0] else null end),
+      vex_status: null,
+      vex_justification: null,
+      vex_impact: null
+    }]' "$SCAN_FILE")
+
+  # Resolve VEX file
+  VEX_FILE=$(common/lib/scripts/resolve-vex-file --image "$IMAGE")
+
+  if [[ -n "$VEX_FILE" ]]; then
+    # Parse VEX statements for this image
+    IMAGE_VEX=$(yq -o json '.statements // []' "$VEX_FILE" | jq --arg image "$IMAGE" '
+      [.[] | {
+        cve: .vulnerability.name,
+        image: $image,
+        status: .status,
+        justification: (.justification // null),
+        impact: (.impact_statement // .action_statement // null)
+      }]')
+
+    # Annotate existing findings with VEX status
+    for CVE_ID in $(echo "$IMAGE_VEX" | jq -r '.[] | select(.status == "affected") | .cve'); do
+      VEX_ENTRY=$(echo "$IMAGE_VEX" | jq --arg cve "$CVE_ID" '.[] | select(.cve == $cve)')
+      VEX_STATUS=$(echo "$VEX_ENTRY" | jq -r '.status')
+      VEX_IMPACT=$(echo "$VEX_ENTRY" | jq -r '.impact // empty')
+      IMAGE_FINDINGS=$(echo "$IMAGE_FINDINGS" | jq --arg cve "$CVE_ID" --arg status "$VEX_STATUS" --arg impact "$VEX_IMPACT" '
+        [.[] | if .cve == $cve then .vex_status = $status | .vex_impact = $impact else . end]')
+    done
+
+    # Add suppressed (not_affected) VEX entries as separate statements
+    VEX_STATEMENTS=$(echo "$VEX_STATEMENTS" "$IMAGE_VEX" | jq -s '.[0] + .[1]')
+    echo "==> ${IMAGE}: $(echo "$IMAGE_FINDINGS" | jq 'length') vulnerabilities, $(echo "$IMAGE_VEX" | jq 'length') VEX statements (from ${VEX_FILE})" >&2
+  else
+    echo "==> ${IMAGE}: $(echo "$IMAGE_FINDINGS" | jq 'length') vulnerabilities, no VEX file" >&2
+  fi
+
+  VULN_FINDINGS=$(echo "$VULN_FINDINGS" "$IMAGE_FINDINGS" | jq -s '.[0] + .[1]')
+done
+
+# Build summary counts
+VULN_SUMMARY=$(echo "$VULN_FINDINGS" | jq '
+  { Critical: 0, High: 0, Medium: 0, Low: 0, Negligible: 0 } +
+  (group_by(.severity) | map({ (.[0].severity): length }) | add // {})')
+
+jq -n \
+  --argjson summary "$VULN_SUMMARY" \
+  --argjson findings "$VULN_FINDINGS" \
+  --argjson vex_statements "$VEX_STATEMENTS" \
+  --argjson scanned_images "$SCANNED_IMAGES" \
+  --argjson missing_images "$MISSING_IMAGES" \
+  '{ summary: $summary, findings: $findings, vex_statements: $vex_statements, scanned_images: $scanned_images, missing_images: $missing_images }' \
+  > "${DATA_DIR}/vulnerabilities.json"
+
+VEX_NOT_AFFECTED=$(echo "$VEX_STATEMENTS" | jq '[.[] | select(.status == "not_affected")] | length')
+echo "==> Wrote ${DATA_DIR}/vulnerabilities.json ($(echo "$VULN_FINDINGS" | jq 'length') findings, ${VEX_NOT_AFFECTED} suppressed by VEX, $(echo "$SCANNED_IMAGES" | jq 'length') images scanned)" >&2
+
+# --- License data ---
+LICENSES_JSON='{}'
+
+for IMAGE in $IMAGES; do
+  SBOM_FILE="${SBOM_DIR}/${IMAGE}.enriched.cdx.json"
+
+  IMAGE_LICENSES=$(jq '
+    [.components[]
+     | select(.licenses != null and (.licenses | length > 0))
+     | {
+         component: .name,
+         version: .version,
+         license: (.licenses[0].license.id // .licenses[0].license.name // "Unknown"),
+         description: (.description // ""),
+         website: ([.externalReferences[]? | select(.type == "website") | .url][0] // null)
+       }
+    ] | sort_by(.component)' "$SBOM_FILE")
+
+  LICENSES_JSON=$(echo "$LICENSES_JSON" | jq --arg image "$IMAGE" --argjson components "$IMAGE_LICENSES" '. + {($image): $components}')
+done
+
+# Build license summary (aggregate across all images)
+LICENSE_SUMMARY=$(echo "$LICENSES_JSON" | jq '
+  [.[][] | .license] | group_by(.) | map({license: .[0], count: length}) | sort_by(-.count)')
+
+jq -n \
+  --argjson summary "$LICENSE_SUMMARY" \
+  --argjson images "$LICENSES_JSON" \
+  '{ summary: $summary, images: $images }' \
+  > "${DATA_DIR}/licenses.json"
+
+echo "==> Wrote ${DATA_DIR}/licenses.json ($(echo "$LICENSE_SUMMARY" | jq 'length') distinct licenses)" >&2
