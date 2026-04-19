@@ -37,6 +37,10 @@ pkgs.buildCompliantImage {
     pkgs.keycloak
     pkgs.cacert
     minimalBusybox
+    # coreutils supplies `tr` (needed by keycloak-bootstrap.sh re-run
+    # path), plus `uname` and `readlink -f` invoked by Keycloak's
+    # upstream kcadm.sh wrapper on every call.
+    pkgs.coreutils
     pkgs.gnugrep
     pkgs.gnused
     pkgs.findutils
