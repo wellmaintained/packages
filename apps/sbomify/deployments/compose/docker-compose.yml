@@ -5,7 +5,7 @@
 # Common environment variables shared across services
 x-common-env: &common-env
   AM_I_IN_DOCKER_CONTAINER: ${AM_I_IN_DOCKER_CONTAINER:-1}
-  APP_BASE_URL: ${APP_BASE_URL:-http://127.0.0.1:8000}
+  APP_BASE_URL: ${APP_BASE_URL:-http://127.0.0.1:${HTTP_PORT:-8000}}
   AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-minioadmin}
   AWS_ENDPOINT_URL_S3: ${AWS_ENDPOINT_URL_S3:-http://sbomify-minio:9000}
   AWS_MEDIA_ACCESS_KEY_ID: ${AWS_MEDIA_ACCESS_KEY_ID:-minioadmin}
@@ -197,7 +197,7 @@ services:
     environment:
       <<: [*keycloak-env, *keycloak-admin-env]
       KEYCLOAK_DEV_MODE: ${KEYCLOAK_DEV_MODE:-true}
-      APP_BASE_URL: ${APP_BASE_URL:-http://127.0.0.1:8000}
+      APP_BASE_URL: ${APP_BASE_URL:-http://127.0.0.1:${HTTP_PORT:-8000}}
 
   sbomify-minio:
     image: ${MINIO_IMAGE:-ghcr.io/wellmaintained/packages/minio}:${MINIO_TAG:-latest}
