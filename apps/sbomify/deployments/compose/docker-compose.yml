@@ -32,7 +32,7 @@ x-common-env: &common-env
 # Docker Compose's built-in DNS. KC_HOSTNAME_BACKCHANNEL_DYNAMIC ensures the
 # OIDC discovery doc returns the right URL for each audience.
 x-keycloak-env: &keycloak-env
-  KC_HOSTNAME: ${KC_HOSTNAME:-http://localhost:8180}
+  KC_HOSTNAME: ${KC_HOSTNAME:-http://localhost:${KEYCLOAK_PORT:-8180}}
   KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
   KEYCLOAK_SERVER_URL: ${KEYCLOAK_SERVER_URL:-http://keycloak:8080/}
   KEYCLOAK_REALM: ${KEYCLOAK_REALM:-sbomify}
