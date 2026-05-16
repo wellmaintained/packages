@@ -36,10 +36,35 @@ jobs:
     steps:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
       - id: set
-        run: echo "matrix=$(jq -c . .github/image-matrix.json)" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # On workflow_dispatch, build everything
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "matrix=$(jq -c '[.[] | del(.paths)]' .github/image-matrix.json)" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Get changed files from the PR
+          CHANGED_FILE="$(mktemp)"
+          gh api "repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files" \
+            --paginate --jq '.[].filename' > "$CHANGED_FILE"
+
+          MATRIX=$(common/lib/scripts/filter-build-matrix .github/image-matrix.json "$CHANGED_FILE")
+          rm -f "$CHANGED_FILE"
+          echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
+
+      - name: Write filtered matrix file
+        run: echo '${{ steps.set.outputs.matrix }}' > filtered-matrix.json
+      - name: Upload filtered matrix
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: filtered-matrix
+          path: filtered-matrix.json
 
   build:
     needs: load-matrix
+    if: ${{ needs.load-matrix.outputs.matrix != '[]' }}
     runs-on: blacksmith-4vcpu-ubuntu-2404
     defaults:
       run:

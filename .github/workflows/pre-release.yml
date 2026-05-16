@@ -42,7 +42,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.merge_commit_sha || github.sha }}
       - id: set
-        run: echo "matrix=$(jq -c . .github/image-matrix.json)" >> "$GITHUB_OUTPUT"
+        run: echo "matrix=$(jq -c '[.[] | del(.paths)]' .github/image-matrix.json)" >> "$GITHUB_OUTPUT"
 
   resolve-pr:
     if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true

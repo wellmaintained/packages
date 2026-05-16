@@ -35,8 +35,14 @@ jobs:
       head_sha7: ${{ steps.sha.outputs.head_sha7 }}
     steps:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - name: Download filtered matrix from build run
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: filtered-matrix
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
       - id: set
-        run: echo "matrix=$(jq -c . .github/image-matrix.json)" >> "$GITHUB_OUTPUT"
+        run: echo "matrix=$(jq -c . filtered-matrix.json)" >> "$GITHUB_OUTPUT"
       - id: sha
         run: |
           HEAD_SHA="${{ github.event.workflow_run.head_sha }}"
@@ -44,6 +50,7 @@ jobs:
 
   score:
     needs: load-matrix
+    if: ${{ needs.load-matrix.outputs.matrix != '[]' }}
     runs-on: blacksmith-2vcpu-ubuntu-2404
     defaults:
       run:

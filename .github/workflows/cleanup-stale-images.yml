@@ -21,7 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
       - id: set
-        run: echo "matrix=$(jq -c . .github/image-matrix.json)" >> "$GITHUB_OUTPUT"
+        run: echo "matrix=$(jq -c '[.[] | del(.paths)]' .github/image-matrix.json)" >> "$GITHUB_OUTPUT"
 
   weekly-sweep:
     needs: load-matrix
